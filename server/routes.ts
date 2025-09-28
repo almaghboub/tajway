@@ -1,0 +1,486 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import session from "express-session";
+import { storage } from "./storage";
+import { hashPassword, verifyPassword } from "./auth";
+import { requireAuth, requireOwner, requireOperational, requireInventoryAccess } from "./middleware";
+import {
+  insertUserSchema,
+  insertCustomerSchema,
+  insertOrderSchema,
+  insertOrderItemSchema,
+  insertInventorySchema,
+  insertShippingRateSchema,
+  loginSchema,
+} from "@shared/schema";
+
+declare global {
+  namespace Express {
+    interface User {
+      id: string;
+      username: string;
+      role: "owner" | "customer_service" | "receptionist" | "sorter" | "stock_manager";
+      firstName: string;
+      lastName: string;
+      email: string;
+      isActive: boolean;
+    }
+  }
+}
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Session configuration
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "your-secret-key",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: false,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      },
+    })
+  );
+
+  // Passport configuration
+  passport.use(
+    new LocalStrategy(async (username, password, done) => {
+      try {
+        const user = await storage.getUserByUsername(username);
+        if (!user) {
+          return done(null, false, { message: "Invalid username or password" });
+        }
+
+        const isValid = await verifyPassword(password, user.password);
+        if (!isValid) {
+          return done(null, false, { message: "Invalid username or password" });
+        }
+
+        if (!user.isActive) {
+          return done(null, false, { message: "Account is disabled" });
+        }
+
+        return done(null, {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          isActive: user.isActive,
+        });
+      } catch (error) {
+        return done(error);
+      }
+    })
+  );
+
+  passport.serializeUser((user, done) => {
+    done(null, user.id);
+  });
+
+  passport.deserializeUser(async (id: string, done) => {
+    try {
+      const user = await storage.getUser(id);
+      if (!user) {
+        return done(null, false);
+      }
+      done(null, {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        isActive: user.isActive,
+      });
+    } catch (error) {
+      done(error);
+    }
+  });
+
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+  // Authentication routes
+  app.post("/api/auth/login", (req, res, next) => {
+    const result = loginSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ message: "Invalid credentials format" });
+    }
+
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.status(401).json({ message: info.message || "Authentication failed" });
+      }
+      req.logIn(user, (err) => {
+        if (err) {
+          return next(err);
+        }
+        res.json({ user });
+      });
+    })(req, res, next);
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+
+  app.get("/api/auth/me", (req, res) => {
+    if (req.isAuthenticated()) {
+      res.json({ user: req.user });
+    } else {
+      res.status(401).json({ message: "Not authenticated" });
+    }
+  });
+
+  // User management routes
+  app.get("/api/users", requireOwner, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const safeUsers = users.map(({ password, ...user }) => user);
+      res.json(safeUsers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.post("/api/users", requireOwner, async (req, res) => {
+    try {
+      const result = insertUserSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid user data", errors: result.error.errors });
+      }
+
+      const hashedPassword = await hashPassword(result.data.password);
+      const user = await storage.createUser({
+        ...result.data,
+        password: hashedPassword,
+      });
+
+      const { password, ...safeUser } = user;
+      res.status(201).json(safeUser);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  app.put("/api/users/:id", requireOwner, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const result = insertUserSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid user data", errors: result.error.errors });
+      }
+
+      let updateData = result.data;
+      if (updateData.password) {
+        updateData.password = await hashPassword(updateData.password);
+      }
+
+      const user = await storage.updateUser(id, updateData);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const { password, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  app.delete("/api/users/:id", requireOwner, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteUser(id);
+      if (!success) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  // Customer routes
+  app.get("/api/customers", requireOperational, async (req, res) => {
+    try {
+      const customers = await storage.getAllCustomers();
+      res.json(customers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch customers" });
+    }
+  });
+
+  app.get("/api/customers/:id", requireOperational, async (req, res) => {
+    try {
+      const customer = await storage.getCustomerWithOrders(req.params.id);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      res.json(customer);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch customer" });
+    }
+  });
+
+  app.post("/api/customers", requireOperational, async (req, res) => {
+    try {
+      const result = insertCustomerSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid customer data", errors: result.error.errors });
+      }
+
+      const customer = await storage.createCustomer(result.data);
+      res.status(201).json(customer);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create customer" });
+    }
+  });
+
+  app.put("/api/customers/:id", requireOperational, async (req, res) => {
+    try {
+      const result = insertCustomerSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid customer data", errors: result.error.errors });
+      }
+
+      const customer = await storage.updateCustomer(req.params.id, result.data);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      res.json(customer);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update customer" });
+    }
+  });
+
+  app.delete("/api/customers/:id", requireOperational, async (req, res) => {
+    try {
+      const success = await storage.deleteCustomer(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      res.json({ message: "Customer deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete customer" });
+    }
+  });
+
+  // Order routes
+  app.get("/api/orders", requireAuth, async (req, res) => {
+    try {
+      const orders = await storage.getAllOrders();
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch orders" });
+    }
+  });
+
+  app.get("/api/orders/:id", requireAuth, async (req, res) => {
+    try {
+      const order = await storage.getOrderWithCustomer(req.params.id);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      res.json(order);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch order" });
+    }
+  });
+
+  app.post("/api/orders", requireOperational, async (req, res) => {
+    try {
+      const result = insertOrderSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid order data", errors: result.error.errors });
+      }
+
+      const order = await storage.createOrder(result.data);
+      res.status(201).json(order);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create order" });
+    }
+  });
+
+  app.put("/api/orders/:id", requireOperational, async (req, res) => {
+    try {
+      const result = insertOrderSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid order data", errors: result.error.errors });
+      }
+
+      const order = await storage.updateOrder(req.params.id, result.data);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      res.json(order);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update order" });
+    }
+  });
+
+  app.delete("/api/orders/:id", requireOperational, async (req, res) => {
+    try {
+      const success = await storage.deleteOrder(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      res.json({ message: "Order deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete order" });
+    }
+  });
+
+  // Order Items routes
+  app.get("/api/orders/:orderId/items", requireAuth, async (req, res) => {
+    try {
+      const items = await storage.getOrderItems(req.params.orderId);
+      res.json(items);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch order items" });
+    }
+  });
+
+  app.post("/api/orders/:orderId/items", requireOperational, async (req, res) => {
+    try {
+      const result = insertOrderItemSchema.safeParse({
+        ...req.body,
+        orderId: req.params.orderId,
+      });
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid order item data", errors: result.error.errors });
+      }
+
+      const item = await storage.createOrderItem(result.data);
+      res.status(201).json(item);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create order item" });
+    }
+  });
+
+  // Inventory routes
+  app.get("/api/inventory", requireInventoryAccess, async (req, res) => {
+    try {
+      const inventory = await storage.getAllInventory();
+      res.json(inventory);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch inventory" });
+    }
+  });
+
+  app.get("/api/inventory/:id", requireInventoryAccess, async (req, res) => {
+    try {
+      const item = await storage.getInventoryItem(req.params.id);
+      if (!item) {
+        return res.status(404).json({ message: "Inventory item not found" });
+      }
+      res.json(item);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch inventory item" });
+    }
+  });
+
+  app.post("/api/inventory", requireInventoryAccess, async (req, res) => {
+    try {
+      const result = insertInventorySchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid inventory data", errors: result.error.errors });
+      }
+
+      const item = await storage.createInventoryItem(result.data);
+      res.status(201).json(item);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create inventory item" });
+    }
+  });
+
+  app.put("/api/inventory/:id", requireInventoryAccess, async (req, res) => {
+    try {
+      const result = insertInventorySchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid inventory data", errors: result.error.errors });
+      }
+
+      const item = await storage.updateInventoryItem(req.params.id, result.data);
+      if (!item) {
+        return res.status(404).json({ message: "Inventory item not found" });
+      }
+      res.json(item);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update inventory item" });
+    }
+  });
+
+  app.delete("/api/inventory/:id", requireInventoryAccess, async (req, res) => {
+    try {
+      const success = await storage.deleteInventoryItem(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Inventory item not found" });
+      }
+      res.json({ message: "Inventory item deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete inventory item" });
+    }
+  });
+
+  // Shipping rates routes
+  app.get("/api/shipping-rates", requireAuth, async (req, res) => {
+    try {
+      const rates = await storage.getAllShippingRates();
+      res.json(rates);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch shipping rates" });
+    }
+  });
+
+  app.post("/api/shipping-rates", requireOwner, async (req, res) => {
+    try {
+      const result = insertShippingRateSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid shipping rate data", errors: result.error.errors });
+      }
+
+      const rate = await storage.createShippingRate(result.data);
+      res.status(201).json(rate);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create shipping rate" });
+    }
+  });
+
+  // Analytics routes
+  app.get("/api/analytics/dashboard", requireAuth, async (req, res) => {
+    try {
+      const [totalProfit, totalRevenue, activeOrders] = await Promise.all([
+        storage.getTotalProfit(),
+        storage.getTotalRevenue(),
+        storage.getActiveOrdersCount(),
+      ]);
+
+      const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
+      res.json({
+        totalProfit,
+        totalRevenue,
+        activeOrders,
+        profitMargin,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch analytics data" });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
