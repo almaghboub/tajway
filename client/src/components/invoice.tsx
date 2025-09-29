@@ -34,11 +34,49 @@ interface InvoiceProps {
   onPrint?: () => void;
 }
 
+// Function to convert number to words
+function numberToWords(num: number): string {
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  
+  if (num === 0) return 'Zero Dollars';
+  
+  const convert = (n: number): string => {
+    if (n === 0) return '';
+    if (n < 10) return ones[n];
+    if (n < 20) return teens[n - 10];
+    if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+    if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + convert(n % 100) : '');
+    if (n < 1000000) return convert(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convert(n % 1000) : '');
+    if (n < 1000000000) return convert(Math.floor(n / 1000000)) + ' Million' + (n % 1000000 !== 0 ? ' ' + convert(n % 1000000) : '');
+    return convert(Math.floor(n / 1000000000)) + ' Billion' + (n % 1000000000 !== 0 ? ' ' + convert(n % 1000000000) : '');
+  };
+  
+  const dollars = Math.floor(num);
+  const cents = Math.round((num - dollars) * 100);
+  
+  let result = '';
+  
+  if (dollars === 0) {
+    result = 'Zero Dollars';
+  } else {
+    result = convert(dollars) + ' Dollar' + (dollars !== 1 ? 's' : '');
+  }
+  
+  if (cents > 0) {
+    result += ' and ' + convert(cents) + ' Cent' + (cents !== 1 ? 's' : '');
+  }
+  
+  return result;
+}
+
 export function Invoice({ order, onPrint }: InvoiceProps) {
   const subtotal = order.items?.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) || 0;
   const shipping = parseFloat(order.shippingCost);
   const commission = parseFloat(order.commission);
   const total = parseFloat(order.totalAmount);
+  const totalInWords = numberToWords(total);
 
   return (
     <div className="invoice-container max-w-4xl mx-auto p-8 bg-white text-black">
@@ -129,7 +167,7 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
       </div>
 
       {/* Summary Section */}
-      <div className="flex justify-end mb-8">
+      <div className="flex justify-end mb-6">
         <div className="w-96">
           <div className="bg-gray-50 rounded-lg p-6 space-y-3">
             <div className="flex justify-between text-sm">
@@ -154,6 +192,14 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
         </div>
       </div>
 
+      {/* Total in Words */}
+      <div className="mb-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+        <p className="text-sm">
+          <span className="font-semibold text-blue-800">Amount in Words: </span>
+          <span className="text-blue-900">{totalInWords}</span>
+        </p>
+      </div>
+
       {/* Notes Section */}
       {order.notes && (
         <div className="mb-8 bg-amber-50 border-l-4 border-amber-500 p-4 rounded">
@@ -161,6 +207,20 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
           <p className="text-sm text-amber-900">{order.notes}</p>
         </div>
       )}
+
+      {/* Signature Section */}
+      <div className="mb-8 grid grid-cols-2 gap-12">
+        <div>
+          <h3 className="text-sm font-bold text-gray-700 mb-6 uppercase tracking-wide">Authorized By:</h3>
+          <div className="border-b-2 border-gray-400 pb-1 mb-2 h-16"></div>
+          <p className="text-sm text-gray-600 text-center">Signature</p>
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-gray-700 mb-6 uppercase tracking-wide">Received By:</h3>
+          <div className="border-b-2 border-gray-400 pb-1 mb-2 h-16"></div>
+          <p className="text-sm text-gray-600 text-center">Signature & Date</p>
+        </div>
+      </div>
 
       {/* Footer */}
       <div className="border-t-2 border-gray-200 pt-6 mt-8">
@@ -197,6 +257,12 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
               print-color-adjust: exact;
             }
             
+            .bg-blue-50 {
+              background: #eff6ff !important;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            
             .bg-red-700 {
               background: #b91c1c !important;
               -webkit-print-color-adjust: exact;
@@ -215,8 +281,13 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
               border-color: #b91c1c !important;
             }
             
+            .border-blue-500 {
+              border-color: #3b82f6 !important;
+            }
+            
             .border-gray-200,
-            .border-gray-300 {
+            .border-gray-300,
+            .border-gray-400 {
               border-color: #e5e7eb !important;
             }
             
