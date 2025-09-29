@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const { login, isLoading } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   const form = useForm<LoginCredentials>({
     resolver: zodResolver(loginSchema),
@@ -28,14 +30,14 @@ export default function Login() {
     try {
       await login(data.username, data.password);
       toast({
-        title: "Login successful",
-        description: "Welcome to LYNX LY Logistics Management",
+        title: t('loginSuccessful'),
+        description: t('welcomeToLynx'),
       });
       setLocation("/dashboard");
     } catch (error) {
       toast({
-        title: "Login failed",
-        description: "Invalid username or password",
+        title: t('loginFailed'),
+        description: t('invalidCredentials'),
         variant: "destructive",
       });
     }
@@ -51,7 +53,7 @@ export default function Login() {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">LYNX LY</CardTitle>
-          <p className="text-muted-foreground">Logistics Management System</p>
+          <p className="text-muted-foreground">{t('logisticsManagementSystem')}</p>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -61,10 +63,10 @@ export default function Login() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>{t('username')}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Enter your username"
+                        placeholder={t('enterUsername')}
                         data-testid="input-username"
                         {...field}
                       />
@@ -79,11 +81,11 @@ export default function Login() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t('password')}</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
-                        placeholder="Enter your password"
+                        placeholder={t('enterPassword')}
                         data-testid="input-password"
                         {...field}
                       />
@@ -99,14 +101,14 @@ export default function Login() {
                 disabled={isLoading}
                 data-testid="button-login"
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? t('signingIn') : t('signIn')}
               </Button>
             </form>
           </Form>
           
           <div className="mt-6 p-4 bg-muted/20 rounded-lg">
             <p className="text-sm text-muted-foreground text-center mb-2">
-              Default login credentials:
+              {t('defaultLoginCredentials')}
             </p>
             <p className="text-sm font-mono text-center">
               Username: <span className="font-semibold">admin</span><br />

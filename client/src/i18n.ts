@@ -91,6 +91,20 @@ const resources = {
       profitCalculations: "Profit calculations restored",
       financialDashboard: "Financial dashboard operational",
       
+      // Login
+      logisticsManagementSystem: "Logistics Management System",
+      username: "Username",
+      enterUsername: "Enter your username",
+      password: "Password",
+      enterPassword: "Enter your password",
+      signingIn: "Signing in...",
+      signIn: "Sign In",
+      loginSuccessful: "Login successful",
+      welcomeToLynx: "Welcome to LYNX LY Logistics Management",
+      loginFailed: "Login failed",
+      invalidCredentials: "Invalid username or password",
+      defaultLoginCredentials: "Default login credentials:",
+      
       // Orders
       orderNumber: "Order Number",
       customer: "Customer",
@@ -285,6 +299,20 @@ const resources = {
       reportingAnalytics: "التقارير والتحليلات",
       profitCalculations: "تم استعادة حسابات الأرباح",
       financialDashboard: "لوحة المعلومات المالية تعمل بشكل صحيح",
+      
+      // Login
+      logisticsManagementSystem: "نظام إدارة اللوجستيات",
+      username: "اسم المستخدم",
+      enterUsername: "أدخل اسم المستخدم",
+      password: "كلمة المرور",
+      enterPassword: "أدخل كلمة المرور",
+      signingIn: "جارٍ تسجيل الدخول...",
+      signIn: "تسجيل الدخول",
+      loginSuccessful: "تم تسجيل الدخول بنجاح",
+      welcomeToLynx: "مرحباً بك في نظام LYNX LY لإدارة اللوجستيات",
+      loginFailed: "فشل تسجيل الدخول",
+      invalidCredentials: "اسم المستخدم أو كلمة المرور غير صحيحة",
+      defaultLoginCredentials: "بيانات الدخول الافتراضية:",
       
       // Orders
       orderNumber: "رقم الطلب",
