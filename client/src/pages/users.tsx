@@ -41,6 +41,8 @@ type CreateUserForm = z.infer<typeof createUserSchema>;
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<SafeUser | null>(null);
   const { toast } = useToast();
 
   const { data: users = [], isLoading } = useQuery({
@@ -57,6 +59,31 @@ export default function Users() {
       username: "",
       password: "",
       confirmPassword: "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      role: "customer_service",
+      isActive: true,
+    },
+  });
+
+  // Edit form schema - password is optional for updates
+  const editUserSchema = insertUserSchema.partial({ password: true }).extend({
+    confirmPassword: z.string().optional(),
+  }).refine((data) => {
+    if (data.password && data.confirmPassword) {
+      return data.password === data.confirmPassword;
+    }
+    return true;
+  }, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
+  const editForm = useForm<z.infer<typeof editUserSchema>>({
+    resolver: zodResolver(editUserSchema),
+    defaultValues: {
+      username: "",
       firstName: "",
       lastName: "",
       email: "",
@@ -92,14 +119,67 @@ export default function Users() {
     },
   });
 
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, userData }: { id: string; userData: Partial<InsertUser> }) => {
+      const response = await apiRequest("PUT", `/api/users/${id}`, userData);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update user");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setIsEditModalOpen(false);
+      setEditingUser(null);
+      editForm.reset();
+      toast({
+        title: "User updated successfully",
+        description: "The user has been updated.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error updating user",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateUser = (data: CreateUserForm) => {
     const { confirmPassword, ...userData } = data;
     createUserMutation.mutate(userData);
   };
 
+  const handleEditUser = (data: z.infer<typeof editUserSchema>) => {
+    if (!editingUser) return;
+    const { confirmPassword, ...userData } = data;
+    // Remove undefined/null password if not provided
+    if (!userData.password) {
+      delete userData.password;
+    }
+    updateUserMutation.mutate({ id: editingUser.id, userData });
+  };
+
   const openCreateModal = () => {
     form.reset();
     setIsCreateModalOpen(true);
+  };
+
+  const openEditModal = (user: SafeUser) => {
+    setEditingUser(user);
+    editForm.reset({
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      password: "",
+      confirmPassword: "",
+    });
+    setIsEditModalOpen(true);
   };
 
   const filteredUsers = users.filter(user =>
@@ -231,7 +311,12 @@ export default function Users() {
                         {new Date(user.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        <Button variant="outline" size="sm" data-testid={`button-edit-user-${user.id}`}>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => openEditModal(user)}
+                          data-testid={`button-edit-user-${user.id}`}
+                        >
                           Edit
                         </Button>
                       </TableCell>
@@ -372,6 +457,142 @@ export default function Users() {
                     data-testid="button-create-user"
                   >
                     {createUserMutation.isPending ? "Creating..." : "Create User"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit User Modal */}
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent className="sm:max-w-md" data-testid="modal-edit-user">
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+            </DialogHeader>
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(handleEditUser)} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={editForm.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John" {...field} data-testid="input-edit-first-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={editForm.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Doe" {...field} data-testid="input-edit-last-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={editForm.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="johndoe" {...field} data-testid="input-edit-username" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="john@example.com" {...field} data-testid="input-edit-email" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-edit-role">
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="owner">Owner</SelectItem>
+                          <SelectItem value="customer_service">Customer Service</SelectItem>
+                          <SelectItem value="receptionist">Receptionist</SelectItem>
+                          <SelectItem value="sorter">Sorter</SelectItem>
+                          <SelectItem value="stock_manager">Stock Manager</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={editForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>New Password (Optional)</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} data-testid="input-edit-password" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={editForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} data-testid="input-edit-confirm-password" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsEditModalOpen(false)}
+                    data-testid="button-cancel-edit-user"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={updateUserMutation.isPending}
+                    data-testid="button-update-user"
+                  >
+                    {updateUserMutation.isPending ? "Updating..." : "Update User"}
                   </Button>
                 </div>
               </form>

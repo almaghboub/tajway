@@ -15,7 +15,19 @@ import type { Customer, InsertCustomer } from "@shared/schema";
 export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [formData, setFormData] = useState<InsertCustomer>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    country: "",
+    postalCode: "",
+  });
+  const [editFormData, setEditFormData] = useState<InsertCustomer>({
     firstName: "",
     lastName: "",
     email: "",
@@ -67,6 +79,43 @@ export default function Customers() {
       toast({
         title: "Error",
         description: "Failed to create customer",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateCustomerMutation = useMutation({
+    mutationFn: async ({ id, customerData }: { id: string; customerData: InsertCustomer }) => {
+      const response = await apiRequest("PUT", `/api/customers/${id}`, customerData);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update customer");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      toast({
+        title: "Success",
+        description: "Customer updated successfully",
+      });
+      setIsEditModalOpen(false);
+      setEditingCustomer(null);
+      setEditFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        address: "",
+        city: "",
+        country: "",
+        postalCode: "",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
         variant: "destructive",
       });
     },

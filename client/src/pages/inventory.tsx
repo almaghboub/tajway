@@ -31,9 +31,23 @@ type CreateInventoryForm = z.infer<typeof createInventorySchema>;
 export default function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Inventory | null>(null);
   const { toast } = useToast();
 
   const form = useForm<CreateInventoryForm>({
+    resolver: zodResolver(createInventorySchema),
+    defaultValues: {
+      productName: "",
+      sku: "",
+      quantity: "",
+      unitCost: "",
+      sellingPrice: "",
+      lowStockThreshold: "",
+    },
+  });
+
+  const editForm = useForm<CreateInventoryForm>({
     resolver: zodResolver(createInventorySchema),
     defaultValues: {
       productName: "",
@@ -83,8 +97,61 @@ export default function Inventory() {
     },
   });
 
+  const updateInventoryMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: CreateInventoryForm }) => {
+      const payload = {
+        ...data,
+        quantity: parseInt(data.quantity),
+        unitCost: data.unitCost,
+        sellingPrice: data.sellingPrice,
+        lowStockThreshold: parseInt(data.lowStockThreshold),
+      };
+      const response = await apiRequest("PUT", `/api/inventory/${id}`, payload);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update inventory item");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      setIsEditModalOpen(false);
+      setEditingItem(null);
+      editForm.reset();
+      toast({
+        title: "Item updated",
+        description: "Inventory item has been updated successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: CreateInventoryForm) => {
     createInventoryMutation.mutate(data);
+  };
+
+  const onEditSubmit = (data: CreateInventoryForm) => {
+    if (!editingItem) return;
+    updateInventoryMutation.mutate({ id: editingItem.id, data });
+  };
+
+  const openEditModal = (item: Inventory) => {
+    setEditingItem(item);
+    editForm.reset({
+      productName: item.productName,
+      sku: item.sku,
+      quantity: item.quantity.toString(),
+      unitCost: item.unitCost,
+      sellingPrice: item.sellingPrice,
+      lowStockThreshold: item.lowStockThreshold.toString(),
+    });
+    setIsEditModalOpen(true);
   };
 
   const filteredInventory = inventory.filter(item =>
@@ -217,7 +284,12 @@ export default function Inventory() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm" data-testid={`button-edit-item-${item.id}`}>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => openEditModal(item)}
+                            data-testid={`button-edit-item-${item.id}`}
+                          >
                             Edit
                           </Button>
                         </TableCell>
@@ -343,6 +415,123 @@ export default function Inventory() {
                   data-testid="button-save"
                 >
                   {createInventoryMutation.isPending ? "Creating..." : "Create Item"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Inventory Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-md" data-testid="modal-edit-inventory">
+          <DialogHeader>
+            <DialogTitle>Edit Inventory Item</DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="productName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter product name" {...field} data-testid="input-edit-product-name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="sku"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SKU *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter SKU" {...field} data-testid="input-edit-sku" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantity *</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="0" {...field} data-testid="input-edit-quantity" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="lowStockThreshold"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Low Stock Threshold *</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="10" {...field} data-testid="input-edit-threshold" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="unitCost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unit Cost *</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-cost" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="sellingPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Selling Price *</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-price" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditModalOpen(false)}
+                  data-testid="button-cancel-edit"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={updateInventoryMutation.isPending}
+                  data-testid="button-update-item"
+                >
+                  {updateInventoryMutation.isPending ? "Updating..." : "Update Item"}
                 </Button>
               </div>
             </form>
