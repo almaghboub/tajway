@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { TrendingUp, DollarSign, Percent, Package, Clock, Plus, UserPlus, PackagePlus, FileText, Database, ShieldCheck, Settings as SettingsIcon, Check, BarChart3, PieChart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { Header } from "@/components/header";
 import { analyticsApi } from "@/lib/api";
 
 export default function Dashboard() {
+  const [, setLocation] = useLocation();
   const { data: metrics, isLoading } = useQuery({
     queryKey: ["/api/analytics/dashboard"],
     queryFn: analyticsApi.getDashboardMetrics,
@@ -232,22 +234,41 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button className="p-4 h-auto flex-col" data-testid="button-new-order">
+              <Button 
+                className="p-4 h-auto flex-col" 
+                data-testid="button-new-order"
+                onClick={() => setLocation("/orders")}
+              >
                 <Plus className="w-6 h-6 mb-2" />
                 <span className="font-medium">New Order</span>
               </Button>
 
-              <Button variant="secondary" className="p-4 h-auto flex-col" data-testid="button-add-customer">
+              <Button 
+                variant="secondary" 
+                className="p-4 h-auto flex-col" 
+                data-testid="button-add-customer"
+                onClick={() => setLocation("/customers")}
+              >
                 <UserPlus className="w-6 h-6 mb-2" />
                 <span className="font-medium">Add Customer</span>
               </Button>
 
-              <Button variant="outline" className="p-4 h-auto flex-col" data-testid="button-update-stock">
+              <Button 
+                variant="outline" 
+                className="p-4 h-auto flex-col" 
+                data-testid="button-update-stock"
+                onClick={() => setLocation("/inventory")}
+              >
                 <PackagePlus className="w-6 h-6 mb-2" />
                 <span className="font-medium">Update Stock</span>
               </Button>
 
-              <Button variant="ghost" className="p-4 h-auto flex-col" data-testid="button-generate-report">
+              <Button 
+                variant="ghost" 
+                className="p-4 h-auto flex-col" 
+                data-testid="button-generate-report"
+                onClick={() => setLocation("/profit-reports")}
+              >
                 <FileText className="w-6 h-6 mb-2" />
                 <span className="font-medium">Generate Report</span>
               </Button>
