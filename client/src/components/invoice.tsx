@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/components/ui/card";
+import logoPath from "@assets/lynx-logo.png";
 
 interface OrderWithItems {
   id: string;
@@ -37,117 +37,138 @@ interface InvoiceProps {
 export function Invoice({ order, onPrint }: InvoiceProps) {
   const subtotal = order.items?.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) || 0;
   const shipping = parseFloat(order.shippingCost);
+  const commission = parseFloat(order.commission);
   const total = parseFloat(order.totalAmount);
 
   return (
     <div className="invoice-container max-w-4xl mx-auto p-8 bg-white text-black">
-      {/* Invoice Header */}
-      <div className="mb-8">
+      {/* Invoice Header with Logo and Company Info */}
+      <div className="mb-8 border-b-4 border-red-700 pb-6">
         <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-blue-600 mb-2">LYNX LY</h1>
-            <p className="text-gray-600">Logistics Management System</p>
+          <div className="flex items-center space-x-4">
+            <img src={logoPath} alt="Lynx Logo" className="h-20 w-auto" />
           </div>
           <div className="text-right">
-            <h2 className="text-2xl font-bold mb-2">INVOICE</h2>
-            <p className="text-gray-600">Invoice #: {order.orderNumber}</p>
-            <p className="text-gray-600">Date: {new Date(order.createdAt).toLocaleDateString()}</p>
+            <h2 className="text-3xl font-bold text-red-700 mb-2">INVOICE</h2>
+            <div className="text-sm space-y-1">
+              <p className="font-semibold">Invoice #: {order.orderNumber}</p>
+              <p>Date: {new Date(order.createdAt).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}</p>
+              <p className="text-gray-600">Status: <span className="capitalize font-semibold text-red-700">{order.status}</span></p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Customer Information */}
-      <div className="mb-8">
-        <h3 className="text-lg font-semibold mb-4 text-blue-600">Bill To:</h3>
-        <div className="bg-gray-50 p-4 rounded">
-          <p className="font-semibold">{order.customer.firstName} {order.customer.lastName}</p>
-          {order.customer.email && <p>{order.customer.email}</p>}
-          {order.customer.phone && <p>{order.customer.phone}</p>}
-          {order.customer.address && (
-            <div className="mt-2">
-              <p>{order.customer.address}</p>
-              {order.customer.city && order.customer.postalCode && (
-                <p>{order.customer.city}, {order.customer.postalCode}</p>
-              )}
-              <p>{order.customer.country}</p>
-            </div>
-          )}
+      {/* Company and Customer Information Side by Side */}
+      <div className="grid grid-cols-2 gap-8 mb-8">
+        {/* From Section */}
+        <div>
+          <h3 className="text-sm font-bold text-red-700 mb-3 uppercase tracking-wide">From:</h3>
+          <div className="space-y-1">
+            <p className="font-bold text-lg">Lynx</p>
+            <p className="text-sm">International Shipping & Purchasing</p>
+            <p className="text-sm text-gray-600">للشحن والشراء الدولي</p>
+          </div>
+        </div>
+
+        {/* Bill To Section */}
+        <div>
+          <h3 className="text-sm font-bold text-red-700 mb-3 uppercase tracking-wide">Bill To:</h3>
+          <div className="bg-gray-50 p-4 rounded-lg space-y-1">
+            <p className="font-bold">{order.customer.firstName} {order.customer.lastName}</p>
+            {order.customer.email && <p className="text-sm">{order.customer.email}</p>}
+            {order.customer.phone && <p className="text-sm">{order.customer.phone}</p>}
+            {order.customer.address && (
+              <div className="mt-2 pt-2 border-t border-gray-200">
+                <p className="text-sm">{order.customer.address}</p>
+                {order.customer.city && order.customer.postalCode && (
+                  <p className="text-sm">{order.customer.city}, {order.customer.postalCode}</p>
+                )}
+                <p className="text-sm font-semibold">{order.customer.country}</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Order Items */}
+      {/* Order Items Table */}
       <div className="mb-8">
-        <h3 className="text-lg font-semibold mb-4 text-blue-600">Order Details:</h3>
-        <table className="w-full border-collapse border border-gray-300">
-          <thead>
-            <tr className="bg-blue-50">
-              <th className="border border-gray-300 px-4 py-2 text-left">Product</th>
-              <th className="border border-gray-300 px-4 py-2 text-center">Quantity</th>
-              <th className="border border-gray-300 px-4 py-2 text-right">Unit Price</th>
-              <th className="border border-gray-300 px-4 py-2 text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {order.items?.map((item) => (
-              <tr key={item.id}>
-                <td className="border border-gray-300 px-4 py-2">{item.productName}</td>
-                <td className="border border-gray-300 px-4 py-2 text-center">{item.quantity}</td>
-                <td className="border border-gray-300 px-4 py-2 text-right">${parseFloat(item.unitPrice).toFixed(2)}</td>
-                <td className="border border-gray-300 px-4 py-2 text-right">${parseFloat(item.totalPrice).toFixed(2)}</td>
+        <h3 className="text-sm font-bold text-red-700 mb-3 uppercase tracking-wide">Shipment Details:</h3>
+        <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-red-700 text-white">
+                <th className="px-4 py-3 text-left font-semibold">Product Description</th>
+                <th className="px-4 py-3 text-center font-semibold">Qty</th>
+                <th className="px-4 py-3 text-right font-semibold">Unit Price</th>
+                <th className="px-4 py-3 text-right font-semibold">Total</th>
               </tr>
-            )) || (
-              <tr>
-                <td colSpan={4} className="border border-gray-300 px-4 py-2 text-center text-gray-500">
-                  Loading order items...
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {order.items?.map((item, index) => (
+                <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <td className="px-4 py-3 font-medium">{item.productName}</td>
+                  <td className="px-4 py-3 text-center">{item.quantity}</td>
+                  <td className="px-4 py-3 text-right">${parseFloat(item.unitPrice).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-right font-semibold">${parseFloat(item.totalPrice).toFixed(2)}</td>
+                </tr>
+              )) || (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                    Loading shipment details...
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Order Summary */}
+      {/* Summary Section */}
       <div className="flex justify-end mb-8">
-        <div className="w-80">
-          <div className="bg-gray-50 p-4 rounded">
-            <div className="flex justify-between py-2">
-              <span>Subtotal:</span>
-              <span>${subtotal.toFixed(2)}</span>
+        <div className="w-96">
+          <div className="bg-gray-50 rounded-lg p-6 space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Subtotal:</span>
+              <span className="font-semibold">${subtotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between py-2">
-              <span>Shipping:</span>
-              <span>${shipping.toFixed(2)}</span>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Shipping & Handling:</span>
+              <span className="font-semibold">${shipping.toFixed(2)}</span>
             </div>
-            <div className="border-t border-gray-300 pt-2 mt-2">
-              <div className="flex justify-between py-2 font-bold text-lg">
-                <span>Total:</span>
-                <span>${total.toFixed(2)}</span>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Commission:</span>
+              <span className="font-semibold">${commission.toFixed(2)}</span>
+            </div>
+            <div className="border-t-2 border-gray-300 pt-3 mt-3">
+              <div className="flex justify-between items-center">
+                <span className="text-lg font-bold text-red-700">TOTAL:</span>
+                <span className="text-2xl font-bold text-red-700">${total.toFixed(2)}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Additional Information */}
-      <div className="mb-8">
-        <div className="grid grid-cols-2 gap-8">
-          <div>
-            <h3 className="text-lg font-semibold mb-2 text-blue-600">Order Status:</h3>
-            <p className="capitalize">{order.status}</p>
-          </div>
-          {order.notes && (
-            <div>
-              <h3 className="text-lg font-semibold mb-2 text-blue-600">Notes:</h3>
-              <p>{order.notes}</p>
-            </div>
-          )}
+      {/* Notes Section */}
+      {order.notes && (
+        <div className="mb-8 bg-amber-50 border-l-4 border-amber-500 p-4 rounded">
+          <h3 className="text-sm font-bold text-amber-800 mb-2 uppercase tracking-wide">Notes:</h3>
+          <p className="text-sm text-amber-900">{order.notes}</p>
         </div>
-      </div>
+      )}
 
       {/* Footer */}
-      <div className="border-t border-gray-300 pt-8 mt-8 text-center text-gray-600">
-        <p>Thank you for your business!</p>
-        <p className="text-sm mt-2">This invoice was generated by LYNX LY Logistics Management System</p>
+      <div className="border-t-2 border-gray-200 pt-6 mt-8">
+        <div className="text-center space-y-2">
+          <p className="text-sm font-semibold text-red-700">Thank you for choosing Lynx!</p>
+          <p className="text-xs text-gray-600">International Shipping & Purchasing - للشحن والشراء الدولي</p>
+          <p className="text-xs text-gray-500 mt-4">This invoice was automatically generated by Lynx Logistics Management System</p>
+        </div>
       </div>
 
       {/* Print Styles */}
@@ -171,19 +192,32 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
             }
             
             .bg-gray-50 {
-              background: #f9f9f9 !important;
+              background: #f9fafb !important;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
             
-            .bg-blue-50 {
-              background: #e3f2fd !important;
+            .bg-red-700 {
+              background: #b91c1c !important;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
             
-            .text-blue-600 {
-              color: #1976d2 !important;
+            .text-red-700 {
+              color: #b91c1c !important;
             }
             
+            .text-white {
+              color: white !important;
+            }
+            
+            .border-red-700 {
+              border-color: #b91c1c !important;
+            }
+            
+            .border-gray-200,
             .border-gray-300 {
-              border-color: #d1d5db !important;
+              border-color: #e5e7eb !important;
             }
             
             table {
@@ -192,6 +226,12 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
             
             tr {
               page-break-inside: avoid;
+            }
+            
+            img {
+              max-height: 80px !important;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
           }
         `
