@@ -127,8 +127,8 @@ export default function Dashboard() {
               <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
                 <div className="text-center">
                   <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">Revenue Chart Placeholder</p>
-                  <p className="text-xs text-muted-foreground">Chart component will render here</p>
+                  <p className="text-muted-foreground">{t('revenueTrend')}</p>
+                  <p className="text-xs text-muted-foreground">{t('chartPlaceholder')}</p>
                 </div>
               </div>
             </CardContent>
@@ -142,8 +142,8 @@ export default function Dashboard() {
               <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
                 <div className="text-center">
                   <PieChart className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">Order Status Chart Placeholder</p>
-                  <p className="text-xs text-muted-foreground">Pie chart component will render here</p>
+                  <p className="text-muted-foreground">{t('orderStatus')}</p>
+                  <p className="text-xs text-muted-foreground">{t('chartPlaceholder')}</p>
                 </div>
               </div>
             </CardContent>
@@ -157,7 +157,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <CardTitle>{t('recentOrders')}</CardTitle>
                 <Button variant="link" className="text-primary hover:text-primary/80 text-sm font-medium">
-                  View All
+                  {t('viewAll')}
                 </Button>
               </div>
             </CardHeader>
@@ -165,8 +165,8 @@ export default function Dashboard() {
               <div className="space-y-3">
                 <div className="text-center py-8">
                   <Package className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">No recent orders</p>
-                  <p className="text-xs text-muted-foreground">Orders will appear here once created</p>
+                  <p className="text-muted-foreground">{t('noRecentOrders')}</p>
+                  <p className="text-xs text-muted-foreground">{t('ordersWillAppear')}</p>
                 </div>
               </div>
             </CardContent>
@@ -181,48 +181,48 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="font-medium text-green-800">Database Connection</span>
+                    <span className="font-medium text-green-800">{t('databaseStatus')}</span>
                   </div>
-                  <span className="text-green-600 font-medium">Healthy</span>
+                  <span className="text-green-600 font-medium">{t('healthy')}</span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="font-medium text-green-800">Authentication Service</span>
+                    <span className="font-medium text-green-800">{t('authService')}</span>
                   </div>
-                  <span className="text-green-600 font-medium">Active</span>
+                  <span className="text-green-600 font-medium">{t('active')}</span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="font-medium text-green-800">Session Management</span>
+                    <span className="font-medium text-green-800">{t('sessionManagement')}</span>
                   </div>
-                  <span className="text-green-600 font-medium">Running</span>
+                  <span className="text-green-600 font-medium">{t('running')}</span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="font-medium text-green-800">API Endpoints</span>
+                    <span className="font-medium text-green-800">{t('apiEndpoints')}</span>
                   </div>
-                  <span className="text-green-600 font-medium">Operational</span>
+                  <span className="text-green-600 font-medium">{t('operational')}</span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="font-medium text-green-800">Role-Based Access</span>
+                    <span className="font-medium text-green-800">{t('roleBasedAccess')}</span>
                   </div>
-                  <span className="text-green-600 font-medium">Enabled</span>
+                  <span className="text-green-600 font-medium">{t('enabled')}</span>
                 </div>
 
                 <Button 
                   className="w-full mt-4" 
                   data-testid="button-run-diagnostics"
                 >
-                  Run Full Diagnostics
+                  {t('runDiagnostics')}
                 </Button>
               </div>
             </CardContent>
@@ -232,7 +232,7 @@ export default function Dashboard() {
         {/* Quick Actions */}
         <Card data-testid="card-quick-actions">
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle>{t('quickActions')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -242,7 +242,7 @@ export default function Dashboard() {
                 onClick={() => setLocation("/orders")}
               >
                 <Plus className="w-6 h-6 mb-2" />
-                <span className="font-medium">New Order</span>
+                <span className="font-medium">{t('newOrder')}</span>
               </Button>
 
               <Button 
@@ -252,7 +252,7 @@ export default function Dashboard() {
                 onClick={() => setLocation("/customers")}
               >
                 <UserPlus className="w-6 h-6 mb-2" />
-                <span className="font-medium">Add Customer</span>
+                <span className="font-medium">{t('addCustomer')}</span>
               </Button>
 
               <Button 
@@ -262,7 +262,7 @@ export default function Dashboard() {
                 onClick={() => setLocation("/inventory")}
               >
                 <PackagePlus className="w-6 h-6 mb-2" />
-                <span className="font-medium">Update Stock</span>
+                <span className="font-medium">{t('updateStock')}</span>
               </Button>
 
               <Button 
@@ -272,7 +272,7 @@ export default function Dashboard() {
                 onClick={() => setLocation("/profit-reports")}
               >
                 <FileText className="w-6 h-6 mb-2" />
-                <span className="font-medium">Generate Report</span>
+                <span className="font-medium">{t('generateReport')}</span>
               </Button>
             </div>
           </CardContent>
@@ -281,27 +281,27 @@ export default function Dashboard() {
         {/* Application Health Check */}
         <Card data-testid="card-health-check">
           <CardHeader>
-            <CardTitle>Application Health Check</CardTitle>
+            <CardTitle>{t('applicationHealthCheck')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <h4 className="font-medium text-foreground flex items-center">
                   <Database className="w-4 h-4 mr-2 text-green-600" />
-                  Database & Schema
+                  {t('databaseAndSchema')}
                 </h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center text-green-600">
                     <Check className="w-3 h-3 mr-2" />
-                    <span>PostgreSQL connection established</span>
+                    <span>{t('postgresqlConnected')}</span>
                   </div>
                   <div className="flex items-center text-green-600">
                     <Check className="w-3 h-3 mr-2" />
-                    <span>Drizzle ORM migrations applied</span>
+                    <span>{t('drizzleApplied')}</span>
                   </div>
                   <div className="flex items-center text-green-600">
                     <Check className="w-3 h-3 mr-2" />
-                    <span>Schema validation successful</span>
+                    <span>{t('schemaValidated')}</span>
                   </div>
                 </div>
               </div>
@@ -309,20 +309,20 @@ export default function Dashboard() {
               <div className="space-y-3">
                 <h4 className="font-medium text-foreground flex items-center">
                   <ShieldCheck className="w-4 h-4 mr-2 text-green-600" />
-                  Authentication & Sessions
+                  {t('authenticationAndSessions')}
                 </h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center text-green-600">
                     <Check className="w-3 h-3 mr-2" />
-                    <span>Passport.js authentication active</span>
+                    <span>{t('passportActive')}</span>
                   </div>
                   <div className="flex items-center text-green-600">
                     <Check className="w-3 h-3 mr-2" />
-                    <span>Session store configured</span>
+                    <span>{t('sessionStoreConfigured')}</span>
                   </div>
                   <div className="flex items-center text-green-600">
                     <Check className="w-3 h-3 mr-2" />
-                    <span>Role-based access control enabled</span>
+                    <span>{t('rbacEnabled')}</span>
                   </div>
                 </div>
               </div>
@@ -330,20 +330,20 @@ export default function Dashboard() {
               <div className="space-y-3">
                 <h4 className="font-medium text-foreground flex items-center">
                   <SettingsIcon className="w-4 h-4 mr-2 text-green-600" />
-                  CRUD Operations
+                  {t('crudOperations')}
                 </h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center text-green-600">
                     <Check className="w-3 h-3 mr-2" />
-                    <span>Order management API restored</span>
+                    <span>{t('orderManagementRestored')}</span>
                   </div>
                   <div className="flex items-center text-green-600">
                     <Check className="w-3 h-3 mr-2" />
-                    <span>Customer operations functional</span>
+                    <span>{t('customerOperations')}</span>
                   </div>
                   <div className="flex items-center text-green-600">
                     <Check className="w-3 h-3 mr-2" />
-                    <span>Inventory tracking operational</span>
+                    <span>{t('inventoryTracking')}</span>
                   </div>
                 </div>
               </div>
@@ -351,16 +351,16 @@ export default function Dashboard() {
               <div className="space-y-3">
                 <h4 className="font-medium text-foreground flex items-center">
                   <TrendingUp className="w-4 h-4 mr-2 text-green-600" />
-                  Reporting & Analytics
+                  {t('reportingAnalytics')}
                 </h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center text-green-600">
                     <Check className="w-3 h-3 mr-2" />
-                    <span>Profit calculations restored</span>
+                    <span>{t('profitCalculations')}</span>
                   </div>
                   <div className="flex items-center text-green-600">
                     <Check className="w-3 h-3 mr-2" />
-                    <span>Financial dashboard operational</span>
+                    <span>{t('financialDashboard')}</span>
                   </div>
                   <div className="flex items-center text-green-600">
                     <Check className="w-3 h-3 mr-2" />
