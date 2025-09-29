@@ -13,6 +13,7 @@ import {
   insertOrderItemSchema,
   insertInventorySchema,
   insertShippingRateSchema,
+  insertSettingSchema,
   loginSchema,
 } from "@shared/schema";
 
@@ -514,6 +515,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch analytics data" });
+    }
+  });
+
+  // Settings routes
+  app.get("/api/settings", requireOwner, async (req, res) => {
+    try {
+      const settings = await storage.getAllSettings();
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
+  app.get("/api/settings/:key", requireOwner, async (req, res) => {
+    try {
+      const setting = await storage.getSetting(req.params.key);
+      if (!setting) {
+        return res.status(404).json({ message: "Setting not found" });
+      }
+      res.json(setting);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch setting" });
+    }
+  });
+
+  app.post("/api/settings", requireOwner, async (req, res) => {
+    try {
+      const result = insertSettingSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid setting data", errors: result.error.errors });
+      }
+
+      const setting = await storage.createSetting(result.data);
+      res.status(201).json(setting);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create setting" });
+    }
+  });
+
+  app.put("/api/settings/:key", requireOwner, async (req, res) => {
+    try {
+      const { value, type } = req.body;
+      if (!value) {
+        return res.status(400).json({ message: "Value is required" });
+      }
+
+      const setting = await storage.updateSetting(req.params.key, value, type);
+      if (!setting) {
+        return res.status(404).json({ message: "Setting not found" });
+      }
+      res.json(setting);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update setting" });
+    }
+  });
+
+  app.delete("/api/settings/:key", requireOwner, async (req, res) => {
+    try {
+      const success = await storage.deleteSetting(req.params.key);
+      if (!success) {
+        return res.status(404).json({ message: "Setting not found" });
+      }
+      res.json({ message: "Setting deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete setting" });
     }
   });
 

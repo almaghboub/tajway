@@ -74,6 +74,16 @@ export const shippingRates = pgTable("shipping_rates", {
   commissionRate: decimal("commission_rate", { precision: 5, scale: 4 }).notNull().default("0.15"),
 });
 
+export const settings = pgTable("settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  type: text("type").notNull().default("string"), // string, boolean, number, json
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -106,6 +116,12 @@ export const insertShippingRateSchema = createInsertSchema(shippingRates).omit({
   id: true,
 });
 
+export const insertSettingSchema = createInsertSchema(settings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Login schema
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -130,6 +146,9 @@ export type Inventory = typeof inventory.$inferSelect;
 
 export type InsertShippingRate = z.infer<typeof insertShippingRateSchema>;
 export type ShippingRate = typeof shippingRates.$inferSelect;
+
+export type InsertSetting = z.infer<typeof insertSettingSchema>;
+export type Setting = typeof settings.$inferSelect;
 
 export type LoginCredentials = z.infer<typeof loginSchema>;
 

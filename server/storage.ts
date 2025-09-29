@@ -11,6 +11,8 @@ import {
   type InsertInventory,
   type ShippingRate,
   type InsertShippingRate,
+  type Setting,
+  type InsertSetting,
   type OrderWithCustomer,
   type CustomerWithOrders,
   users,
@@ -19,6 +21,7 @@ import {
   orderItems,
   inventory,
   shippingRates,
+  settings,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { hashPassword } from "./auth";
@@ -77,6 +80,13 @@ export interface IStorage {
   deleteShippingRate(id: string): Promise<boolean>;
   getAllShippingRates(): Promise<ShippingRate[]>;
 
+  // Settings
+  getSetting(key: string): Promise<Setting | undefined>;
+  createSetting(setting: InsertSetting): Promise<Setting>;
+  updateSetting(key: string, value: string, type?: string): Promise<Setting | undefined>;
+  deleteSetting(key: string): Promise<boolean>;
+  getAllSettings(): Promise<Setting[]>;
+
   // Analytics
   getTotalProfit(): Promise<number>;
   getTotalRevenue(): Promise<number>;
@@ -90,6 +100,7 @@ export class MemStorage implements IStorage {
   private orderItems: Map<string, OrderItem>;
   private inventory: Map<string, Inventory>;
   private shippingRates: Map<string, ShippingRate>;
+  private settings: Map<string, Setting>;
   private orderCounter: number = 1;
 
   constructor() {
@@ -99,6 +110,7 @@ export class MemStorage implements IStorage {
     this.orderItems = new Map();
     this.inventory = new Map();
     this.shippingRates = new Map();
+    this.settings = new Map();
     
     // Initialize with default data
     this.initializeDefaultData();
@@ -458,6 +470,45 @@ export class MemStorage implements IStorage {
     const orders = Array.from(this.orders.values());
     return orders.filter(order => order.status !== "delivered" && order.status !== "cancelled").length;
   }
+
+  // Settings methods
+  async getSetting(key: string): Promise<Setting | undefined> {
+    return this.settings.get(key);
+  }
+
+  async createSetting(insertSetting: InsertSetting): Promise<Setting> {
+    const id = randomUUID();
+    const setting: Setting = {
+      ...insertSetting,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.settings.set(setting.key, setting);
+    return setting;
+  }
+
+  async updateSetting(key: string, value: string, type?: string): Promise<Setting | undefined> {
+    const existing = this.settings.get(key);
+    if (!existing) return undefined;
+
+    const updated: Setting = {
+      ...existing,
+      value,
+      type: type || existing.type,
+      updatedAt: new Date(),
+    };
+    this.settings.set(key, updated);
+    return updated;
+  }
+
+  async deleteSetting(key: string): Promise<boolean> {
+    return this.settings.delete(key);
+  }
+
+  async getAllSettings(): Promise<Setting[]> {
+    return Array.from(this.settings.values());
+  }
 }
 
 export class PostgreSQLStorage implements IStorage {
@@ -786,6 +837,42 @@ export class PostgreSQLStorage implements IStorage {
       count: sql<number>`COUNT(*)`,
     }).from(orders).where(sql`${orders.status} NOT IN ('delivered', 'cancelled')`);
     return Number(result[0]?.count || 0);
+  }
+
+  // Settings methods
+  async getSetting(key: string): Promise<Setting | undefined> {
+    const result = await db.select().from(settings).where(eq(settings.key, key)).limit(1);
+    return result[0];
+  }
+
+  async createSetting(insertSetting: InsertSetting): Promise<Setting> {
+    const result = await db.insert(settings).values(insertSetting).returning();
+    return result[0];
+  }
+
+  async updateSetting(key: string, value: string, type?: string): Promise<Setting | undefined> {
+    const updateData: Partial<InsertSetting> = { 
+      value, 
+      updatedAt: new Date() 
+    };
+    if (type) {
+      updateData.type = type;
+    }
+    
+    const result = await db.update(settings)
+      .set(updateData)
+      .where(eq(settings.key, key))
+      .returning();
+    return result[0];
+  }
+
+  async deleteSetting(key: string): Promise<boolean> {
+    const result = await db.delete(settings).where(eq(settings.key, key)).returning();
+    return result.length > 0;
+  }
+
+  async getAllSettings(): Promise<Setting[]> {
+    return await db.select().from(settings);
   }
 }
 
