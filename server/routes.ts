@@ -302,14 +302,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/orders", requireOperational, async (req, res) => {
     try {
-      const result = insertOrderSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ message: "Invalid order data", errors: result.error.errors });
-      }
+      // Check if request contains order and items data (new format)
+      if (req.body.order && req.body.items) {
+        const orderResult = insertOrderSchema.safeParse(req.body.order);
+        if (!orderResult.success) {
+          return res.status(400).json({ message: "Invalid order data", errors: orderResult.error.errors });
+        }
 
-      const order = await storage.createOrder(result.data);
-      res.status(201).json(order);
+        const itemsResult = req.body.items.map((item: any) => 
+          insertOrderItemSchema.omit({ orderId: true }).safeParse(item)
+        );
+        
+        const invalidItems = itemsResult.filter((result: any) => !result.success);
+        if (invalidItems.length > 0) {
+          return res.status(400).json({ message: "Invalid order items data", errors: invalidItems });
+        }
+
+        // Create order first
+        const order = await storage.createOrder(orderResult.data);
+        
+        // Create order items
+        const items = [];
+        for (const itemData of req.body.items) {
+          const item = await storage.createOrderItem({
+            ...itemData,
+            orderId: order.id,
+          });
+          items.push(item);
+        }
+
+        // Return order with items
+        const orderWithItems = await storage.getOrderWithCustomer(order.id);
+        res.status(201).json(orderWithItems);
+      } else {
+        // Legacy format - just order data
+        const result = insertOrderSchema.safeParse(req.body);
+        if (!result.success) {
+          return res.status(400).json({ message: "Invalid order data", errors: result.error.errors });
+        }
+
+        const order = await storage.createOrder(result.data);
+        res.status(201).json(order);
+      }
     } catch (error) {
+      console.error("Order creation error:", error);
       res.status(500).json({ message: "Failed to create order" });
     }
   });
