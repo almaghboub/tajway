@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -17,8 +20,10 @@ export default function Customers() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [viewingCustomer, setViewingCustomer] = useState<Customer | null>(null);
+  const [countryFilters, setCountryFilters] = useState<string[]>([]);
   const [formData, setFormData] = useState<InsertCustomer>({
     firstName: "",
     lastName: "",
@@ -154,10 +159,22 @@ export default function Customers() {
     setIsViewModalOpen(true);
   };
 
-  const filteredCustomers = customers.filter(customer =>
-    `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const toggleCountryFilter = (country: string) => {
+    setCountryFilters(prev =>
+      prev.includes(country)
+        ? prev.filter(c => c !== country)
+        : [...prev, country]
+    );
+  };
+
+  const uniqueCountries = Array.from(new Set(customers.map(c => c.country).filter(Boolean)));
+
+  const filteredCustomers = customers.filter(customer => {
+    const matchesSearch = `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCountry = countryFilters.length === 0 || countryFilters.includes(customer.country);
+    return matchesSearch && matchesCountry;
+  });
 
   return (
     <div className="flex-1 flex flex-col">
@@ -180,10 +197,65 @@ export default function Customers() {
                 data-testid="input-search-customers"
               />
             </div>
-            <Button variant="outline" data-testid="button-filter-customers">
-              <Filter className="w-4 h-4 mr-2" />
-              Filter
-            </Button>
+            <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" data-testid="button-filter-customers">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filter
+                  {countryFilters.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {countryFilters.length}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64" data-testid="popover-filter-customers">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold mb-3">Filter by Country</h4>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {uniqueCountries.length > 0 ? (
+                        uniqueCountries.map((country) => (
+                          <div key={country} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`filter-${country}`}
+                              checked={countryFilters.includes(country)}
+                              onCheckedChange={() => toggleCountryFilter(country)}
+                              data-testid={`checkbox-filter-${country}`}
+                            />
+                            <Label
+                              htmlFor={`filter-${country}`}
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              {country}
+                            </Label>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No countries available</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCountryFilters([])}
+                      data-testid="button-reset-filters"
+                    >
+                      Reset
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setIsFilterOpen(false)}
+                      data-testid="button-apply-filters"
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           <Button onClick={() => setIsModalOpen(true)} data-testid="button-new-customer">
             <Plus className="w-4 h-4 mr-2" />

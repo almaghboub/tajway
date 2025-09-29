@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Header } from "@/components/header";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -32,7 +35,9 @@ export default function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Inventory | null>(null);
+  const [stockStatusFilters, setStockStatusFilters] = useState<string[]>(["in-stock", "low-stock", "out-of-stock"]);
   const { toast } = useToast();
 
   const form = useForm<CreateInventoryForm>({
@@ -154,16 +159,33 @@ export default function Inventory() {
     setIsEditModalOpen(true);
   };
 
-  const filteredInventory = inventory.filter(item =>
-    item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.sku.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const getStockStatus = (quantity: number, threshold: number) => {
     if (quantity === 0) return { label: "Out of Stock", color: "bg-red-100 text-red-800" };
     if (quantity <= threshold) return { label: "Low Stock", color: "bg-yellow-100 text-yellow-800" };
     return { label: "In Stock", color: "bg-green-100 text-green-800" };
   };
+
+  const getStockStatusKey = (quantity: number, threshold: number): string => {
+    if (quantity === 0) return "out-of-stock";
+    if (quantity <= threshold) return "low-stock";
+    return "in-stock";
+  };
+
+  const toggleStockStatusFilter = (status: string) => {
+    setStockStatusFilters(prev =>
+      prev.includes(status)
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+  };
+
+  const filteredInventory = inventory.filter(item => {
+    const matchesSearch = item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.sku.toLowerCase().includes(searchTerm.toLowerCase());
+    const stockStatus = getStockStatusKey(item.quantity, item.lowStockThreshold);
+    const matchesStatus = stockStatusFilters.includes(stockStatus);
+    return matchesSearch && matchesStatus;
+  });
 
   const lowStockItems = inventory.filter(item => item.quantity <= item.lowStockThreshold);
 
@@ -205,10 +227,65 @@ export default function Inventory() {
                 data-testid="input-search-inventory"
               />
             </div>
-            <Button variant="outline" data-testid="button-filter-inventory">
-              <Filter className="w-4 h-4 mr-2" />
-              Filter
-            </Button>
+            <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" data-testid="button-filter-inventory">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filter
+                  {stockStatusFilters.length < 3 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {stockStatusFilters.length}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64" data-testid="popover-filter-inventory">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold mb-3">Filter by Stock Status</h4>
+                    <div className="space-y-2">
+                      {[
+                        { value: "in-stock", label: "In Stock" },
+                        { value: "low-stock", label: "Low Stock" },
+                        { value: "out-of-stock", label: "Out of Stock" }
+                      ].map((status) => (
+                        <div key={status.value} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`filter-${status.value}`}
+                            checked={stockStatusFilters.includes(status.value)}
+                            onCheckedChange={() => toggleStockStatusFilter(status.value)}
+                            data-testid={`checkbox-filter-${status.value}`}
+                          />
+                          <Label
+                            htmlFor={`filter-${status.value}`}
+                            className="text-sm font-normal cursor-pointer"
+                          >
+                            {status.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setStockStatusFilters(["in-stock", "low-stock", "out-of-stock"])}
+                      data-testid="button-reset-filters"
+                    >
+                      Reset
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setIsFilterOpen(false)}
+                      data-testid="button-apply-filters"
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           <Button onClick={() => setIsCreateModalOpen(true)} data-testid="button-add-item">
             <Plus className="w-4 h-4 mr-2" />

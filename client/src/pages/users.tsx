@@ -9,6 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Header } from "@/components/header";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
@@ -42,7 +45,9 @@ export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<SafeUser | null>(null);
+  const [roleFilters, setRoleFilters] = useState<string[]>(["owner", "customer_service", "receptionist"]);
   const { toast } = useToast();
 
   const { data: users = [], isLoading } = useQuery({
@@ -182,11 +187,21 @@ export default function Users() {
     setIsEditModalOpen(true);
   };
 
-  const filteredUsers = users.filter(user =>
-    `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const toggleRoleFilter = (role: string) => {
+    setRoleFilters(prev =>
+      prev.includes(role)
+        ? prev.filter(r => r !== role)
+        : [...prev, role]
+    );
+  };
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = roleFilters.includes(user.role);
+    return matchesSearch && matchesRole;
+  });
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -230,10 +245,65 @@ export default function Users() {
                 data-testid="input-search-users"
               />
             </div>
-            <Button variant="outline" data-testid="button-filter-users">
-              <Filter className="w-4 h-4 mr-2" />
-              Filter
-            </Button>
+            <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" data-testid="button-filter-users">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filter
+                  {roleFilters.length < 3 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {roleFilters.length}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64" data-testid="popover-filter-users">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold mb-3">Filter by Role</h4>
+                    <div className="space-y-2">
+                      {[
+                        { value: "owner", label: "Owner" },
+                        { value: "customer_service", label: "Customer Service" },
+                        { value: "receptionist", label: "Receptionist" }
+                      ].map((role) => (
+                        <div key={role.value} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`filter-${role.value}`}
+                            checked={roleFilters.includes(role.value)}
+                            onCheckedChange={() => toggleRoleFilter(role.value)}
+                            data-testid={`checkbox-filter-${role.value}`}
+                          />
+                          <Label
+                            htmlFor={`filter-${role.value}`}
+                            className="text-sm font-normal cursor-pointer"
+                          >
+                            {role.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setRoleFilters(["owner", "customer_service", "receptionist"])}
+                      data-testid="button-reset-filters"
+                    >
+                      Reset
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setIsFilterOpen(false)}
+                      data-testid="button-apply-filters"
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           <Button onClick={openCreateModal} data-testid="button-new-user">
             <Plus className="w-4 h-4 mr-2" />

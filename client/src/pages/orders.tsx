@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Header } from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -28,11 +30,13 @@ export default function Orders() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<OrderWithCustomer | null>(null);
   const [viewingOrder, setViewingOrder] = useState<OrderWithCustomer | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<any>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [statusFilters, setStatusFilters] = useState<string[]>(["pending", "processing", "shipped", "delivered", "cancelled"]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [editOrderStatus, setEditOrderStatus] = useState("");
   const [shippingCost, setShippingCost] = useState(0);
@@ -380,10 +384,20 @@ export default function Orders() {
     createOrderMutation.mutate({ order, items });
   };
 
-  const filteredOrders = orders.filter(order =>
-    order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    `${order.customer.firstName} ${order.customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const toggleStatusFilter = (status: string) => {
+    setStatusFilters(prev =>
+      prev.includes(status)
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+  };
+
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      `${order.customer.firstName} ${order.customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilters.includes(order.status);
+    return matchesSearch && matchesStatus;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -423,10 +437,61 @@ export default function Orders() {
                 data-testid="input-search-orders"
               />
             </div>
-            <Button variant="outline" data-testid="button-filter-orders">
-              <Filter className="w-4 h-4 mr-2" />
-              Filter
-            </Button>
+            <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" data-testid="button-filter-orders">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filter
+                  {statusFilters.length < 5 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {statusFilters.length}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64" data-testid="popover-filter-orders">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold mb-3">Filter by Status</h4>
+                    <div className="space-y-2">
+                      {["pending", "processing", "shipped", "delivered", "cancelled"].map((status) => (
+                        <div key={status} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`filter-${status}`}
+                            checked={statusFilters.includes(status)}
+                            onCheckedChange={() => toggleStatusFilter(status)}
+                            data-testid={`checkbox-filter-${status}`}
+                          />
+                          <Label
+                            htmlFor={`filter-${status}`}
+                            className="text-sm font-normal cursor-pointer capitalize"
+                          >
+                            {status}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setStatusFilters(["pending", "processing", "shipped", "delivered", "cancelled"])}
+                      data-testid="button-reset-filters"
+                    >
+                      Reset
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setIsFilterOpen(false)}
+                      data-testid="button-apply-filters"
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           <Button onClick={() => setIsModalOpen(true)} data-testid="button-new-order">
             <Plus className="w-4 h-4 mr-2" />
