@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Truck, LayoutDashboard, Package, Users, Box, TrendingUp, Users2, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth-provider";
+import logoPath from "@assets/lynx-logo.png";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"] },
@@ -33,14 +34,8 @@ export function Sidebar() {
     <aside className="w-64 bg-card border-r border-border flex flex-col">
       {/* Logo and branding */}
       <div className="p-6 border-b border-border">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <Truck className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="font-bold text-lg text-foreground">LYNX LY</h1>
-            <p className="text-sm text-muted-foreground">Logistics Management</p>
-          </div>
+        <div className="flex items-center justify-center">
+          <img src={logoPath} alt="Lynx Logo" className="h-16 w-auto" />
         </div>
       </div>
 
