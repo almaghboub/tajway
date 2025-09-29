@@ -26,10 +26,13 @@ interface OrderItem {
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<OrderWithCustomer | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<any>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [editOrderStatus, setEditOrderStatus] = useState("");
   const [shippingCost, setShippingCost] = useState(0);
   const [shippingCountry, setShippingCountry] = useState("");
   const [shippingCategory, setShippingCategory] = useState("normal");
@@ -99,6 +102,36 @@ export default function Orders() {
     },
   });
 
+  const updateOrderMutation = useMutation({
+    mutationFn: async ({ id, status, notes }: { id: string; status: string; notes: string }) => {
+      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update order");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/dashboard"] });
+      toast({
+        title: "Success",
+        description: "Order updated successfully",
+      });
+      setIsEditModalOpen(false);
+      setEditingOrder(null);
+      setEditOrderStatus("");
+      setNotes("");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Query for order details when printing
   const { data: orderWithItems, isLoading: isLoadingOrderItems } = useQuery({
     queryKey: ["/api/orders", selectedOrderForPrint?.id, "items"],
@@ -122,6 +155,23 @@ export default function Orders() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const openEditModal = (order: OrderWithCustomer) => {
+    setEditingOrder(order);
+    setEditOrderStatus(order.status);
+    setNotes(order.notes || "");
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingOrder) return;
+    updateOrderMutation.mutate({
+      id: editingOrder.id,
+      status: editOrderStatus,
+      notes: notes
+    });
   };
 
   const resetForm = () => {
@@ -431,6 +481,14 @@ export default function Orders() {
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => openEditModal(order)}
+                            data-testid={`button-edit-order-${order.id}`}
+                          >
+                            Edit
+                          </Button>
                           <Button variant="outline" size="sm" data-testid={`button-view-order-${order.id}`}>
                             View
                           </Button>
@@ -728,6 +786,89 @@ export default function Orders() {
                 </div>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Order Modal */}
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent className="max-w-2xl" data-testid="modal-edit-order">
+            <DialogHeader>
+              <DialogTitle>Edit Order</DialogTitle>
+            </DialogHeader>
+            {editingOrder && (
+              <form onSubmit={handleEditSubmit} className="space-y-6">
+                {/* Order Details (Read-only) */}
+                <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">Order ID:</span>
+                      <span className="ml-2">{editingOrder.id.substring(0, 8)}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Customer:</span>
+                      <span className="ml-2">{editingOrder.customer.firstName} {editingOrder.customer.lastName}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Total Amount:</span>
+                      <span className="ml-2">${parseFloat(editingOrder.totalAmount).toFixed(2)}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Created:</span>
+                      <span className="ml-2">{new Date(editingOrder.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Editable Fields */}
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="edit-status">Order Status</Label>
+                    <Select value={editOrderStatus} onValueChange={setEditOrderStatus}>
+                      <SelectTrigger id="edit-status" data-testid="select-edit-status">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="processing">Processing</SelectItem>
+                        <SelectItem value="shipped">Shipped</SelectItem>
+                        <SelectItem value="delivered">Delivered</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="edit-notes">Order Notes</Label>
+                    <textarea
+                      id="edit-notes"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className="w-full min-h-[100px] p-3 border rounded-md resize-none"
+                      placeholder="Add notes about this order..."
+                      data-testid="textarea-edit-notes"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-2 pt-4 border-t">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsEditModalOpen(false)}
+                    data-testid="button-cancel-edit"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={updateOrderMutation.isPending}
+                    data-testid="button-update-order"
+                  >
+                    {updateOrderMutation.isPending ? "Updating..." : "Update Order"}
+                  </Button>
+                </div>
+              </form>
+            )}
           </DialogContent>
         </Dialog>
 
