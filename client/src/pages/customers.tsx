@@ -1,16 +1,33 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Users, Search, Filter } from "lucide-react";
+import { Plus, Users, Search, Filter, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Header } from "@/components/header";
+import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { Customer } from "@shared/schema";
+import type { Customer, InsertCustomer } from "@shared/schema";
 
 export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState<InsertCustomer>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    country: "",
+    postalCode: "",
+  });
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: customers = [], isLoading } = useQuery({
     queryKey: ["/api/customers"],
@@ -19,6 +36,46 @@ export default function Customers() {
       return response.json() as Promise<Customer[]>;
     },
   });
+
+  const createCustomerMutation = useMutation({
+    mutationFn: async (customerData: InsertCustomer) => {
+      const response = await apiRequest("POST", "/api/customers", customerData);
+      if (!response.ok) {
+        throw new Error("Failed to create customer");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      toast({
+        title: "Success",
+        description: "Customer created successfully",
+      });
+      setIsModalOpen(false);
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        address: "",
+        city: "",
+        country: "",
+        postalCode: "",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create customer",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createCustomerMutation.mutate(formData);
+  };
 
   const filteredCustomers = customers.filter(customer =>
     `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -51,7 +108,7 @@ export default function Customers() {
               Filter
             </Button>
           </div>
-          <Button data-testid="button-new-customer">
+          <Button onClick={() => setIsModalOpen(true)} data-testid="button-new-customer">
             <Plus className="w-4 h-4 mr-2" />
             Add Customer
           </Button>
@@ -79,7 +136,7 @@ export default function Customers() {
                   {searchTerm ? "No customers match your search criteria" : "Get started by adding your first customer"}
                 </p>
                 {!searchTerm && (
-                  <Button className="mt-4" data-testid="button-add-first-customer">
+                  <Button className="mt-4" onClick={() => setIsModalOpen(true)} data-testid="button-add-first-customer">
                     <Plus className="w-4 h-4 mr-2" />
                     Add First Customer
                   </Button>
@@ -127,6 +184,121 @@ export default function Customers() {
             )}
           </CardContent>
         </Card>
+
+        {/* Customer Creation Modal */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="max-w-md" data-testid="modal-create-customer">
+            <DialogHeader>
+              <DialogTitle>Add New Customer</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                    required
+                    data-testid="input-first-name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                    required
+                    data-testid="input-last-name"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  required
+                  data-testid="input-email"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  data-testid="input-phone"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="address">Address</Label>
+                <Input
+                  id="address"
+                  value={formData.address || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                  data-testid="input-address"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    value={formData.city || ""}
+                    onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                    data-testid="input-city"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="postalCode">Postal Code</Label>
+                  <Input
+                    id="postalCode"
+                    value={formData.postalCode || ""}
+                    onChange={(e) => setFormData(prev => ({ ...prev, postalCode: e.target.value }))}
+                    data-testid="input-postal-code"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="country">Country</Label>
+                <Input
+                  id="country"
+                  value={formData.country}
+                  onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
+                  required
+                  data-testid="input-country"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsModalOpen(false)}
+                  data-testid="button-cancel"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={createCustomerMutation.isPending}
+                  data-testid="button-save-customer"
+                >
+                  {createCustomerMutation.isPending ? "Creating..." : "Create Customer"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
