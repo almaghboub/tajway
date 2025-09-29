@@ -1,13 +1,21 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Users2, Search, Filter } from "lucide-react";
+import { Plus, Users2, Search, Filter, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Header } from "@/components/header";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertUserSchema, type InsertUser } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
 
 interface SafeUser {
   id: string;
@@ -20,8 +28,20 @@ interface SafeUser {
   createdAt: string;
 }
 
+// Form schema with password confirmation
+const createUserSchema = insertUserSchema.extend({
+  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+type CreateUserForm = z.infer<typeof createUserSchema>;
+
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const { toast } = useToast();
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["/api/users"],
@@ -30,6 +50,57 @@ export default function Users() {
       return response.json() as Promise<SafeUser[]>;
     },
   });
+
+  const form = useForm<CreateUserForm>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+      confirmPassword: "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      role: "customer_service",
+      isActive: true,
+    },
+  });
+
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: InsertUser) => {
+      const response = await apiRequest("POST", "/api/users", userData);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to create user");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setIsCreateModalOpen(false);
+      form.reset();
+      toast({
+        title: "User created successfully",
+        description: "The new user has been added to the system.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error creating user",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateUser = (data: CreateUserForm) => {
+    const { confirmPassword, ...userData } = data;
+    createUserMutation.mutate(userData);
+  };
+
+  const openCreateModal = () => {
+    form.reset();
+    setIsCreateModalOpen(true);
+  };
 
   const filteredUsers = users.filter(user =>
     `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,7 +155,7 @@ export default function Users() {
               Filter
             </Button>
           </div>
-          <Button data-testid="button-new-user">
+          <Button onClick={openCreateModal} data-testid="button-new-user">
             <Plus className="w-4 h-4 mr-2" />
             Add User
           </Button>
@@ -112,7 +183,7 @@ export default function Users() {
                   {searchTerm ? "No users match your search criteria" : "Get started by adding your first user"}
                 </p>
                 {!searchTerm && (
-                  <Button className="mt-4" data-testid="button-add-first-user">
+                  <Button className="mt-4" onClick={openCreateModal} data-testid="button-add-first-user">
                     <Plus className="w-4 h-4 mr-2" />
                     Add First User
                   </Button>
@@ -171,6 +242,142 @@ export default function Users() {
             )}
           </CardContent>
         </Card>
+
+        {/* Create User Modal */}
+        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+          <DialogContent className="sm:max-w-md" data-testid="modal-create-user">
+            <DialogHeader>
+              <DialogTitle>Create New User</DialogTitle>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleCreateUser)} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John" {...field} data-testid="input-first-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Doe" {...field} data-testid="input-last-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="johndoe" {...field} data-testid="input-username" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="john@example.com" {...field} data-testid="input-email" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-role">
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="owner">Owner</SelectItem>
+                          <SelectItem value="customer_service">Customer Service</SelectItem>
+                          <SelectItem value="receptionist">Receptionist</SelectItem>
+                          <SelectItem value="sorter">Sorter</SelectItem>
+                          <SelectItem value="stock_manager">Stock Manager</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} data-testid="input-password" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} data-testid="input-confirm-password" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsCreateModalOpen(false)}
+                    data-testid="button-cancel-user"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createUserMutation.isPending}
+                    data-testid="button-create-user"
+                  >
+                    {createUserMutation.isPending ? "Creating..." : "Create User"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
