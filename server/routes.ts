@@ -13,6 +13,7 @@ import {
   insertOrderItemSchema,
   insertInventorySchema,
   insertShippingRateSchema,
+  insertCommissionRuleSchema,
   insertSettingSchema,
   loginSchema,
 } from "@shared/schema";
@@ -580,6 +581,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Setting deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete setting" });
+    }
+  });
+
+  // Shipping Rates routes
+  app.get("/api/shipping-rates", requireOwner, async (req, res) => {
+    try {
+      const shippingRates = await storage.getAllShippingRates();
+      res.json(shippingRates);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch shipping rates" });
+    }
+  });
+
+  app.post("/api/shipping-rates", requireOwner, async (req, res) => {
+    try {
+      const result = insertShippingRateSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid shipping rate data", errors: result.error.errors });
+      }
+
+      const shippingRate = await storage.createShippingRate(result.data);
+      res.status(201).json(shippingRate);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create shipping rate" });
+    }
+  });
+
+  app.put("/api/shipping-rates/:id", requireOwner, async (req, res) => {
+    try {
+      const result = insertShippingRateSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid shipping rate data", errors: result.error.errors });
+      }
+
+      const shippingRate = await storage.updateShippingRate(req.params.id, result.data);
+      if (!shippingRate) {
+        return res.status(404).json({ message: "Shipping rate not found" });
+      }
+      res.json(shippingRate);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update shipping rate" });
+    }
+  });
+
+  app.delete("/api/shipping-rates/:id", requireOwner, async (req, res) => {
+    try {
+      const success = await storage.deleteShippingRate(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Shipping rate not found" });
+      }
+      res.json({ message: "Shipping rate deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete shipping rate" });
+    }
+  });
+
+  // Commission Rules routes
+  app.get("/api/commission-rules", requireOwner, async (req, res) => {
+    try {
+      const commissionRules = await storage.getAllCommissionRules();
+      res.json(commissionRules);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch commission rules" });
+    }
+  });
+
+  app.post("/api/commission-rules", requireOwner, async (req, res) => {
+    try {
+      const result = insertCommissionRuleSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid commission rule data", errors: result.error.errors });
+      }
+
+      const commissionRule = await storage.createCommissionRule(result.data);
+      res.status(201).json(commissionRule);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create commission rule" });
+    }
+  });
+
+  app.put("/api/commission-rules/:id", requireOwner, async (req, res) => {
+    try {
+      const result = insertCommissionRuleSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid commission rule data", errors: result.error.errors });
+      }
+
+      const commissionRule = await storage.updateCommissionRule(req.params.id, result.data);
+      if (!commissionRule) {
+        return res.status(404).json({ message: "Commission rule not found" });
+      }
+      res.json(commissionRule);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update commission rule" });
+    }
+  });
+
+  app.delete("/api/commission-rules/:id", requireOwner, async (req, res) => {
+    try {
+      const success = await storage.deleteCommissionRule(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Commission rule not found" });
+      }
+      res.json({ message: "Commission rule deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete commission rule" });
+    }
+  });
+
+  // Shipping Calculation route
+  app.post("/api/calculate-shipping", requireAuth, async (req, res) => {
+    try {
+      const { country, category, weight, orderValue } = req.body;
+      
+      if (!country || !category || !weight || !orderValue) {
+        return res.status(400).json({ 
+          message: "Missing required fields: country, category, weight, orderValue" 
+        });
+      }
+
+      const calculation = await storage.calculateShipping(country, category, weight, orderValue);
+      res.json(calculation);
+    } catch (error) {
+      res.status(500).json({ 
+        message: error.message || "Failed to calculate shipping" 
+      });
     }
   });
 

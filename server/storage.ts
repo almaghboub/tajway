@@ -11,6 +11,8 @@ import {
   type InsertInventory,
   type ShippingRate,
   type InsertShippingRate,
+  type CommissionRule,
+  type InsertCommissionRule,
   type Setting,
   type InsertSetting,
   type OrderWithCustomer,
@@ -21,6 +23,7 @@ import {
   orderItems,
   inventory,
   shippingRates,
+  commissionRules,
   settings,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -74,11 +77,27 @@ export interface IStorage {
 
   // Shipping Rates
   getShippingRate(id: string): Promise<ShippingRate | undefined>;
-  getShippingRateByCountry(country: string): Promise<ShippingRate | undefined>;
+  getShippingRateByCountryAndCategory(country: string, category: string): Promise<ShippingRate | undefined>;
   createShippingRate(rate: InsertShippingRate): Promise<ShippingRate>;
   updateShippingRate(id: string, rate: Partial<InsertShippingRate>): Promise<ShippingRate | undefined>;
   deleteShippingRate(id: string): Promise<boolean>;
   getAllShippingRates(): Promise<ShippingRate[]>;
+
+  // Commission Rules
+  getCommissionRule(id: string): Promise<CommissionRule | undefined>;
+  getCommissionRuleByCountryAndValue(country: string, orderValue: number): Promise<CommissionRule | undefined>;
+  createCommissionRule(rule: InsertCommissionRule): Promise<CommissionRule>;
+  updateCommissionRule(id: string, rule: Partial<InsertCommissionRule>): Promise<CommissionRule | undefined>;
+  deleteCommissionRule(id: string): Promise<boolean>;
+  getAllCommissionRules(): Promise<CommissionRule[]>;
+
+  // Shipping Calculation
+  calculateShipping(country: string, category: string, weight: number, orderValue: number): Promise<{
+    base_shipping: number;
+    commission: number;
+    total: number;
+    currency: string;
+  }>;
 
   // Settings
   getSetting(key: string): Promise<Setting | undefined>;
@@ -100,6 +119,7 @@ export class MemStorage implements IStorage {
   private orderItems: Map<string, OrderItem>;
   private inventory: Map<string, Inventory>;
   private shippingRates: Map<string, ShippingRate>;
+  private commissionRules: Map<string, CommissionRule>;
   private settings: Map<string, Setting>;
   private orderCounter: number = 1;
 
@@ -110,6 +130,7 @@ export class MemStorage implements IStorage {
     this.orderItems = new Map();
     this.inventory = new Map();
     this.shippingRates = new Map();
+    this.commissionRules = new Map();
     this.settings = new Map();
     
     // Initialize with default data
@@ -541,27 +562,76 @@ export class PostgreSQLStorage implements IStorage {
         await db.insert(shippingRates).values([
           {
             country: "China",
-            baseRate: "25.00",
-            perKgRate: "8.00",
-            commissionRate: "0.1800",
+            category: "normal",
+            pricePerKg: "8.00",
+            currency: "USD",
+          },
+          {
+            country: "China",
+            category: "perfumes",
+            pricePerKg: "12.00",
+            currency: "USD",
           },
           {
             country: "Turkey",
-            baseRate: "30.00",
-            perKgRate: "12.00",
-            commissionRate: "0.2000",
+            category: "normal",
+            pricePerKg: "12.00",
+            currency: "USD",
           },
           {
             country: "UK",
-            baseRate: "35.00",
-            perKgRate: "15.00",
-            commissionRate: "0.1500",
+            category: "normal",
+            pricePerKg: "15.00",
+            currency: "GBP",
           },
           {
             country: "UAE",
-            baseRate: "40.00",
-            perKgRate: "18.00",
-            commissionRate: "0.1200",
+            category: "normal",
+            pricePerKg: "18.00",
+            currency: "USD",
+          },
+        ]);
+      }
+
+      // Check if commission rules exist
+      const existingCommissionRules = await this.getAllCommissionRules();
+      if (existingCommissionRules.length === 0) {
+        // Create default commission rules
+        await db.insert(commissionRules).values([
+          {
+            country: "China",
+            minValue: "0.00",
+            maxValue: "100.00",
+            percentage: "0.1800",
+            fixedFee: "0.00",
+          },
+          {
+            country: "China",
+            minValue: "100.01",
+            maxValue: null, // no max
+            percentage: "0.1500",
+            fixedFee: "1.00",
+          },
+          {
+            country: "Turkey",
+            minValue: "0.00",
+            maxValue: null,
+            percentage: "0.2000",
+            fixedFee: "0.00",
+          },
+          {
+            country: "UK",
+            minValue: "0.00",
+            maxValue: null,
+            percentage: "0.1500",
+            fixedFee: "0.00",
+          },
+          {
+            country: "UAE",
+            minValue: "0.00",
+            maxValue: null,
+            percentage: "0.1200",
+            fixedFee: "0.00",
           },
         ]);
       }
@@ -790,16 +860,15 @@ export class PostgreSQLStorage implements IStorage {
     return result[0];
   }
 
-  async getShippingRateByCountry(country: string): Promise<ShippingRate | undefined> {
-    const result = await db.select().from(shippingRates).where(eq(shippingRates.country, country)).limit(1);
+  async getShippingRateByCountryAndCategory(country: string, category: string): Promise<ShippingRate | undefined> {
+    const result = await db.select().from(shippingRates)
+      .where(sql`${shippingRates.country} = ${country} AND ${shippingRates.category} = ${category}`)
+      .limit(1);
     return result[0];
   }
 
   async createShippingRate(insertShippingRate: InsertShippingRate): Promise<ShippingRate> {
-    const result = await db.insert(shippingRates).values({
-      ...insertShippingRate,
-      commissionRate: insertShippingRate.commissionRate || "0.15",
-    }).returning();
+    const result = await db.insert(shippingRates).values(insertShippingRate).returning();
     return result[0];
   }
 
@@ -815,6 +884,80 @@ export class PostgreSQLStorage implements IStorage {
 
   async getAllShippingRates(): Promise<ShippingRate[]> {
     return await db.select().from(shippingRates).orderBy(shippingRates.country);
+  }
+
+  // Commission Rules
+  async getCommissionRule(id: string): Promise<CommissionRule | undefined> {
+    const result = await db.select().from(commissionRules).where(eq(commissionRules.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getCommissionRuleByCountryAndValue(country: string, orderValue: number): Promise<CommissionRule | undefined> {
+    const result = await db.select().from(commissionRules)
+      .where(sql`${commissionRules.country} = ${country} 
+                 AND ${commissionRules.minValue} <= ${orderValue}
+                 AND (${commissionRules.maxValue} IS NULL OR ${commissionRules.maxValue} >= ${orderValue})`)
+      .orderBy(commissionRules.minValue)
+      .limit(1);
+    return result[0];
+  }
+
+  async createCommissionRule(insertCommissionRule: InsertCommissionRule): Promise<CommissionRule> {
+    const result = await db.insert(commissionRules).values(insertCommissionRule).returning();
+    return result[0];
+  }
+
+  async updateCommissionRule(id: string, ruleData: Partial<InsertCommissionRule>): Promise<CommissionRule | undefined> {
+    const updateData = {
+      ...ruleData,
+      updatedAt: new Date(),
+    };
+    const result = await db.update(commissionRules).set(updateData).where(eq(commissionRules.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteCommissionRule(id: string): Promise<boolean> {
+    const result = await db.delete(commissionRules).where(eq(commissionRules.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getAllCommissionRules(): Promise<CommissionRule[]> {
+    return await db.select().from(commissionRules).orderBy(commissionRules.country, commissionRules.minValue);
+  }
+
+  // Shipping Calculation
+  async calculateShipping(country: string, category: string, weight: number, orderValue: number): Promise<{
+    base_shipping: number;
+    commission: number;
+    total: number;
+    currency: string;
+  }> {
+    // Get shipping rate for country and category
+    const shippingRate = await this.getShippingRateByCountryAndCategory(country, category);
+    if (!shippingRate) {
+      throw new Error(`No shipping rate found for country: ${country}, category: ${category}`);
+    }
+
+    // Calculate base shipping cost
+    const baseShipping = weight * parseFloat(shippingRate.pricePerKg);
+
+    // Get commission rule for country and order value
+    const commissionRule = await this.getCommissionRuleByCountryAndValue(country, orderValue);
+    let commission = 0;
+    
+    if (commissionRule) {
+      // Calculate commission: percentage + fixed fee
+      const percentageCommission = orderValue * parseFloat(commissionRule.percentage);
+      const fixedFee = parseFloat(commissionRule.fixedFee);
+      commission = percentageCommission + fixedFee;
+    }
+
+    return {
+      base_shipping: baseShipping,
+      commission,
+      total: baseShipping + commission,
+      currency: shippingRate.currency,
+    };
   }
 
   // Analytics
