@@ -16,7 +16,9 @@ export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [viewingCustomer, setViewingCustomer] = useState<Customer | null>(null);
   const [formData, setFormData] = useState<InsertCustomer>({
     firstName: "",
     lastName: "",
@@ -147,6 +149,11 @@ export default function Customers() {
     setIsEditModalOpen(true);
   };
 
+  const openViewModal = (customer: Customer) => {
+    setViewingCustomer(customer);
+    setIsViewModalOpen(true);
+  };
+
   const filteredCustomers = customers.filter(customer =>
     `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -247,7 +254,12 @@ export default function Customers() {
                           <Button variant="outline" size="sm" onClick={() => openEditModal(customer)} data-testid={`button-edit-customer-${customer.id}`}>
                             Edit
                           </Button>
-                          <Button variant="outline" size="sm" data-testid={`button-view-customer-${customer.id}`}>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => openViewModal(customer)}
+                            data-testid={`button-view-customer-${customer.id}`}
+                          >
                             View
                           </Button>
                         </div>
@@ -488,6 +500,89 @@ export default function Customers() {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Customer Modal */}
+        <Dialog open={isViewModalOpen} onOpenChange={(open) => {
+          setIsViewModalOpen(open);
+          if (!open) setViewingCustomer(null);
+        }}>
+          <DialogContent className="max-w-2xl" data-testid="modal-view-customer">
+            <DialogHeader>
+              <DialogTitle>Customer Details</DialogTitle>
+            </DialogHeader>
+            {viewingCustomer && (
+              <div className="space-y-6">
+                {/* Personal Information */}
+                <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                  <h3 className="font-semibold text-lg mb-3">Personal Information</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-muted-foreground">Customer ID:</span>
+                      <p className="mt-1" data-testid="text-view-customer-id">{viewingCustomer.id.substring(0, 8)}...</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">Full Name:</span>
+                      <p className="mt-1" data-testid="text-view-customer-name">
+                        {viewingCustomer.firstName} {viewingCustomer.lastName}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">Email:</span>
+                      <p className="mt-1" data-testid="text-view-customer-email">{viewingCustomer.email}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">Phone:</span>
+                      <p className="mt-1" data-testid="text-view-customer-phone">{viewingCustomer.phone || "N/A"}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">Created Date:</span>
+                      <p className="mt-1" data-testid="text-view-customer-created">
+                        {new Date(viewingCustomer.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address Information */}
+                <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                  <h3 className="font-semibold text-lg mb-3">Address Information</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-muted-foreground">Street Address:</span>
+                      <p className="mt-1" data-testid="text-view-customer-address">
+                        {viewingCustomer.address || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">City:</span>
+                      <p className="mt-1" data-testid="text-view-customer-city">{viewingCustomer.city || "N/A"}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">Postal Code:</span>
+                      <p className="mt-1" data-testid="text-view-customer-postal">
+                        {viewingCustomer.postalCode || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">Country:</span>
+                      <p className="mt-1" data-testid="text-view-customer-country">{viewingCustomer.country}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4 border-t">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsViewModalOpen(false)}
+                    data-testid="button-close-view-customer"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>

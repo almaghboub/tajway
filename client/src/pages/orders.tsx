@@ -27,7 +27,9 @@ export default function Orders() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<OrderWithCustomer | null>(null);
+  const [viewingOrder, setViewingOrder] = useState<OrderWithCustomer | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<any>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
@@ -148,6 +150,18 @@ export default function Orders() {
     enabled: !!selectedOrderForPrint?.id && isPrintModalOpen,
   });
 
+  // Query for order details when viewing
+  const { data: viewOrderWithItems, isLoading: isLoadingViewOrder } = useQuery({
+    queryKey: ["/api/orders", viewingOrder?.id, "view"],
+    queryFn: async () => {
+      if (!viewingOrder?.id) return null;
+      const itemsResponse = await apiRequest("GET", `/api/orders/${viewingOrder.id}/items`);
+      const items = await itemsResponse.json();
+      return { ...viewingOrder, items };
+    },
+    enabled: !!viewingOrder?.id && isViewModalOpen,
+  });
+
   const handlePrintInvoice = (order: any) => {
     setSelectedOrderForPrint(order);
     setIsPrintModalOpen(true);
@@ -162,6 +176,11 @@ export default function Orders() {
     setEditOrderStatus(order.status);
     setNotes(order.notes || "");
     setIsEditModalOpen(true);
+  };
+
+  const openViewModal = (order: OrderWithCustomer) => {
+    setViewingOrder(order);
+    setIsViewModalOpen(true);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -489,7 +508,12 @@ export default function Orders() {
                           >
                             Edit
                           </Button>
-                          <Button variant="outline" size="sm" data-testid={`button-view-order-${order.id}`}>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => openViewModal(order)}
+                            data-testid={`button-view-order-${order.id}`}
+                          >
                             View
                           </Button>
                           <Button 
@@ -868,6 +892,158 @@ export default function Orders() {
                   </Button>
                 </div>
               </form>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* View Order Modal */}
+        <Dialog open={isViewModalOpen} onOpenChange={(open) => {
+          setIsViewModalOpen(open);
+          if (!open) setViewingOrder(null);
+        }}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="modal-view-order">
+            <DialogHeader>
+              <DialogTitle>Order Details</DialogTitle>
+            </DialogHeader>
+            {viewingOrder && (
+              <div className="space-y-6">
+                {/* Order Summary */}
+                <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                  <h3 className="font-semibold text-lg mb-3">Order Information</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-muted-foreground">Order Number:</span>
+                      <p className="mt-1" data-testid="text-view-order-number">{viewingOrder.orderNumber}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">Order ID:</span>
+                      <p className="mt-1" data-testid="text-view-order-id">{viewingOrder.id.substring(0, 8)}...</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">Status:</span>
+                      <div className="mt-1">
+                        <Badge className={getStatusColor(viewingOrder.status)} data-testid="badge-view-status">
+                          {viewingOrder.status.charAt(0).toUpperCase() + viewingOrder.status.slice(1)}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">Created Date:</span>
+                      <p className="mt-1" data-testid="text-view-created">{new Date(viewingOrder.createdAt).toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Customer Information */}
+                <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                  <h3 className="font-semibold text-lg mb-3">Customer Information</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-muted-foreground">Name:</span>
+                      <p className="mt-1" data-testid="text-view-customer-name">
+                        {viewingOrder.customer.firstName} {viewingOrder.customer.lastName}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">Email:</span>
+                      <p className="mt-1" data-testid="text-view-customer-email">{viewingOrder.customer.email}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">Phone:</span>
+                      <p className="mt-1" data-testid="text-view-customer-phone">{viewingOrder.customer.phone || "N/A"}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">Country:</span>
+                      <p className="mt-1" data-testid="text-view-customer-country">{viewingOrder.customer.country}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Order Items */}
+                {isLoadingViewOrder ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-muted-foreground mt-2">Loading order items...</p>
+                  </div>
+                ) : viewOrderWithItems?.items && viewOrderWithItems.items.length > 0 ? (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-lg">Order Items</h3>
+                    <div className="border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Product</TableHead>
+                            <TableHead className="text-right">Quantity</TableHead>
+                            <TableHead className="text-right">Unit Price</TableHead>
+                            <TableHead className="text-right">Total</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {viewOrderWithItems.items.map((item: any, index: number) => (
+                            <TableRow key={index} data-testid={`row-view-item-${index}`}>
+                              <TableCell data-testid={`text-view-product-${index}`}>{item.productName}</TableCell>
+                              <TableCell className="text-right" data-testid={`text-view-quantity-${index}`}>
+                                {item.quantity}
+                              </TableCell>
+                              <TableCell className="text-right" data-testid={`text-view-unit-price-${index}`}>
+                                ${parseFloat(item.unitPrice).toFixed(2)}
+                              </TableCell>
+                              <TableCell className="text-right" data-testid={`text-view-item-total-${index}`}>
+                                ${parseFloat(item.totalPrice).toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    No items found for this order
+                  </div>
+                )}
+
+                {/* Order Totals */}
+                <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                  <h3 className="font-semibold text-lg mb-3">Order Summary</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Subtotal:</span>
+                      <span data-testid="text-view-subtotal">${(parseFloat(viewingOrder.totalAmount) - parseFloat(viewingOrder.shippingCost)).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Shipping Cost:</span>
+                      <span data-testid="text-view-shipping">${parseFloat(viewingOrder.shippingCost).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between pt-2 border-t font-semibold text-base">
+                      <span>Total Amount:</span>
+                      <span data-testid="text-view-total">${parseFloat(viewingOrder.totalAmount).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-green-600">
+                      <span>Estimated Profit:</span>
+                      <span data-testid="text-view-profit">${parseFloat(viewingOrder.profit).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Order Notes */}
+                {viewingOrder.notes && (
+                  <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                    <h3 className="font-semibold text-lg">Notes</h3>
+                    <p className="text-sm whitespace-pre-wrap" data-testid="text-view-notes">{viewingOrder.notes}</p>
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-4 border-t">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsViewModalOpen(false)}
+                    data-testid="button-close-view"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
             )}
           </DialogContent>
         </Dialog>
