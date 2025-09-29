@@ -126,6 +126,27 @@ export default function Customers() {
     createCustomerMutation.mutate(formData);
   };
 
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCustomer) return;
+    updateCustomerMutation.mutate({ id: editingCustomer.id, customerData: editFormData });
+  };
+
+  const openEditModal = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setEditFormData({
+      firstName: customer.firstName,
+      lastName: customer.lastName,
+      email: customer.email,
+      phone: customer.phone || "",
+      address: customer.address || "",
+      city: customer.city || "",
+      country: customer.country || "",
+      postalCode: customer.postalCode || "",
+    });
+    setIsEditModalOpen(true);
+  };
+
   const filteredCustomers = customers.filter(customer =>
     `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -222,9 +243,14 @@ export default function Customers() {
                         {new Date(customer.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        <Button variant="outline" size="sm" data-testid={`button-view-customer-${customer.id}`}>
-                          View
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" onClick={() => openEditModal(customer)} data-testid={`button-edit-customer-${customer.id}`}>
+                            Edit
+                          </Button>
+                          <Button variant="outline" size="sm" data-testid={`button-view-customer-${customer.id}`}>
+                            View
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -343,6 +369,122 @@ export default function Customers() {
                   data-testid="button-save-customer"
                 >
                   {createCustomerMutation.isPending ? "Creating..." : "Create Customer"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Customer Modal */}
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent className="max-w-md" data-testid="modal-edit-customer">
+            <DialogHeader>
+              <DialogTitle>Edit Customer</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-firstName">First Name *</Label>
+                  <Input
+                    id="edit-firstName"
+                    value={editFormData.firstName}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                    required
+                    data-testid="input-edit-first-name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-lastName">Last Name *</Label>
+                  <Input
+                    id="edit-lastName"
+                    value={editFormData.lastName}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                    required
+                    data-testid="input-edit-last-name"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-email">Email *</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                  required
+                  data-testid="input-edit-email"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-phone">Phone</Label>
+                <Input
+                  id="edit-phone"
+                  type="tel"
+                  value={editFormData.phone || ""}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  data-testid="input-edit-phone"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-address">Address</Label>
+                <Input
+                  id="edit-address"
+                  value={editFormData.address || ""}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, address: e.target.value }))}
+                  data-testid="input-edit-address"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-city">City</Label>
+                  <Input
+                    id="edit-city"
+                    value={editFormData.city || ""}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, city: e.target.value }))}
+                    data-testid="input-edit-city"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-postalCode">Postal Code</Label>
+                  <Input
+                    id="edit-postalCode"
+                    value={editFormData.postalCode || ""}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, postalCode: e.target.value }))}
+                    data-testid="input-edit-postal-code"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-country">Country *</Label>
+                <Input
+                  id="edit-country"
+                  value={editFormData.country}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, country: e.target.value }))}
+                  required
+                  data-testid="input-edit-country"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsEditModalOpen(false)}
+                  data-testid="button-cancel-edit"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={updateCustomerMutation.isPending}
+                  data-testid="button-update-customer"
+                >
+                  {updateCustomerMutation.isPending ? "Updating..." : "Update Customer"}
                 </Button>
               </div>
             </form>
