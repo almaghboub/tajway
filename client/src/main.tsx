@@ -1,20 +1,26 @@
 import { createRoot } from "react-dom/client";
-import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { Suspense, useEffect } from "react";
+import { I18nextProvider, useTranslation } from "react-i18next";
 import App from "./App";
 import "./index.css";
-import "./i18n";
+import i18n from "./i18n";
 
-function I18nWrapper() {
-  const { i18n } = useTranslation();
+function DirectionHandler() {
+  const { i18n: i18nInstance } = useTranslation();
 
   useEffect(() => {
-    const dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+    const dir = i18nInstance.language === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.dir = dir;
-    document.documentElement.lang = i18n.language;
-  }, [i18n.language]);
+    document.documentElement.lang = i18nInstance.language;
+  }, [i18nInstance.language]);
 
   return <App />;
 }
 
-createRoot(document.getElementById("root")!).render(<I18nWrapper />);
+createRoot(document.getElementById("root")!).render(
+  <I18nextProvider i18n={i18n}>
+    <Suspense fallback={<div>Loading...</div>}>
+      <DirectionHandler />
+    </Suspense>
+  </I18nextProvider>
+);
