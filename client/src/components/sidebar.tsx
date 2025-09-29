@@ -1,22 +1,24 @@
 import { Link, useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 import { Truck, LayoutDashboard, Package, Users, Box, TrendingUp, Users2, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth-provider";
 import logoPath from "@assets/lynx-logo.png";
 
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"] },
-  { name: "Orders", href: "/orders", icon: Package, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"] },
-  { name: "Customers", href: "/customers", icon: Users, roles: ["owner", "customer_service", "receptionist"] },
-  { name: "Inventory", href: "/inventory", icon: Box, roles: ["owner", "stock_manager", "sorter"] },
-  { name: "Profit Reports", href: "/profits", icon: TrendingUp, roles: ["owner"] },
-  { name: "User Management", href: "/users", icon: Users2, roles: ["owner"] },
-  { name: "Settings", href: "/settings", icon: Settings, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"] },
+const navigationItems = [
+  { key: "dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"] },
+  { key: "orders", href: "/orders", icon: Package, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"] },
+  { key: "customers", href: "/customers", icon: Users, roles: ["owner", "customer_service", "receptionist"] },
+  { key: "inventory", href: "/inventory", icon: Box, roles: ["owner", "stock_manager", "sorter"] },
+  { key: "profitReports", href: "/profits", icon: TrendingUp, roles: ["owner"] },
+  { key: "userManagement", href: "/users", icon: Users2, roles: ["owner"] },
+  { key: "settings", href: "/settings", icon: Settings, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"] },
 ];
 
 export function Sidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     try {
@@ -26,7 +28,7 @@ export function Sidebar() {
     }
   };
 
-  const filteredNavigation = navigation.filter(item => 
+  const filteredNavigation = navigationItems.filter(item => 
     user?.role && item.roles.includes(user.role)
   );
 
@@ -47,7 +49,7 @@ export function Sidebar() {
             const isActive = location === item.href;
             
             return (
-              <li key={item.name}>
+              <li key={item.key}>
                 <Link href={item.href}>
                   <span
                     className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors cursor-pointer ${
@@ -55,10 +57,10 @@ export function Sidebar() {
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                     }`}
-                    data-testid={`nav-${item.name.toLowerCase().replace(" ", "-")}`}
+                    data-testid={`nav-${item.key.toLowerCase().replace(/([A-Z])/g, '-$1').toLowerCase()}`}
                   >
                     <Icon className="w-4 h-4" />
-                    <span className={isActive ? "font-medium" : ""}>{item.name}</span>
+                    <span className={isActive ? "font-medium" : ""}>{t(item.key)}</span>
                   </span>
                 </Link>
               </li>
