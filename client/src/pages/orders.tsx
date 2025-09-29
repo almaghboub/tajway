@@ -138,7 +138,7 @@ export default function Orders() {
   // Generate hash of order items to detect changes
   const getItemsHash = () => {
     return JSON.stringify(orderItems.map(item => ({
-      id: item.productId,
+      name: item.productName,
       qty: item.quantity,
       price: item.unitPrice
     })));
@@ -212,14 +212,6 @@ export default function Orders() {
   const updateOrderItem = (index: number, field: keyof OrderItem, value: any) => {
     const newItems = [...orderItems];
     newItems[index] = { ...newItems[index], [field]: value };
-    
-    if (field === "productId") {
-      const product = inventory.find(p => p.id === value);
-      if (product) {
-        newItems[index].productName = product.productName;
-        newItems[index].unitPrice = parseFloat(product.sellingPrice);
-      }
-    }
     
     if (field === "quantity" || field === "unitPrice") {
       newItems[index].totalPrice = newItems[index].quantity * newItems[index].unitPrice;
@@ -516,66 +508,61 @@ export default function Orders() {
                 ) : (
                   <div className="space-y-4">
                     {orderItems.map((item, index) => (
-                      <div key={index} className="border rounded-lg p-4" data-testid={`order-item-${index}`}>
+                      <div key={index} className="border rounded-lg p-4 bg-muted/30" data-testid={`order-item-${index}`}>
                         <div className="grid grid-cols-12 gap-4 items-end">
-                          <div className="col-span-4">
-                            <Label>Product</Label>
-                            <Select 
-                              value={item.productId} 
-                              onValueChange={(value) => updateOrderItem(index, "productId", value)}
-                            >
-                              <SelectTrigger data-testid={`select-product-${index}`}>
-                                <SelectValue placeholder="Select product" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {inventory.map((product) => (
-                                  <SelectItem key={product.id} value={product.id}>
-                                    {product.productName} - ${product.sellingPrice}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          <div className="col-span-5">
+                            <Label htmlFor={`product-name-${index}`}>Product Name/Number</Label>
+                            <Input
+                              id={`product-name-${index}`}
+                              value={item.productName}
+                              onChange={(e) => updateOrderItem(index, "productName", e.target.value)}
+                              placeholder="Enter product name or number"
+                              required
+                              data-testid={`input-product-name-${index}`}
+                            />
                           </div>
                           
                           <div className="col-span-2">
-                            <Label>Quantity</Label>
+                            <Label htmlFor={`quantity-${index}`}>Quantity</Label>
                             <Input
+                              id={`quantity-${index}`}
                               type="number"
                               min="1"
                               value={item.quantity}
                               onChange={(e) => updateOrderItem(index, "quantity", parseInt(e.target.value) || 1)}
+                              required
                               data-testid={`input-quantity-${index}`}
                             />
                           </div>
                           
                           <div className="col-span-2">
-                            <Label>Unit Price</Label>
+                            <Label htmlFor={`unit-price-${index}`}>Unit Price ($)</Label>
                             <Input
+                              id={`unit-price-${index}`}
                               type="number"
                               step="0.01"
+                              min="0"
                               value={item.unitPrice}
                               onChange={(e) => updateOrderItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                              placeholder="0.00"
+                              required
                               data-testid={`input-unit-price-${index}`}
                             />
                           </div>
                           
                           <div className="col-span-2">
                             <Label>Total</Label>
-                            <Input
-                              value={`$${item.totalPrice.toFixed(2)}`}
-                              readOnly
-                              className="bg-gray-50"
-                              data-testid={`text-item-total-${index}`}
-                            />
+                            <div className="h-10 px-3 py-2 border rounded-md bg-muted font-semibold flex items-center" data-testid={`text-item-total-${index}`}>
+                              ${item.totalPrice.toFixed(2)}
+                            </div>
                           </div>
                           
-                          <div className="col-span-2">
+                          <div className="col-span-1 flex justify-end">
                             <Button
                               type="button"
-                              variant="outline"
-                              size="sm"
+                              variant="destructive"
+                              size="icon"
                               onClick={() => removeOrderItem(index)}
-                              className="text-red-600 hover:text-red-700"
                               data-testid={`button-remove-item-${index}`}
                             >
                               <Trash2 className="w-4 h-4" />
