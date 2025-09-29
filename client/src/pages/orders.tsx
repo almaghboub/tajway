@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Package, Search, Filter, Trash2, X } from "lucide-react";
+import { Plus, Package, Search, Filter, Trash2, X, Printer } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Header } from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Invoice } from "@/components/invoice";
 import type { OrderWithCustomer, Customer, Inventory, InsertOrder, InsertOrderItem } from "@shared/schema";
 
 interface OrderItem {
@@ -25,6 +26,8 @@ interface OrderItem {
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<any>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [shippingCost, setShippingCost] = useState(0);
@@ -83,6 +86,31 @@ export default function Orders() {
       });
     },
   });
+
+  // Query for order details when printing
+  const { data: orderWithItems, isLoading: isLoadingOrderItems } = useQuery({
+    queryKey: ["/api/orders", selectedOrderForPrint?.id, "items"],
+    queryFn: async () => {
+      if (!selectedOrderForPrint?.id) return null;
+      const [orderResponse, itemsResponse] = await Promise.all([
+        apiRequest("GET", `/api/orders/${selectedOrderForPrint.id}`),
+        apiRequest("GET", `/api/orders/${selectedOrderForPrint.id}/items`)
+      ]);
+      const order = await orderResponse.json();
+      const items = await itemsResponse.json();
+      return { ...order, items };
+    },
+    enabled: !!selectedOrderForPrint?.id && isPrintModalOpen,
+  });
+
+  const handlePrintInvoice = (order: any) => {
+    setSelectedOrderForPrint(order);
+    setIsPrintModalOpen(true);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   const resetForm = () => {
     setSelectedCustomerId("");
@@ -287,9 +315,20 @@ export default function Orders() {
                         {new Date(order.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        <Button variant="outline" size="sm" data-testid={`button-view-order-${order.id}`}>
-                          View
-                        </Button>
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm" data-testid={`button-view-order-${order.id}`}>
+                            View
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handlePrintInvoice(order)}
+                            data-testid={`button-print-invoice-${order.id}`}
+                          >
+                            <Printer className="w-4 h-4 mr-1" />
+                            Print
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -499,6 +538,38 @@ export default function Orders() {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Print Invoice Modal */}
+        <Dialog open={isPrintModalOpen} onOpenChange={setIsPrintModalOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" data-testid="modal-print-invoice">
+            <DialogHeader>
+              <div className="flex justify-between items-center">
+                <DialogTitle>Invoice Preview</DialogTitle>
+                <div className="flex space-x-2">
+                  <Button onClick={handlePrint} data-testid="button-print">
+                    <Printer className="w-4 h-4 mr-2" />
+                    Print
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsPrintModalOpen(false)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </DialogHeader>
+            {isLoadingOrderItems ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-muted-foreground mt-2">Loading order details...</p>
+              </div>
+            ) : orderWithItems ? (
+              <Invoice order={orderWithItems} onPrint={handlePrint} />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Failed to load order details</p>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
