@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Settings as SettingsIcon, Database, Shield, Bell, Palette, Check, Truck, DollarSign, Plus, Edit, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Settings as SettingsIcon, Database, Shield, Bell, Palette, Check, Truck, DollarSign, Plus, Edit, Trash2, Languages } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -608,6 +609,7 @@ const DEFAULT_SETTINGS = {
 export default function Settings() {
   const [settingsState, setSettingsState] = useState(DEFAULT_SETTINGS);
   const { toast } = useToast();
+  const { i18n } = useTranslation();
 
   // Load settings from API
   const { data: settings = [], isLoading } = useQuery({
@@ -705,6 +707,14 @@ export default function Settings() {
       title: "Password reset",
       description: "This feature requires additional confirmation. Contact system administrator.",
       variant: "destructive",
+    });
+  };
+
+  const handleLanguageChange = (language: string) => {
+    i18n.changeLanguage(language);
+    toast({
+      title: "Language updated",
+      description: `Language changed to ${language === 'en' ? 'English' : 'Arabic'}`,
     });
   };
   return (
@@ -965,6 +975,24 @@ export default function Settings() {
                 disabled={updateSettingMutation.isPending}
                 data-testid="switch-dark-mode" 
               />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="language">Language</Label>
+                <p className="text-sm text-muted-foreground">
+                  Choose your preferred language
+                </p>
+              </div>
+              <Select value={i18n.language} onValueChange={handleLanguageChange}>
+                <SelectTrigger className="w-[180px]" data-testid="select-language">
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="ar">العربية (Arabic)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="p-4 bg-muted/20 rounded-lg">
