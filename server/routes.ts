@@ -596,7 +596,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/shipping-rates", requireOwner, async (req, res) => {
     try {
-      const result = insertShippingRateSchema.safeParse(req.body);
+      const processedData = {
+        ...req.body,
+        ownerId: req.user.id,
+      };
+
+      const result = insertShippingRateSchema.safeParse(processedData);
       if (!result.success) {
         return res.status(400).json({ message: "Invalid shipping rate data", errors: result.error.errors });
       }
@@ -604,6 +609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const shippingRate = await storage.createShippingRate(result.data);
       res.status(201).json(shippingRate);
     } catch (error) {
+      console.error("Error creating shipping rate:", error);
       res.status(500).json({ message: "Failed to create shipping rate" });
     }
   });
@@ -649,7 +655,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/commission-rules", requireOwner, async (req, res) => {
     try {
-      const result = insertCommissionRuleSchema.safeParse(req.body);
+      // Handle empty maxValue by converting to null
+      const processedData = {
+        ...req.body,
+        maxValue: req.body.maxValue === "" || req.body.maxValue === null || req.body.maxValue === undefined ? null : req.body.maxValue,
+        ownerId: req.user.id,
+      };
+
+      const result = insertCommissionRuleSchema.safeParse(processedData);
       if (!result.success) {
         return res.status(400).json({ message: "Invalid commission rule data", errors: result.error.errors });
       }
@@ -657,13 +670,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const commissionRule = await storage.createCommissionRule(result.data);
       res.status(201).json(commissionRule);
     } catch (error) {
+      console.error("Error creating commission rule:", error);
       res.status(500).json({ message: "Failed to create commission rule" });
     }
   });
 
   app.put("/api/commission-rules/:id", requireOwner, async (req, res) => {
     try {
-      const result = insertCommissionRuleSchema.partial().safeParse(req.body);
+      // Handle empty maxValue by converting to null
+      const processedData = {
+        ...req.body,
+        maxValue: req.body.maxValue === "" || req.body.maxValue === null || req.body.maxValue === undefined ? null : req.body.maxValue,
+      };
+
+      const result = insertCommissionRuleSchema.partial().safeParse(processedData);
       if (!result.success) {
         return res.status(400).json({ message: "Invalid commission rule data", errors: result.error.errors });
       }
@@ -674,6 +694,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(commissionRule);
     } catch (error) {
+      console.error("Error updating commission rule:", error);
       res.status(500).json({ message: "Failed to update commission rule" });
     }
   });
