@@ -69,9 +69,22 @@ export const inventory = pgTable("inventory", {
 export const shippingRates = pgTable("shipping_rates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   country: text("country").notNull(),
-  baseRate: decimal("base_rate", { precision: 10, scale: 2 }).notNull(),
-  perKgRate: decimal("per_kg_rate", { precision: 10, scale: 2 }).notNull(),
-  commissionRate: decimal("commission_rate", { precision: 5, scale: 4 }).notNull().default("0.15"),
+  category: text("category").notNull(), // e.g., normal, perfumes, household, etc.
+  pricePerKg: decimal("price_per_kg", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").notNull().default("USD"), // USD, GBP, LYD, etc.
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const commissionRules = pgTable("commission_rules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  country: text("country").notNull(),
+  minValue: decimal("min_value", { precision: 10, scale: 2 }).notNull(),
+  maxValue: decimal("max_value", { precision: 10, scale: 2 }), // NULL = no max
+  percentage: decimal("percentage", { precision: 5, scale: 4 }).notNull(),
+  fixedFee: decimal("fixed_fee", { precision: 10, scale: 2 }).notNull().default("0"), // for cases like "$1 purchase tax"
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const settings = pgTable("settings", {
@@ -114,6 +127,14 @@ export const insertInventorySchema = createInsertSchema(inventory).omit({
 
 export const insertShippingRateSchema = createInsertSchema(shippingRates).omit({
   id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCommissionRuleSchema = createInsertSchema(commissionRules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertSettingSchema = createInsertSchema(settings).omit({
@@ -146,6 +167,9 @@ export type Inventory = typeof inventory.$inferSelect;
 
 export type InsertShippingRate = z.infer<typeof insertShippingRateSchema>;
 export type ShippingRate = typeof shippingRates.$inferSelect;
+
+export type InsertCommissionRule = z.infer<typeof insertCommissionRuleSchema>;
+export type CommissionRule = typeof commissionRules.$inferSelect;
 
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 export type Setting = typeof settings.$inferSelect;
