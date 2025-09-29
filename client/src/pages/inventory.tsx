@@ -17,10 +17,12 @@ import { insertInventorySchema } from "@shared/schema";
 import type { Inventory, InsertInventory } from "@shared/schema";
 import { z } from "zod";
 
-const createInventorySchema = insertInventorySchema.omit({ id: true, createdAt: true, updatedAt: true }).extend({
+const createInventorySchema = z.object({
+  productName: z.string().min(1, "Product name is required"),
+  sku: z.string().min(1, "SKU is required"),
+  quantity: z.string().min(1, "Quantity is required"),
   unitCost: z.string().min(1, "Unit cost is required"),
   sellingPrice: z.string().min(1, "Selling price is required"),
-  quantity: z.string().min(1, "Quantity is required"),
   lowStockThreshold: z.string().min(1, "Low stock threshold is required"),
 });
 
