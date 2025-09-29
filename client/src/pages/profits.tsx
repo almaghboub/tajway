@@ -1,16 +1,120 @@
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, DollarSign, Calculator, FileText } from "lucide-react";
+import { useState } from "react";
+import { TrendingUp, DollarSign, Calculator, FileText, Printer } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Header } from "@/components/header";
 import { analyticsApi } from "@/lib/api";
+import { SalesReport } from "@/components/sales-report";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Profits() {
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [selectedReportType, setSelectedReportType] = useState<"profit" | "commission" | "financial">("profit");
+  const [reportData, setReportData] = useState<any>(null);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const { toast } = useToast();
+
   const { data: metrics, isLoading } = useQuery({
     queryKey: ["/api/analytics/dashboard"],
     queryFn: analyticsApi.getDashboardMetrics,
   });
+
+  const generateReport = async (reportType: "profit" | "commission" | "financial") => {
+    setIsGeneratingReport(true);
+    setSelectedReportType(reportType);
+    
+    try {
+      // Fetch detailed data for reports
+      const [ordersResponse, customersResponse] = await Promise.all([
+        apiRequest("GET", "/api/orders"),
+        apiRequest("GET", "/api/customers")
+      ]);
+      
+      const orders = await ordersResponse.json();
+      const customers = await customersResponse.json();
+      
+      // Create customer lookup map
+      const customerMap = customers.reduce((acc: any, customer: any) => {
+        acc[customer.id] = customer;
+        return acc;
+      }, {});
+      
+      // Process orders data
+      const orderSummaries = orders.map((order: any) => {
+        const customer = customerMap[order.customerId];
+        return {
+          id: order.id,
+          orderNumber: order.orderNumber,
+          customerName: customer ? `${customer.firstName} ${customer.lastName}` : "Unknown",
+          totalAmount: order.totalAmount,
+          profit: order.profit,
+          commission: order.commission,
+          country: customer?.country || "Unknown",
+          createdAt: order.createdAt
+        };
+      });
+      
+      // Calculate totals
+      const totalRevenue = orders.reduce((sum: number, order: any) => sum + parseFloat(order.totalAmount), 0);
+      const totalProfit = orders.reduce((sum: number, order: any) => sum + parseFloat(order.profit), 0);
+      const totalCommission = orders.reduce((sum: number, order: any) => sum + parseFloat(order.commission), 0);
+      const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+      
+      // Create country breakdown for commission report
+      const countryBreakdown = Object.values(
+        orderSummaries.reduce((acc: any, order: any) => {
+          const country = order.country;
+          if (!acc[country]) {
+            acc[country] = {
+              country,
+              revenue: 0,
+              commission: 0,
+              commissionRate: 0.15, // Default 15%
+              orderCount: 0
+            };
+          }
+          acc[country].revenue += parseFloat(order.totalAmount);
+          acc[country].commission += parseFloat(order.commission);
+          acc[country].orderCount += 1;
+          // Calculate average commission rate for this country
+          acc[country].commissionRate = acc[country].revenue > 0 ? acc[country].commission / acc[country].revenue : 0.15;
+          return acc;
+        }, {})
+      );
+      
+      const reportData = {
+        totalRevenue,
+        totalProfit,
+        totalCommission,
+        profitMargin,
+        orderCount: orders.length,
+        orders: reportType === "profit" ? orderSummaries : undefined,
+        countryBreakdown: reportType === "commission" ? countryBreakdown : undefined,
+        periodStart: orders.length > 0 ? orders[orders.length - 1].createdAt : undefined,
+        periodEnd: orders.length > 0 ? orders[0].createdAt : undefined
+      };
+      
+      setReportData(reportData);
+      setIsReportModalOpen(true);
+      
+    } catch (error) {
+      toast({
+        title: "Error generating report",
+        description: "Failed to fetch data for report generation",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
     <div className="flex-1 flex flex-col">
@@ -149,19 +253,36 @@ export default function Profits() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button className="h-auto p-4 flex-col" data-testid="button-profit-report">
+              <Button 
+                className="h-auto p-4 flex-col" 
+                onClick={() => generateReport("profit")}
+                disabled={isGeneratingReport}
+                data-testid="button-profit-report"
+              >
                 <FileText className="w-6 h-6 mb-2" />
                 <span className="font-medium">Profit Report</span>
-                <span className="text-xs text-muted-foreground">Monthly profit analysis</span>
+                <span className="text-xs text-muted-foreground">Order-wise profit analysis</span>
               </Button>
 
-              <Button variant="outline" className="h-auto p-4 flex-col" data-testid="button-commission-report">
+              <Button 
+                variant="outline" 
+                className="h-auto p-4 flex-col" 
+                onClick={() => generateReport("commission")}
+                disabled={isGeneratingReport}
+                data-testid="button-commission-report"
+              >
                 <Calculator className="w-6 h-6 mb-2" />
                 <span className="font-medium">Commission Report</span>
                 <span className="text-xs text-muted-foreground">Country-wise commissions</span>
               </Button>
 
-              <Button variant="secondary" className="h-auto p-4 flex-col" data-testid="button-financial-summary">
+              <Button 
+                variant="secondary" 
+                className="h-auto p-4 flex-col" 
+                onClick={() => generateReport("financial")}
+                disabled={isGeneratingReport}
+                data-testid="button-financial-summary"
+              >
                 <TrendingUp className="w-6 h-6 mb-2" />
                 <span className="font-medium">Financial Summary</span>
                 <span className="text-xs text-muted-foreground">Complete financial overview</span>
@@ -185,6 +306,42 @@ export default function Profits() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Sales Report Modal */}
+        <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
+          <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto" data-testid="modal-sales-report">
+            <DialogHeader>
+              <div className="flex justify-between items-center">
+                <DialogTitle>Sales Report Preview</DialogTitle>
+                <div className="flex space-x-2">
+                  <Button onClick={handlePrint} data-testid="button-print-report">
+                    <Printer className="w-4 h-4 mr-2" />
+                    Print Report
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsReportModalOpen(false)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </DialogHeader>
+            {isGeneratingReport ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-muted-foreground mt-2">Generating report...</p>
+              </div>
+            ) : reportData ? (
+              <SalesReport 
+                reportType={selectedReportType} 
+                data={reportData} 
+                onPrint={handlePrint} 
+              />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Failed to generate report</p>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
