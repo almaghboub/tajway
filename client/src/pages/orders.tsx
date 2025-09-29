@@ -31,6 +31,18 @@ export default function Orders() {
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [shippingCost, setShippingCost] = useState(0);
+  const [shippingCountry, setShippingCountry] = useState("");
+  const [shippingCategory, setShippingCategory] = useState("normal");
+  const [shippingWeight, setShippingWeight] = useState(1);
+  const [shippingCalculation, setShippingCalculation] = useState<{
+    base_shipping: number;
+    commission: number;
+    total: number;
+    currency: string;
+    orderValue: number;
+    itemsHash: string;
+  } | null>(null);
+  const [calculatingShipping, setCalculatingShipping] = useState(false);
   const [notes, setNotes] = useState("");
   
   const { toast } = useToast();
@@ -116,7 +128,75 @@ export default function Orders() {
     setSelectedCustomerId("");
     setOrderItems([]);
     setShippingCost(0);
+    setShippingCountry("");
+    setShippingCategory("normal");
+    setShippingWeight(1);
+    setShippingCalculation(null);
     setNotes("");
+  };
+
+  // Generate hash of order items to detect changes
+  const getItemsHash = () => {
+    return JSON.stringify(orderItems.map(item => ({
+      id: item.productId,
+      qty: item.quantity,
+      price: item.unitPrice
+    })));
+  };
+
+  // Check if shipping calculation is stale
+  const isShippingCalculationStale = () => {
+    if (!shippingCalculation) return false;
+    const currentItemsHash = getItemsHash();
+    const currentOrderValue = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
+    
+    return (
+      shippingCalculation.itemsHash !== currentItemsHash ||
+      Math.abs(shippingCalculation.orderValue - currentOrderValue) > 0.01
+    );
+  };
+
+  const calculateShippingCost = async () => {
+    if (!shippingCountry || !shippingCategory || !shippingWeight || orderItems.length === 0) {
+      return;
+    }
+
+    setCalculatingShipping(true);
+    try {
+      const orderValue = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
+      const itemsHash = getItemsHash();
+      
+      const response = await apiRequest("POST", "/api/calculate-shipping", {
+        country: shippingCountry,
+        category: shippingCategory,
+        weight: shippingWeight,
+        orderValue: orderValue
+      });
+
+      if (response.ok) {
+        const calculation = await response.json();
+        setShippingCalculation({
+          ...calculation,
+          orderValue,
+          itemsHash
+        });
+        setShippingCost(calculation.base_shipping);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to calculate shipping cost",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to calculate shipping cost",
+        variant: "destructive",
+      });
+    } finally {
+      setCalculatingShipping(false);
+    }
   };
 
   const addOrderItem = () => {
@@ -154,11 +234,45 @@ export default function Orders() {
 
   const calculateTotals = () => {
     const subtotal = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
-    const total = subtotal + shippingCost;
-    const commission = total * 0.15; // Default commission rate
-    const profit = subtotal - commission;
     
-    return { subtotal, total, commission, profit };
+    // Use dynamic shipping calculation if available
+    if (shippingCalculation) {
+      // Convert shipping amounts to USD if needed (simplified conversion for demo)
+      const exchangeRates = { USD: 1, EUR: 1.1, GBP: 1.25, CNY: 0.14 }; // Simplified rates
+      const usdRate = exchangeRates[shippingCalculation.currency as keyof typeof exchangeRates] || 1;
+      
+      const shippingInUSD = shippingCalculation.base_shipping * usdRate;
+      const commissionInUSD = shippingCalculation.commission * usdRate;
+      
+      const total = subtotal + shippingInUSD;
+      const profit = subtotal - commissionInUSD;
+      
+      return { 
+        subtotal, 
+        total, 
+        commission: commissionInUSD, 
+        profit,
+        shippingCost: shippingInUSD,
+        currency: 'USD', // Normalize to USD
+        originalCurrency: shippingCalculation.currency,
+        originalShipping: shippingCalculation.base_shipping,
+        originalCommission: shippingCalculation.commission
+      };
+    } else {
+      // Fallback to manual calculation
+      const total = subtotal + shippingCost;
+      const commission = total * 0.15; // Default commission rate
+      const profit = subtotal - commission;
+      
+      return { 
+        subtotal, 
+        total, 
+        commission, 
+        profit,
+        shippingCost,
+        currency: 'USD'
+      };
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -173,15 +287,24 @@ export default function Orders() {
       return;
     }
 
-    const { total, commission, profit } = calculateTotals();
+    if (!shippingCalculation) {
+      toast({
+        title: "Validation Error",
+        description: "Please calculate shipping before creating the order",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const totals = calculateTotals();
     
     const order: InsertOrder = {
       customerId: selectedCustomerId,
       status: "pending",
-      totalAmount: total.toFixed(2),
-      shippingCost: shippingCost.toFixed(2),
-      commission: commission.toFixed(2),
-      profit: profit.toFixed(2),
+      totalAmount: totals.total.toFixed(2),
+      shippingCost: totals.shippingCost.toFixed(2),
+      commission: totals.commission.toFixed(2),
+      profit: totals.profit.toFixed(2),
       notes: notes || undefined,
     };
 
@@ -465,19 +588,73 @@ export default function Orders() {
                 )}
               </div>
 
-              {/* Shipping and Notes */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="shipping">Shipping Cost</Label>
-                  <Input
-                    id="shipping"
-                    type="number"
-                    step="0.01"
-                    value={shippingCost}
-                    onChange={(e) => setShippingCost(parseFloat(e.target.value) || 0)}
-                    data-testid="input-shipping-cost"
-                  />
+              {/* Shipping Configuration and Notes */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="shipping-country">Shipping Country</Label>
+                    <Select value={shippingCountry} onValueChange={setShippingCountry}>
+                      <SelectTrigger data-testid="select-shipping-country">
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="China">China</SelectItem>
+                        <SelectItem value="Turkey">Turkey</SelectItem>
+                        <SelectItem value="UK">UK</SelectItem>
+                        <SelectItem value="UAE">UAE</SelectItem>
+                        <SelectItem value="Germany">Germany</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="shipping-category">Shipping Category</Label>
+                    <Select value={shippingCategory} onValueChange={setShippingCategory}>
+                      <SelectTrigger data-testid="select-shipping-category">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="perfumes">Perfumes</SelectItem>
+                        <SelectItem value="electronics">Electronics</SelectItem>
+                        <SelectItem value="clothing">Clothing</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="shipping-weight">Weight (kg)</Label>
+                    <Input
+                      id="shipping-weight"
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      value={shippingWeight}
+                      onChange={(e) => setShippingWeight(parseFloat(e.target.value) || 1)}
+                      data-testid="input-shipping-weight"
+                    />
+                  </div>
                 </div>
+                
+                <div className="flex items-center gap-4">
+                  <Button
+                    type="button"
+                    onClick={calculateShippingCost}
+                    disabled={calculatingShipping || !shippingCountry || !shippingCategory || orderItems.length === 0}
+                    data-testid="button-calculate-shipping"
+                  >
+                    {calculatingShipping ? "Calculating..." : "Calculate Shipping"}
+                  </Button>
+                  
+                  {shippingCalculation && (
+                    <div className="text-sm text-green-600 font-medium" data-testid="text-shipping-calculated">
+                      Calculated: Shipping {shippingCalculation.currency} {shippingCalculation.base_shipping.toFixed(2)}, 
+                      Commission {shippingCalculation.currency} {shippingCalculation.commission.toFixed(2)}
+                      {shippingCalculation.currency !== 'USD' && (
+                        <span className="text-blue-600"> (converted to USD in totals)</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <Label htmlFor="notes">Notes (Optional)</Label>
                   <Input
@@ -501,41 +678,67 @@ export default function Orders() {
                     </div>
                     <div className="flex justify-between">
                       <span>Shipping:</span>
-                      <span data-testid="text-shipping">${shippingCost.toFixed(2)}</span>
+                      <span data-testid="text-shipping">
+                        {calculateTotals().currency} {calculateTotals().shippingCost.toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Commission (15%):</span>
-                      <span data-testid="text-commission">${calculateTotals().commission.toFixed(2)}</span>
+                      <span>Commission{shippingCalculation ? ' (Dynamic)' : ' (15%)'}:</span>
+                      <span data-testid="text-commission">
+                        {calculateTotals().currency} {calculateTotals().commission.toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between font-medium text-lg border-t pt-2">
                       <span>Total:</span>
-                      <span data-testid="text-total">${calculateTotals().total.toFixed(2)}</span>
+                      <span data-testid="text-total">
+                        {calculateTotals().currency} {calculateTotals().total.toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between text-green-600 font-medium">
                       <span>Estimated Profit:</span>
-                      <span data-testid="text-profit">${calculateTotals().profit.toFixed(2)}</span>
+                      <span data-testid="text-profit">
+                        {calculateTotals().currency} {calculateTotals().profit.toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Form Actions */}
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsModalOpen(false)}
-                  data-testid="button-cancel"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={createOrderMutation.isPending || !selectedCustomerId || orderItems.length === 0}
-                  data-testid="button-create-order"
-                >
-                  {createOrderMutation.isPending ? "Creating..." : "Create Order"}
-                </Button>
+              <div className="space-y-2">
+                {!shippingCalculation && orderItems.length > 0 && (
+                  <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded" data-testid="text-shipping-required">
+                    Please calculate shipping before creating the order.
+                  </div>
+                )}
+                {shippingCalculation && isShippingCalculationStale() && (
+                  <div className="text-sm text-red-600 bg-red-50 p-2 rounded" data-testid="text-shipping-stale">
+                    Order items changed. Please recalculate shipping before creating the order.
+                  </div>
+                )}
+                <div className="flex justify-end space-x-2 pt-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsModalOpen(false)}
+                    data-testid="button-cancel"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={
+                      createOrderMutation.isPending || 
+                      !selectedCustomerId || 
+                      orderItems.length === 0 || 
+                      !shippingCalculation || 
+                      isShippingCalculationStale()
+                    }
+                    data-testid="button-create-order"
+                  >
+                    {createOrderMutation.isPending ? "Creating..." : "Create Order"}
+                  </Button>
+                </div>
               </div>
             </form>
           </DialogContent>
