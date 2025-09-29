@@ -26,6 +26,7 @@ const resources = {
       export: "Export",
       print: "Print",
       loading: "Loading...",
+      loadingShipmentDetails: "Loading shipment details...",
       noData: "No data available",
       actions: "Actions",
       status: "Status",
@@ -107,6 +108,8 @@ const resources = {
       
       // Invoice
       invoice: "INVOICE",
+      invoiceNumber: "Invoice #",
+      date: "Date",
       from: "From",
       billTo: "Bill To",
       shipmentDetails: "Shipment Details",
@@ -169,6 +172,7 @@ const resources = {
       export: "تصدير",
       print: "طباعة",
       loading: "جاري التحميل...",
+      loadingShipmentDetails: "جاري تحميل تفاصيل الشحنة...",
       noData: "لا توجد بيانات",
       actions: "إجراءات",
       status: "الحالة",
@@ -250,6 +254,8 @@ const resources = {
       
       // Invoice
       invoice: "فاتورة",
+      invoiceNumber: "رقم الفاتورة",
+      date: "التاريخ",
       from: "من",
       billTo: "الفاتورة إلى",
       shipmentDetails: "تفاصيل الشحنة",

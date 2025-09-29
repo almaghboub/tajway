@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import logoPath from "@assets/lynx-logo.png";
 
 interface OrderWithItems {
@@ -72,6 +73,7 @@ function numberToWords(num: number): string {
 }
 
 export function Invoice({ order, onPrint }: InvoiceProps) {
+  const { t } = useTranslation();
   const subtotal = order.items?.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) || 0;
   const shipping = parseFloat(order.shippingCost);
   const commission = parseFloat(order.commission);
@@ -87,15 +89,15 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
             <img src={logoPath} alt="Lynx Logo" className="h-20 w-auto" />
           </div>
           <div className="text-right">
-            <h2 className="text-3xl font-bold text-red-700 mb-2">INVOICE</h2>
+            <h2 className="text-3xl font-bold text-red-700 mb-2">{t('invoice')}</h2>
             <div className="text-sm space-y-1">
-              <p className="font-semibold">Invoice #: {order.orderNumber}</p>
-              <p>Date: {new Date(order.createdAt).toLocaleDateString('en-US', { 
+              <p className="font-semibold">{t('invoiceNumber')}: {order.orderNumber}</p>
+              <p>{t('date')}: {new Date(order.createdAt).toLocaleDateString('en-US', { 
                 year: 'numeric', 
                 month: 'long', 
                 day: 'numeric' 
               })}</p>
-              <p className="text-gray-600">Status: <span className="capitalize font-semibold text-red-700">{order.status}</span></p>
+              <p className="text-gray-600">{t('status')}: <span className="capitalize font-semibold text-red-700">{t(order.status)}</span></p>
             </div>
           </div>
         </div>
@@ -105,17 +107,16 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
       <div className="grid grid-cols-2 gap-8 mb-8">
         {/* From Section */}
         <div>
-          <h3 className="text-sm font-bold text-red-700 mb-3 uppercase tracking-wide">From:</h3>
+          <h3 className="text-sm font-bold text-red-700 mb-3 uppercase tracking-wide">{t('from')}:</h3>
           <div className="space-y-1">
             <p className="font-bold text-lg">Lynx</p>
-            <p className="text-sm">International Shipping & Purchasing</p>
-            <p className="text-sm text-gray-600">للشحن والشراء الدولي</p>
+            <p className="text-sm">{t('companyTagline')}</p>
           </div>
         </div>
 
         {/* Bill To Section */}
         <div>
-          <h3 className="text-sm font-bold text-red-700 mb-3 uppercase tracking-wide">Bill To:</h3>
+          <h3 className="text-sm font-bold text-red-700 mb-3 uppercase tracking-wide">{t('billTo')}:</h3>
           <div className="bg-gray-50 p-4 rounded-lg space-y-1">
             <p className="font-bold">{order.customer.firstName} {order.customer.lastName}</p>
             {order.customer.email && <p className="text-sm">{order.customer.email}</p>}
@@ -135,15 +136,15 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
 
       {/* Order Items Table */}
       <div className="mb-8">
-        <h3 className="text-sm font-bold text-red-700 mb-3 uppercase tracking-wide">Shipment Details:</h3>
+        <h3 className="text-sm font-bold text-red-700 mb-3 uppercase tracking-wide">{t('shipmentDetails')}:</h3>
         <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="bg-red-700 text-white">
-                <th className="px-4 py-3 text-left font-semibold">Product Description</th>
-                <th className="px-4 py-3 text-center font-semibold">Qty</th>
-                <th className="px-4 py-3 text-right font-semibold">Unit Price</th>
-                <th className="px-4 py-3 text-right font-semibold">Total</th>
+                <th className="px-4 py-3 text-left font-semibold">{t('productDescription')}</th>
+                <th className="px-4 py-3 text-center font-semibold">{t('qty')}</th>
+                <th className="px-4 py-3 text-right font-semibold">{t('unitPrice')}</th>
+                <th className="px-4 py-3 text-right font-semibold">{t('total')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -157,7 +158,7 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
               )) || (
                 <tr>
                   <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
-                    Loading shipment details...
+                    {t('loadingShipmentDetails')}
                   </td>
                 </tr>
               )}
@@ -171,20 +172,20 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
         <div className="w-96">
           <div className="bg-gray-50 rounded-lg p-6 space-y-3">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Subtotal:</span>
+              <span className="text-gray-600">{t('subtotal')}:</span>
               <span className="font-semibold">${subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Shipping & Handling:</span>
+              <span className="text-gray-600">{t('shippingHandling')}:</span>
               <span className="font-semibold">${shipping.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Commission:</span>
+              <span className="text-gray-600">{t('commission')}:</span>
               <span className="font-semibold">${commission.toFixed(2)}</span>
             </div>
             <div className="border-t-2 border-gray-300 pt-3 mt-3">
               <div className="flex justify-between items-center">
-                <span className="text-lg font-bold text-red-700">TOTAL:</span>
+                <span className="text-lg font-bold text-red-700">{t('total')}:</span>
                 <span className="text-2xl font-bold text-red-700">${total.toFixed(2)}</span>
               </div>
             </div>
@@ -195,7 +196,7 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
       {/* Total in Words */}
       <div className="mb-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
         <p className="text-sm">
-          <span className="font-semibold text-blue-800">Amount in Words: </span>
+          <span className="font-semibold text-blue-800">{t('amountInWords')}: </span>
           <span className="text-blue-900">{totalInWords}</span>
         </p>
       </div>
@@ -203,7 +204,7 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
       {/* Notes Section */}
       {order.notes && (
         <div className="mb-8 bg-amber-50 border-l-4 border-amber-500 p-4 rounded">
-          <h3 className="text-sm font-bold text-amber-800 mb-2 uppercase tracking-wide">Notes:</h3>
+          <h3 className="text-sm font-bold text-amber-800 mb-2 uppercase tracking-wide">{t('notes')}:</h3>
           <p className="text-sm text-amber-900">{order.notes}</p>
         </div>
       )}
@@ -211,23 +212,23 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
       {/* Signature Section */}
       <div className="mb-8 grid grid-cols-2 gap-12">
         <div>
-          <h3 className="text-sm font-bold text-gray-700 mb-6 uppercase tracking-wide">Authorized By:</h3>
+          <h3 className="text-sm font-bold text-gray-700 mb-6 uppercase tracking-wide">{t('authorizedBy')}:</h3>
           <div className="border-b-2 border-gray-400 pb-1 mb-2 h-16"></div>
-          <p className="text-sm text-gray-600 text-center">Signature</p>
+          <p className="text-sm text-gray-600 text-center">{t('signature')}</p>
         </div>
         <div>
-          <h3 className="text-sm font-bold text-gray-700 mb-6 uppercase tracking-wide">Received By:</h3>
+          <h3 className="text-sm font-bold text-gray-700 mb-6 uppercase tracking-wide">{t('receivedBy')}:</h3>
           <div className="border-b-2 border-gray-400 pb-1 mb-2 h-16"></div>
-          <p className="text-sm text-gray-600 text-center">Signature & Date</p>
+          <p className="text-sm text-gray-600 text-center">{t('signatureDate')}</p>
         </div>
       </div>
 
       {/* Footer */}
       <div className="border-t-2 border-gray-200 pt-6 mt-8">
         <div className="text-center space-y-2">
-          <p className="text-sm font-semibold text-red-700">Thank you for choosing Lynx!</p>
-          <p className="text-xs text-gray-600">International Shipping & Purchasing - للشحن والشراء الدولي</p>
-          <p className="text-xs text-gray-500 mt-4">This invoice was automatically generated by Lynx Logistics Management System</p>
+          <p className="text-sm font-semibold text-red-700">{t('thankYou')}</p>
+          <p className="text-xs text-gray-600">{t('companyTagline')}</p>
+          <p className="text-xs text-gray-500 mt-4">{t('autoGenerated')}</p>
         </div>
       </div>
 
