@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 import { TrendingUp, DollarSign, Percent, Package, Clock, Plus, UserPlus, PackagePlus, FileText, Database, ShieldCheck, Settings as SettingsIcon, Check, BarChart3, PieChart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Header } from "@/components/header";
 import { analyticsApi } from "@/lib/api";
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { data: metrics, isLoading } = useQuery({
     queryKey: ["/api/analytics/dashboard"],
@@ -17,8 +19,8 @@ export default function Dashboard() {
   return (
     <div className="flex-1 flex flex-col min-h-screen">
       <Header 
-        title="Dashboard" 
-        description="Welcome back! Here's your logistics overview." 
+        title={t('dashboard')} 
+        description={t('welcomeBack')} 
       />
       
       <div className="flex-1 p-6 space-y-6 bg-muted/20">
@@ -28,7 +30,7 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Profit</p>
+                  <p className="text-sm text-muted-foreground">{t('totalProfit')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
@@ -38,7 +40,7 @@ export default function Dashboard() {
                   )}
                   <p className="text-xs text-green-600 flex items-center mt-1">
                     <TrendingUp className="w-3 h-3 mr-1" />
-                    +18.7% vs last period
+                    +18.7% {t('vsLastPeriod')}
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -52,7 +54,7 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Revenue</p>
+                  <p className="text-sm text-muted-foreground">{t('totalRevenue')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
@@ -60,7 +62,7 @@ export default function Dashboard() {
                       ${metrics?.totalRevenue?.toFixed(2) || "0.00"}
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1">All orders total</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('allOrdersTotal')}</p>
                 </div>
                 <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                   <DollarSign className="w-5 h-5 text-primary" />
@@ -73,7 +75,7 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Profit Margin</p>
+                  <p className="text-sm text-muted-foreground">{t('profitMargin')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
@@ -81,7 +83,7 @@ export default function Dashboard() {
                       {metrics?.profitMargin?.toFixed(1) || "0.0"}%
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1">Profit vs Revenue</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('profitVsRevenue')}</p>
                 </div>
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                   <Percent className="w-5 h-5 text-purple-600" />
@@ -94,7 +96,7 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Active Orders</p>
+                  <p className="text-sm text-muted-foreground">{t('activeOrders')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-16 mt-1" />
                   ) : (
@@ -104,7 +106,7 @@ export default function Dashboard() {
                   )}
                   <p className="text-xs text-orange-600 flex items-center mt-1">
                     <Clock className="w-3 h-3 mr-1" />
-                    3 urgent
+                    3 {t('urgent')}
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -119,7 +121,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card data-testid="card-revenue-chart">
             <CardHeader>
-              <CardTitle>Revenue Trend</CardTitle>
+              <CardTitle>{t('revenueTrend')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
@@ -134,7 +136,7 @@ export default function Dashboard() {
 
           <Card data-testid="card-order-status-chart">
             <CardHeader>
-              <CardTitle>Order Status Distribution</CardTitle>
+              <CardTitle>{t('orderStatus')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
@@ -153,7 +155,7 @@ export default function Dashboard() {
           <Card data-testid="card-recent-orders">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Recent Orders</CardTitle>
+                <CardTitle>{t('recentOrders')}</CardTitle>
                 <Button variant="link" className="text-primary hover:text-primary/80 text-sm font-medium">
                   View All
                 </Button>
@@ -172,7 +174,7 @@ export default function Dashboard() {
 
           <Card data-testid="card-system-status">
             <CardHeader>
-              <CardTitle>System Status</CardTitle>
+              <CardTitle>{t('systemHealth')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
