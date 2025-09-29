@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -31,8 +32,10 @@ export default function Orders() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<OrderWithCustomer | null>(null);
   const [viewingOrder, setViewingOrder] = useState<OrderWithCustomer | null>(null);
+  const [deletingOrder, setDeletingOrder] = useState<OrderWithCustomer | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<any>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
@@ -138,6 +141,33 @@ export default function Orders() {
     },
   });
 
+  const deleteOrderMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest("DELETE", `/api/orders/${id}`);
+      if (!response.ok) {
+        throw new Error("Failed to delete order");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/dashboard"] });
+      toast({
+        title: "Success",
+        description: "Order deleted successfully",
+      });
+      setIsDeleteDialogOpen(false);
+      setDeletingOrder(null);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete order",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Query for order details when printing
   const { data: orderWithItems, isLoading: isLoadingOrderItems } = useQuery({
     queryKey: ["/api/orders", selectedOrderForPrint?.id, "items"],
@@ -185,6 +215,16 @@ export default function Orders() {
   const openViewModal = (order: OrderWithCustomer) => {
     setViewingOrder(order);
     setIsViewModalOpen(true);
+  };
+
+  const openDeleteDialog = (order: OrderWithCustomer) => {
+    setDeletingOrder(order);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (!deletingOrder) return;
+    deleteOrderMutation.mutate(deletingOrder.id);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -589,6 +629,14 @@ export default function Orders() {
                           >
                             <Printer className="w-4 h-4 mr-1" />
                             Print
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            onClick={() => openDeleteDialog(order)}
+                            data-testid={`button-delete-order-${order.id}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -1144,6 +1192,37 @@ export default function Orders() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent data-testid="dialog-delete-order">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Order</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this order? This action cannot be undone.
+                {deletingOrder && (
+                  <div className="mt-2 p-2 bg-muted rounded text-sm">
+                    <strong>Order #{deletingOrder.id}</strong> - {deletingOrder.customerName}
+                  </div>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+              <Button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleDelete();
+                  setIsDeleteDialogOpen(false);
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                data-testid="button-confirm-delete"
+              >
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

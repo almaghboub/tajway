@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Users, Search, Filter, X } from "lucide-react";
+import { Plus, Users, Search, Filter, X, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,8 +22,10 @@ export default function Customers() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [viewingCustomer, setViewingCustomer] = useState<Customer | null>(null);
+  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
   const [countryFilters, setCountryFilters] = useState<string[]>([]);
   const [formData, setFormData] = useState<InsertCustomer>({
     firstName: "",
@@ -128,6 +131,32 @@ export default function Customers() {
     },
   });
 
+  const deleteCustomerMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest("DELETE", `/api/customers/${id}`);
+      if (!response.ok) {
+        throw new Error("Failed to delete customer");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      toast({
+        title: "Success",
+        description: "Customer deleted successfully",
+      });
+      setIsDeleteDialogOpen(false);
+      setDeletingCustomer(null);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete customer",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createCustomerMutation.mutate(formData);
@@ -157,6 +186,16 @@ export default function Customers() {
   const openViewModal = (customer: Customer) => {
     setViewingCustomer(customer);
     setIsViewModalOpen(true);
+  };
+
+  const openDeleteDialog = (customer: Customer) => {
+    setDeletingCustomer(customer);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (!deletingCustomer) return;
+    deleteCustomerMutation.mutate(deletingCustomer.id);
   };
 
   const toggleCountryFilter = (country: string) => {
@@ -333,6 +372,14 @@ export default function Customers() {
                             data-testid={`button-view-customer-${customer.id}`}
                           >
                             View
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            onClick={() => openDeleteDialog(customer)}
+                            data-testid={`button-delete-customer-${customer.id}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -657,6 +704,37 @@ export default function Customers() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent data-testid="dialog-delete-customer">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Customer</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this customer? This action cannot be undone.
+                {deletingCustomer && (
+                  <div className="mt-2 p-2 bg-muted rounded text-sm">
+                    <strong>{deletingCustomer.firstName} {deletingCustomer.lastName}</strong> - {deletingCustomer.email}
+                  </div>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+              <Button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleDelete();
+                  setIsDeleteDialogOpen(false);
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                data-testid="button-confirm-delete"
+              >
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

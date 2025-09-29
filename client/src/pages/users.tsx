@@ -1,12 +1,13 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Users2, Search, Filter, X } from "lucide-react";
+import { Plus, Users2, Search, Filter, X, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -46,7 +47,9 @@ export default function Users() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<SafeUser | null>(null);
+  const [deletingUser, setDeletingUser] = useState<SafeUser | null>(null);
   const [roleFilters, setRoleFilters] = useState<string[]>(["owner", "customer_service", "receptionist"]);
   const { toast } = useToast();
 
@@ -152,6 +155,32 @@ export default function Users() {
     },
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest("DELETE", `/api/users/${id}`);
+      if (!response.ok) {
+        throw new Error("Failed to delete user");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({
+        title: "User deleted successfully",
+        description: "The user has been removed from the system.",
+      });
+      setIsDeleteDialogOpen(false);
+      setDeletingUser(null);
+    },
+    onError: () => {
+      toast({
+        title: "Error deleting user",
+        description: "Failed to delete user",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateUser = (data: CreateUserForm) => {
     const { confirmPassword, ...userData } = data;
     createUserMutation.mutate(userData);
@@ -185,6 +214,16 @@ export default function Users() {
       confirmPassword: "",
     });
     setIsEditModalOpen(true);
+  };
+
+  const openDeleteDialog = (user: SafeUser) => {
+    setDeletingUser(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (!deletingUser) return;
+    deleteUserMutation.mutate(deletingUser.id);
   };
 
   const toggleRoleFilter = (role: string) => {
@@ -381,14 +420,24 @@ export default function Users() {
                         {new Date(user.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => openEditModal(user)}
-                          data-testid={`button-edit-user-${user.id}`}
-                        >
-                          Edit
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => openEditModal(user)}
+                            data-testid={`button-edit-user-${user.id}`}
+                          >
+                            Edit
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            onClick={() => openDeleteDialog(user)}
+                            data-testid={`button-delete-user-${user.id}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -669,6 +718,37 @@ export default function Users() {
             </Form>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent data-testid="dialog-delete-user">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete User</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this user? This action cannot be undone.
+                {deletingUser && (
+                  <div className="mt-2 p-2 bg-muted rounded text-sm">
+                    <strong>{deletingUser.firstName} {deletingUser.lastName}</strong> ({deletingUser.username}) - {deletingUser.email}
+                  </div>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+              <Button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleDelete();
+                  setIsDeleteDialogOpen(false);
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                data-testid="button-confirm-delete"
+              >
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

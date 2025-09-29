@@ -1,12 +1,13 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Box, Search, Filter, AlertTriangle } from "lucide-react";
+import { Plus, Box, Search, Filter, AlertTriangle, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -36,7 +37,9 @@ export default function Inventory() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Inventory | null>(null);
+  const [deletingItem, setDeletingItem] = useState<Inventory | null>(null);
   const [stockStatusFilters, setStockStatusFilters] = useState<string[]>(["in-stock", "low-stock", "out-of-stock"]);
   const { toast } = useToast();
 
@@ -137,6 +140,32 @@ export default function Inventory() {
     },
   });
 
+  const deleteInventoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest("DELETE", `/api/inventory/${id}`);
+      if (!response.ok) {
+        throw new Error("Failed to delete inventory item");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      toast({
+        title: "Item deleted",
+        description: "Inventory item has been deleted successfully.",
+      });
+      setIsDeleteDialogOpen(false);
+      setDeletingItem(null);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete inventory item",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: CreateInventoryForm) => {
     createInventoryMutation.mutate(data);
   };
@@ -157,6 +186,16 @@ export default function Inventory() {
       lowStockThreshold: item.lowStockThreshold.toString(),
     });
     setIsEditModalOpen(true);
+  };
+
+  const openDeleteDialog = (item: Inventory) => {
+    setDeletingItem(item);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (!deletingItem) return;
+    deleteInventoryMutation.mutate(deletingItem.id);
   };
 
   const getStockStatus = (quantity: number, threshold: number) => {
@@ -361,14 +400,24 @@ export default function Inventory() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => openEditModal(item)}
-                            data-testid={`button-edit-item-${item.id}`}
-                          >
-                            Edit
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => openEditModal(item)}
+                              data-testid={`button-edit-item-${item.id}`}
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm" 
+                              onClick={() => openDeleteDialog(item)}
+                              data-testid={`button-delete-item-${item.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -615,6 +664,37 @@ export default function Inventory() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent data-testid="dialog-delete-item">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Inventory Item</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this inventory item? This action cannot be undone.
+              {deletingItem && (
+                <div className="mt-2 p-2 bg-muted rounded text-sm">
+                  <strong>{deletingItem.productName}</strong> (SKU: {deletingItem.sku})
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <Button
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+                setIsDeleteDialogOpen(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              Delete
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
