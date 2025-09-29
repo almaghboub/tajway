@@ -350,7 +350,7 @@ export default function Orders() {
       const commissionInUSD = shippingCalculation.commission * usdRate;
       
       const total = subtotal + shippingInUSD;
-      const profit = subtotal - commissionInUSD;
+      const profit = commissionInUSD;
       
       return { 
         subtotal, 
@@ -367,7 +367,7 @@ export default function Orders() {
       // Fallback to manual calculation
       const total = subtotal + shippingCost;
       const commission = total * 0.15; // Default commission rate
-      const profit = subtotal - commission;
+      const profit = commission;
       
       return { 
         subtotal, 
@@ -1202,7 +1202,7 @@ export default function Orders() {
                 Are you sure you want to delete this order? This action cannot be undone.
                 {deletingOrder && (
                   <div className="mt-2 p-2 bg-muted rounded text-sm">
-                    <strong>Order #{deletingOrder.id}</strong> - {deletingOrder.customerName}
+                    <strong>Order #{deletingOrder.orderNumber}</strong> - {deletingOrder.customer.firstName} {deletingOrder.customer.lastName}
                   </div>
                 )}
               </AlertDialogDescription>

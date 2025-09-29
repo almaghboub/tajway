@@ -632,6 +632,15 @@ export default function Settings() {
     }
   }, [settings]);
 
+  // Apply dark mode to document
+  useEffect(() => {
+    if (settingsState.darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [settingsState.darkMode]);
+
   // Update setting mutation
   const updateSettingMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
