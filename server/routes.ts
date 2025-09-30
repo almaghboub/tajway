@@ -598,7 +598,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const processedData = {
         ...req.body,
-        ownerId: req.user.id,
+        ownerId: req.user!.id,
       };
 
       const result = insertShippingRateSchema.safeParse(processedData);
@@ -659,7 +659,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const processedData = {
         ...req.body,
         maxValue: req.body.maxValue === "" || req.body.maxValue === null || req.body.maxValue === undefined ? null : req.body.maxValue,
-        ownerId: req.user.id,
+        ownerId: req.user!.id,
       };
 
       const result = insertCommissionRuleSchema.safeParse(processedData);
@@ -726,7 +726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(calculation);
     } catch (error) {
       res.status(500).json({ 
-        message: error.message || "Failed to calculate shipping" 
+        message: error instanceof Error ? error.message : "Failed to calculate shipping" 
       });
     }
   });
