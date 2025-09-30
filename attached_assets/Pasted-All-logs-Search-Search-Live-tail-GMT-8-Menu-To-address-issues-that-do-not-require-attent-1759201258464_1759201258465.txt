@@ -1,0 +1,127 @@
+All logs
+Search
+Search
+
+Live tail
+GMT+8
+
+Menu
+
+To address issues that do not require attention, run:
+  npm audit fix
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+Run `npm audit` for details.
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+vite v5.4.20 building for production...
+transforming...
+Browserslist: browsers data (caniuse-lite) is 11 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 1865 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/public/index.html                       1.95 kB │ gzip:   0.74 kB
+../dist/public/assets/lynx-logo-BsCzvO-M.png   53.76 kB
+../dist/public/assets/index-B8KnZTZs.css       66.27 kB │ gzip:  11.58 kB
+../dist/public/assets/index-Bvos7mOb.js       711.66 kB │ gzip: 200.16 kB
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 4.19s
+  dist/index.js  46.5kb
+⚡ Done in 7ms
+==> Uploading build...
+==> Uploaded in 5.9s. Compression took 3.1s
+==> Build successful 🎉
+==> Deploying...
+==> Running 'npm run start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+2:59:02 AM [express] serving on port 10000
+Error initializing default data: NeonDbError: Error connecting to database: fetch failed
+    at execute (file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1549:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonHttpPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-http/session.js:40:20)
+    at async PostgreSQLStorage.getUserByUsername (file:///opt/render/project/src/dist/index.js:295:20)
+    at async PostgreSQLStorage.initializeDefaultData (file:///opt/render/project/src/dist/index.js:175:29) {
+  severity: undefined,
+  code: undefined,
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: undefined,
+  line: undefined,
+  routine: undefined,
+  sourceError: TypeError: fetch failed
+      at node:internal/deps/undici/undici:13510:13
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async execute (file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1548:15)
+      at async NeonHttpPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-http/session.js:40:20)
+      at async PostgreSQLStorage.getUserByUsername (file:///opt/render/project/src/dist/index.js:295:20)
+      at async PostgreSQLStorage.initializeDefaultData (file:///opt/render/project/src/dist/index.js:175:29) {
+    [cause]: Error: getaddrinfo ENOTFOUND host
+        at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26) {
+      errno: -3007,
+      code: 'ENOTFOUND',
+      syscall: 'getaddrinfo',
+      hostname: 'host'
+    }
+  }
+}
+==> Your service is live 🎉
+==> 
+==> ///////////////////////////////////////////////////////////
+==> 
+==> Available at your primary URL https://fixerupper.onrender.com
+==> 
+==> ///////////////////////////////////////////////////////////
+2:59:15 AM [express] GET /api/auth/me 401 in 2ms :: {"message":"Not authenticated"}
+2:59:26 AM [express] POST /api/auth/login 500 in 75ms :: {"message":"Error connecting to database: f…
+NeonDbError: Error connecting to database: fetch failed
+    at execute (file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1549:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonHttpPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-http/session.js:40:20)
+    at async PostgreSQLStorage.getUserByUsername (file:///opt/render/project/src/dist/index.js:295:20)
+    at async Strategy._verify (file:///opt/render/project/src/dist/index.js:606:22)
+2:59:38 AM [express] POST /api/auth/login 500 in 13ms :: {"message":"Error connecting to database: f…
+NeonDbError: Error connecting to database: fetch failed
+    at execute (file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1549:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonHttpPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-http/session.js:40:20)
+    at async PostgreSQLStorage.getUserByUsername (file:///opt/render/project/src/dist/index.js:295:20)
+    at async Strategy._verify (file:///opt/render/project/src/dist/index.js:606:22)
+2:59:55 AM [express] POST /api/auth/login 500 in 9ms :: {"message":"Error connecting to database: fe…
+NeonDbError: Error connecting to database: fetch failed
+    at execute (file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1549:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonHttpPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-http/session.js:40:20)
+    at async PostgreSQLStorage.getUserByUsername (file:///opt/render/project/src/dist/index.js:295:20)
+    at async Strategy._verify (file:///opt/render/project/src/dist/index.js:606:22)
+3:00:10 AM [express] POST /api/auth/login 500 in 116ms :: {"message":"Error connecting to database: …
+NeonDbError: Error connecting to database: fetch failed
+    at execute (file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1549:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonHttpPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-http/session.js:40:20)
+    at async PostgreSQLStorage.getUserByUsername (file:///opt/render/project/src/dist/index.js:295:20)
+    at async Strategy._verify (file:///opt/render/project/src/dist/index.js:606:22)
+3:00:25 AM [express] POST /api/auth/login 500 in 13ms :: {"message":"Error connecting to database: f…
+NeonDbError: Error connecting to database: fetch failed
+    at execute (file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1549:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonHttpPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-http/session.js:40:20)
+    at async PostgreSQLStorage.getUserByUsername (file:///opt/render/project/src/dist/index.js:295:20)
+    at async Strategy._verify (file:///opt/render/project/src/dist/index.js:606:22)
