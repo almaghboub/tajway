@@ -596,12 +596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/shipping-rates", requireOwner, async (req, res) => {
     try {
-      const processedData = {
-        ...req.body,
-        ownerId: req.user!.id,
-      };
-
-      const result = insertShippingRateSchema.safeParse(processedData);
+      const result = insertShippingRateSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ message: "Invalid shipping rate data", errors: result.error.errors });
       }
@@ -659,7 +654,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const processedData = {
         ...req.body,
         maxValue: req.body.maxValue === "" || req.body.maxValue === null || req.body.maxValue === undefined ? null : req.body.maxValue,
-        ownerId: req.user!.id,
       };
 
       const result = insertCommissionRuleSchema.safeParse(processedData);
