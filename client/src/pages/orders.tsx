@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus, Package, Search, Filter, Trash2, X, Printer } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ interface OrderItem {
 }
 
 export default function Orders() {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -96,16 +98,16 @@ export default function Orders() {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/dashboard"] });
       toast({
-        title: "Success",
-        description: "Order created successfully",
+        title: t('success'),
+        description: t('orderCreatedSuccess'),
       });
       setIsModalOpen(false);
       resetForm();
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to create order",
+        title: t('error'),
+        description: t('failedCreateOrder'),
         variant: "destructive",
       });
     },
@@ -124,8 +126,8 @@ export default function Orders() {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/dashboard"] });
       toast({
-        title: "Success",
-        description: "Order updated successfully",
+        title: t('success'),
+        description: t('orderUpdatedSuccess'),
       });
       setIsEditModalOpen(false);
       setEditingOrder(null);
@@ -134,7 +136,7 @@ export default function Orders() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('error'),
         description: error.message,
         variant: "destructive",
       });
@@ -153,16 +155,16 @@ export default function Orders() {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/dashboard"] });
       toast({
-        title: "Success",
-        description: "Order deleted successfully",
+        title: t('success'),
+        description: t('orderDeletedSuccess'),
       });
       setIsDeleteDialogOpen(false);
       setDeletingOrder(null);
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to delete order",
+        title: t('error'),
+        description: t('failedDeleteOrder'),
         variant: "destructive",
       });
     },
@@ -296,15 +298,15 @@ export default function Orders() {
         setShippingCost(calculation.base_shipping);
       } else {
         toast({
-          title: "Error",
-          description: "Failed to calculate shipping cost",
+          title: t('error'),
+          description: t('failedCalculateShipping'),
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to calculate shipping cost",
+        title: t('error'),
+        description: t('failedCalculateShipping'),
         variant: "destructive",
       });
     } finally {
@@ -385,8 +387,8 @@ export default function Orders() {
     
     if (!selectedCustomerId || orderItems.length === 0) {
       toast({
-        title: "Validation Error",
-        description: "Please select a customer and add at least one item",
+        title: t('validationError'),
+        description: t('selectCustomerAndItem'),
         variant: "destructive",
       });
       return;
@@ -394,8 +396,8 @@ export default function Orders() {
 
     if (!shippingCalculation) {
       toast({
-        title: "Validation Error",
-        description: "Please calculate shipping before creating the order",
+        title: t('validationError'),
+        description: t('calculateShippingBeforeOrder'),
         variant: "destructive",
       });
       return;
@@ -459,8 +461,8 @@ export default function Orders() {
   return (
     <div className="flex-1 flex flex-col">
       <Header 
-        title="Orders" 
-        description="Manage and track all customer orders" 
+        title={t('ordersTitle')} 
+        description={t('ordersDescription')} 
       />
       
       <div className="flex-1 p-6 space-y-6">
@@ -470,7 +472,7 @@ export default function Orders() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search orders..."
+                placeholder={t('searchOrders')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 w-64"
@@ -481,7 +483,7 @@ export default function Orders() {
               <PopoverTrigger asChild>
                 <Button variant="outline" data-testid="button-filter-orders">
                   <Filter className="w-4 h-4 mr-2" />
-                  Filter
+                  {t('filter')}
                   {statusFilters.length < 5 && (
                     <Badge variant="secondary" className="ml-2">
                       {statusFilters.length}
@@ -492,7 +494,7 @@ export default function Orders() {
               <PopoverContent className="w-64" data-testid="popover-filter-orders">
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-semibold mb-3">Filter by Status</h4>
+                    <h4 className="font-semibold mb-3">{t('filterByStatus')}</h4>
                     <div className="space-y-2">
                       {["pending", "processing", "shipped", "delivered", "cancelled"].map((status) => (
                         <div key={status} className="flex items-center space-x-2">
@@ -506,7 +508,7 @@ export default function Orders() {
                             htmlFor={`filter-${status}`}
                             className="text-sm font-normal cursor-pointer capitalize"
                           >
-                            {status}
+                            {t(status)}
                           </Label>
                         </div>
                       ))}
@@ -519,14 +521,14 @@ export default function Orders() {
                       onClick={() => setStatusFilters(["pending", "processing", "shipped", "delivered", "cancelled"])}
                       data-testid="button-reset-filters"
                     >
-                      Reset
+                      {t('reset')}
                     </Button>
                     <Button
                       size="sm"
                       onClick={() => setIsFilterOpen(false)}
                       data-testid="button-apply-filters"
                     >
-                      Apply
+                      {t('apply')}
                     </Button>
                   </div>
                 </div>
@@ -535,7 +537,7 @@ export default function Orders() {
           </div>
           <Button onClick={() => setIsModalOpen(true)} data-testid="button-new-order">
             <Plus className="w-4 h-4 mr-2" />
-            New Order
+            {t('newOrder')}
           </Button>
         </div>
 
@@ -544,26 +546,26 @@ export default function Orders() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Package className="w-5 h-5 mr-2" />
-              Orders ({filteredOrders.length})
+              {t('ordersCount')} ({filteredOrders.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="text-muted-foreground mt-2">Loading orders...</p>
+                <p className="text-muted-foreground mt-2">{t('loadingOrders')}</p>
               </div>
             ) : filteredOrders.length === 0 ? (
               <div className="text-center py-8">
                 <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">No orders found</h3>
+                <h3 className="text-lg font-medium text-foreground mb-2">{t('noOrdersFound')}</h3>
                 <p className="text-muted-foreground">
-                  {searchTerm ? "No orders match your search criteria" : "Get started by creating your first order"}
+                  {searchTerm ? t('noOrdersMatch') : t('getStartedFirstOrder')}
                 </p>
                 {!searchTerm && (
                   <Button className="mt-4" onClick={() => setIsModalOpen(true)} data-testid="button-create-first-order">
                     <Plus className="w-4 h-4 mr-2" />
-                    Create First Order
+                    {t('createFirstOrder')}
                   </Button>
                 )}
               </div>
@@ -571,13 +573,13 @@ export default function Orders() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Order #</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Profit</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t('orderNumber')}</TableHead>
+                    <TableHead>{t('customer')}</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                    <TableHead>{t('total')}</TableHead>
+                    <TableHead>{t('profit')}</TableHead>
+                    <TableHead>{t('createdAt')}</TableHead>
+                    <TableHead>{t('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -611,7 +613,7 @@ export default function Orders() {
                             onClick={() => openEditModal(order)}
                             data-testid={`button-edit-order-${order.id}`}
                           >
-                            Edit
+                            {t('edit')}
                           </Button>
                           <Button 
                             variant="outline" 
@@ -619,7 +621,7 @@ export default function Orders() {
                             onClick={() => openViewModal(order)}
                             data-testid={`button-view-order-${order.id}`}
                           >
-                            View
+                            {t('view')}
                           </Button>
                           <Button 
                             variant="outline" 
@@ -628,7 +630,7 @@ export default function Orders() {
                             data-testid={`button-print-invoice-${order.id}`}
                           >
                             <Printer className="w-4 h-4 mr-1" />
-                            Print
+                            {t('print')}
                           </Button>
                           <Button 
                             variant="destructive" 
@@ -652,15 +654,15 @@ export default function Orders() {
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="modal-create-order">
             <DialogHeader>
-              <DialogTitle>Create New Order</DialogTitle>
+              <DialogTitle>{t('createNewOrder')}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Customer Selection */}
               <div>
-                <Label htmlFor="customer">Customer</Label>
+                <Label htmlFor="customer">{t('customer')}</Label>
                 <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId} required>
                   <SelectTrigger data-testid="select-customer">
-                    <SelectValue placeholder="Select a customer" />
+                    <SelectValue placeholder={t('selectCustomer')} />
                   </SelectTrigger>
                   <SelectContent>
                     {customers.map((customer) => (
@@ -675,7 +677,7 @@ export default function Orders() {
               {/* Order Items */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <Label>Order Items</Label>
+                  <Label>{t('orderItems')}</Label>
                   <Button 
                     type="button" 
                     onClick={addOrderItem} 
@@ -683,13 +685,13 @@ export default function Orders() {
                     data-testid="button-add-item"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Item
+                    {t('addItem')}
                   </Button>
                 </div>
 
                 {orderItems.length === 0 ? (
                   <div className="text-center py-4 border-2 border-dashed border-gray-300 rounded-lg">
-                    <p className="text-muted-foreground">No items added yet</p>
+                    <p className="text-muted-foreground">{t('noItemsAdded')}</p>
                     <Button 
                       type="button" 
                       variant="outline" 
@@ -697,7 +699,7 @@ export default function Orders() {
                       className="mt-2"
                       data-testid="button-add-first-item"
                     >
-                      Add First Item
+                      {t('addFirstItem')}
                     </Button>
                   </div>
                 ) : (
@@ -706,19 +708,19 @@ export default function Orders() {
                       <div key={index} className="border rounded-lg p-4 bg-muted/30" data-testid={`order-item-${index}`}>
                         <div className="grid grid-cols-12 gap-4 items-end">
                           <div className="col-span-5">
-                            <Label htmlFor={`product-name-${index}`}>Product Name/Number</Label>
+                            <Label htmlFor={`product-name-${index}`}>{t('productNameNumber')}</Label>
                             <Input
                               id={`product-name-${index}`}
                               value={item.productName}
                               onChange={(e) => updateOrderItem(index, "productName", e.target.value)}
-                              placeholder="Enter product name or number"
+                              placeholder={t('enterProductName')}
                               required
                               data-testid={`input-product-name-${index}`}
                             />
                           </div>
                           
                           <div className="col-span-2">
-                            <Label htmlFor={`quantity-${index}`}>Quantity</Label>
+                            <Label htmlFor={`quantity-${index}`}>{t('quantity')}</Label>
                             <Input
                               id={`quantity-${index}`}
                               type="number"
@@ -731,7 +733,7 @@ export default function Orders() {
                           </div>
                           
                           <div className="col-span-2">
-                            <Label htmlFor={`unit-price-${index}`}>Unit Price ($)</Label>
+                            <Label htmlFor={`unit-price-${index}`}>{t('unitPriceDollar')}</Label>
                             <Input
                               id={`unit-price-${index}`}
                               type="number"
@@ -746,7 +748,7 @@ export default function Orders() {
                           </div>
                           
                           <div className="col-span-2">
-                            <Label>Total</Label>
+                            <Label>{t('total')}</Label>
                             <div className="h-10 px-3 py-2 border rounded-md bg-muted font-semibold flex items-center" data-testid={`text-item-total-${index}`}>
                               ${item.totalPrice.toFixed(2)}
                             </div>
@@ -774,36 +776,36 @@ export default function Orders() {
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="shipping-country">Shipping Country</Label>
+                    <Label htmlFor="shipping-country">{t('shippingCountry')}</Label>
                     <Select value={shippingCountry} onValueChange={setShippingCountry}>
                       <SelectTrigger data-testid="select-shipping-country">
-                        <SelectValue placeholder="Select country" />
+                        <SelectValue placeholder={t('selectCountry')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="China">China</SelectItem>
-                        <SelectItem value="Turkey">Turkey</SelectItem>
-                        <SelectItem value="UK">UK</SelectItem>
-                        <SelectItem value="UAE">UAE</SelectItem>
-                        <SelectItem value="Germany">Germany</SelectItem>
+                        <SelectItem value="China">{t('china')}</SelectItem>
+                        <SelectItem value="Turkey">{t('turkey')}</SelectItem>
+                        <SelectItem value="UK">{t('uk')}</SelectItem>
+                        <SelectItem value="UAE">{t('uae')}</SelectItem>
+                        <SelectItem value="Germany">{t('germany')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="shipping-category">Shipping Category</Label>
+                    <Label htmlFor="shipping-category">{t('shippingCategory')}</Label>
                     <Select value={shippingCategory} onValueChange={setShippingCategory}>
                       <SelectTrigger data-testid="select-shipping-category">
-                        <SelectValue placeholder="Select category" />
+                        <SelectValue placeholder={t('selectCategory')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="normal">Normal</SelectItem>
-                        <SelectItem value="perfumes">Perfumes</SelectItem>
-                        <SelectItem value="electronics">Electronics</SelectItem>
-                        <SelectItem value="clothing">Clothing</SelectItem>
+                        <SelectItem value="normal">{t('normal')}</SelectItem>
+                        <SelectItem value="perfumes">{t('perfumes')}</SelectItem>
+                        <SelectItem value="electronics">{t('electronics')}</SelectItem>
+                        <SelectItem value="clothing">{t('clothing')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="shipping-weight">Weight (kg)</Label>
+                    <Label htmlFor="shipping-weight">{t('weightKg')}</Label>
                     <Input
                       id="shipping-weight"
                       type="number"
@@ -823,27 +825,27 @@ export default function Orders() {
                     disabled={calculatingShipping || !shippingCountry || !shippingCategory || orderItems.length === 0}
                     data-testid="button-calculate-shipping"
                   >
-                    {calculatingShipping ? "Calculating..." : "Calculate Shipping"}
+                    {calculatingShipping ? t('calculating') : t('calculateShipping')}
                   </Button>
                   
                   {shippingCalculation && (
                     <div className="text-sm text-green-600 font-medium" data-testid="text-shipping-calculated">
-                      Calculated: Shipping {shippingCalculation.currency} {shippingCalculation.base_shipping.toFixed(2)}, 
-                      Commission {shippingCalculation.currency} {shippingCalculation.commission.toFixed(2)}
+                      {t('calculatedShipping')} {shippingCalculation.currency} {shippingCalculation.base_shipping.toFixed(2)}, 
+                      {t('calculatedCommission')} {shippingCalculation.currency} {shippingCalculation.commission.toFixed(2)}
                       {shippingCalculation.currency !== 'USD' && (
-                        <span className="text-blue-600"> (converted to USD in totals)</span>
+                        <span className="text-blue-600"> {t('convertedToUsd')}</span>
                       )}
                     </div>
                   )}
                 </div>
 
                 <div>
-                  <Label htmlFor="notes">Notes (Optional)</Label>
+                  <Label htmlFor="notes">{t('notesOptional')}</Label>
                   <Input
                     id="notes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Order notes..."
+                    placeholder={t('orderNotes')}
                     data-testid="input-notes"
                   />
                 </div>
@@ -852,32 +854,32 @@ export default function Orders() {
               {/* Order Summary */}
               {orderItems.length > 0 && (
                 <div className="border-t pt-4">
-                  <h4 className="font-medium mb-4">Order Summary</h4>
+                  <h4 className="font-medium mb-4">{t('orderSummary')}</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span>Subtotal:</span>
+                      <span>{t('subtotal')}</span>
                       <span data-testid="text-subtotal">${calculateTotals().subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Shipping:</span>
+                      <span>{t('shipping')}</span>
                       <span data-testid="text-shipping">
                         {calculateTotals().currency} {calculateTotals().shippingCost.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Commission{shippingCalculation ? ' (Dynamic)' : ' (15%)'}:</span>
+                      <span>{shippingCalculation ? t('commissionDynamic') : t('commissionFifteen')}</span>
                       <span data-testid="text-commission">
                         {calculateTotals().currency} {calculateTotals().commission.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between font-medium text-lg border-t pt-2">
-                      <span>Total:</span>
+                      <span>{t('total')}:</span>
                       <span data-testid="text-total">
                         {calculateTotals().currency} {calculateTotals().total.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between text-green-600 font-medium">
-                      <span>Estimated Profit:</span>
+                      <span>{t('estimatedProfit')}</span>
                       <span data-testid="text-profit">
                         {calculateTotals().currency} {calculateTotals().profit.toFixed(2)}
                       </span>
@@ -890,12 +892,12 @@ export default function Orders() {
               <div className="space-y-2">
                 {!shippingCalculation && orderItems.length > 0 && (
                   <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded" data-testid="text-shipping-required">
-                    Please calculate shipping before creating the order.
+                    {t('pleaseCalculateShipping')}
                   </div>
                 )}
                 {shippingCalculation && isShippingCalculationStale() && (
                   <div className="text-sm text-red-600 bg-red-50 p-2 rounded" data-testid="text-shipping-stale">
-                    Order items changed. Please recalculate shipping before creating the order.
+                    {t('recalculateShipping')}
                   </div>
                 )}
                 <div className="flex justify-end space-x-2 pt-2">
@@ -905,7 +907,7 @@ export default function Orders() {
                     onClick={() => setIsModalOpen(false)}
                     data-testid="button-cancel"
                   >
-                    Cancel
+                    {t('cancel')}
                   </Button>
                   <Button 
                     type="submit" 
@@ -918,7 +920,7 @@ export default function Orders() {
                     }
                     data-testid="button-create-order"
                   >
-                    {createOrderMutation.isPending ? "Creating..." : "Create Order"}
+                    {createOrderMutation.isPending ? t('creating') : t('createOrder')}
                   </Button>
                 </div>
               </div>
@@ -930,7 +932,7 @@ export default function Orders() {
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
           <DialogContent className="max-w-2xl" data-testid="modal-edit-order">
             <DialogHeader>
-              <DialogTitle>Edit Order</DialogTitle>
+              <DialogTitle>{t('editOrderTitle')}</DialogTitle>
             </DialogHeader>
             {editingOrder && (
               <form onSubmit={handleEditSubmit} className="space-y-6">
@@ -938,19 +940,19 @@ export default function Orders() {
                 <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium">Order ID:</span>
+                      <span className="font-medium">{t('orderId')}</span>
                       <span className="ml-2">{editingOrder.id.substring(0, 8)}</span>
                     </div>
                     <div>
-                      <span className="font-medium">Customer:</span>
+                      <span className="font-medium">{t('customerLabel')}</span>
                       <span className="ml-2">{editingOrder.customer.firstName} {editingOrder.customer.lastName}</span>
                     </div>
                     <div>
-                      <span className="font-medium">Total Amount:</span>
+                      <span className="font-medium">{t('totalAmountLabel')}</span>
                       <span className="ml-2">${parseFloat(editingOrder.totalAmount).toFixed(2)}</span>
                     </div>
                     <div>
-                      <span className="font-medium">Created:</span>
+                      <span className="font-medium">{t('created')}</span>
                       <span className="ml-2">{new Date(editingOrder.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
@@ -959,29 +961,29 @@ export default function Orders() {
                 {/* Editable Fields */}
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="edit-status">Order Status</Label>
+                    <Label htmlFor="edit-status">{t('orderStatus')}</Label>
                     <Select value={editOrderStatus} onValueChange={setEditOrderStatus}>
                       <SelectTrigger id="edit-status" data-testid="select-edit-status">
-                        <SelectValue placeholder="Select status" />
+                        <SelectValue placeholder={t('selectStatus')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="processing">Processing</SelectItem>
-                        <SelectItem value="shipped">Shipped</SelectItem>
-                        <SelectItem value="delivered">Delivered</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="pending">{t('pending')}</SelectItem>
+                        <SelectItem value="processing">{t('processing')}</SelectItem>
+                        <SelectItem value="shipped">{t('shipped')}</SelectItem>
+                        <SelectItem value="delivered">{t('delivered')}</SelectItem>
+                        <SelectItem value="cancelled">{t('cancelled')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
-                    <Label htmlFor="edit-notes">Order Notes</Label>
+                    <Label htmlFor="edit-notes">{t('orderNotesLabel')}</Label>
                     <textarea
                       id="edit-notes"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       className="w-full min-h-[100px] p-3 border rounded-md resize-none"
-                      placeholder="Add notes about this order..."
+                      placeholder={t('addOrderNotes')}
                       data-testid="textarea-edit-notes"
                     />
                   </div>
@@ -994,14 +996,14 @@ export default function Orders() {
                     onClick={() => setIsEditModalOpen(false)}
                     data-testid="button-cancel-edit"
                   >
-                    Cancel
+                    {t('cancel')}
                   </Button>
                   <Button 
                     type="submit" 
                     disabled={updateOrderMutation.isPending}
                     data-testid="button-update-order"
                   >
-                    {updateOrderMutation.isPending ? "Updating..." : "Update Order"}
+                    {updateOrderMutation.isPending ? t('updating') : t('updateOrder')}
                   </Button>
                 </div>
               </form>
@@ -1016,32 +1018,32 @@ export default function Orders() {
         }}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="modal-view-order">
             <DialogHeader>
-              <DialogTitle>Order Details</DialogTitle>
+              <DialogTitle>{t('orderDetailsTitle')}</DialogTitle>
             </DialogHeader>
             {viewingOrder && (
               <div className="space-y-6">
                 {/* Order Summary */}
                 <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-                  <h3 className="font-semibold text-lg mb-3">Order Information</h3>
+                  <h3 className="font-semibold text-lg mb-3">{t('orderInformation')}</h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium text-muted-foreground">Order Number:</span>
+                      <span className="font-medium text-muted-foreground">{t('orderNumberLabel')}</span>
                       <p className="mt-1" data-testid="text-view-order-number">{viewingOrder.orderNumber}</p>
                     </div>
                     <div>
-                      <span className="font-medium text-muted-foreground">Order ID:</span>
+                      <span className="font-medium text-muted-foreground">{t('orderIdLabel')}</span>
                       <p className="mt-1" data-testid="text-view-order-id">{viewingOrder.id.substring(0, 8)}...</p>
                     </div>
                     <div>
-                      <span className="font-medium text-muted-foreground">Status:</span>
+                      <span className="font-medium text-muted-foreground">{t('statusLabel')}</span>
                       <div className="mt-1">
                         <Badge className={getStatusColor(viewingOrder.status)} data-testid="badge-view-status">
-                          {viewingOrder.status.charAt(0).toUpperCase() + viewingOrder.status.slice(1)}
+                          {t(viewingOrder.status)}
                         </Badge>
                       </div>
                     </div>
                     <div>
-                      <span className="font-medium text-muted-foreground">Created Date:</span>
+                      <span className="font-medium text-muted-foreground">{t('createdDate')}</span>
                       <p className="mt-1" data-testid="text-view-created">{new Date(viewingOrder.createdAt).toLocaleString()}</p>
                     </div>
                   </div>
@@ -1049,24 +1051,24 @@ export default function Orders() {
 
                 {/* Customer Information */}
                 <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-                  <h3 className="font-semibold text-lg mb-3">Customer Information</h3>
+                  <h3 className="font-semibold text-lg mb-3">{t('customerInformation')}</h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium text-muted-foreground">Name:</span>
+                      <span className="font-medium text-muted-foreground">{t('nameLabel')}</span>
                       <p className="mt-1" data-testid="text-view-customer-name">
                         {viewingOrder.customer.firstName} {viewingOrder.customer.lastName}
                       </p>
                     </div>
                     <div>
-                      <span className="font-medium text-muted-foreground">Email:</span>
+                      <span className="font-medium text-muted-foreground">{t('emailLabel')}</span>
                       <p className="mt-1" data-testid="text-view-customer-email">{viewingOrder.customer.email}</p>
                     </div>
                     <div>
-                      <span className="font-medium text-muted-foreground">Phone:</span>
-                      <p className="mt-1" data-testid="text-view-customer-phone">{viewingOrder.customer.phone || "N/A"}</p>
+                      <span className="font-medium text-muted-foreground">{t('phoneLabel')}</span>
+                      <p className="mt-1" data-testid="text-view-customer-phone">{viewingOrder.customer.phone || t('naLabel')}</p>
                     </div>
                     <div>
-                      <span className="font-medium text-muted-foreground">Country:</span>
+                      <span className="font-medium text-muted-foreground">{t('countryLabel')}</span>
                       <p className="mt-1" data-testid="text-view-customer-country">{viewingOrder.customer.country}</p>
                     </div>
                   </div>
@@ -1076,19 +1078,19 @@ export default function Orders() {
                 {isLoadingViewOrder ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="text-muted-foreground mt-2">Loading order items...</p>
+                    <p className="text-muted-foreground mt-2">{t('loadingOrderItems')}</p>
                   </div>
                 ) : viewOrderWithItems?.items && viewOrderWithItems.items.length > 0 ? (
                   <div className="space-y-3">
-                    <h3 className="font-semibold text-lg">Order Items</h3>
+                    <h3 className="font-semibold text-lg">{t('orderItemsTitle')}</h3>
                     <div className="border rounded-lg overflow-hidden">
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Product</TableHead>
-                            <TableHead className="text-right">Quantity</TableHead>
-                            <TableHead className="text-right">Unit Price</TableHead>
-                            <TableHead className="text-right">Total</TableHead>
+                            <TableHead>{t('product')}</TableHead>
+                            <TableHead className="text-right">{t('quantity')}</TableHead>
+                            <TableHead className="text-right">{t('unitPriceLabel')}</TableHead>
+                            <TableHead className="text-right">{t('total')}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1112,28 +1114,28 @@ export default function Orders() {
                   </div>
                 ) : (
                   <div className="text-center py-4 text-muted-foreground">
-                    No items found for this order
+                    {t('noItemsFound')}
                   </div>
                 )}
 
                 {/* Order Totals */}
                 <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-                  <h3 className="font-semibold text-lg mb-3">Order Summary</h3>
+                  <h3 className="font-semibold text-lg mb-3">{t('orderSummary')}</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal:</span>
+                      <span className="text-muted-foreground">{t('subtotalLabel')}</span>
                       <span data-testid="text-view-subtotal">${(parseFloat(viewingOrder.totalAmount) - parseFloat(viewingOrder.shippingCost)).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Shipping Cost:</span>
+                      <span className="text-muted-foreground">{t('shippingCostLabel')}</span>
                       <span data-testid="text-view-shipping">${parseFloat(viewingOrder.shippingCost).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between pt-2 border-t font-semibold text-base">
-                      <span>Total Amount:</span>
+                      <span>{t('totalAmountLabelColon')}</span>
                       <span data-testid="text-view-total">${parseFloat(viewingOrder.totalAmount).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-green-600">
-                      <span>Estimated Profit:</span>
+                      <span>{t('estimatedProfitLabel')}</span>
                       <span data-testid="text-view-profit">${parseFloat(viewingOrder.profit).toFixed(2)}</span>
                     </div>
                   </div>
@@ -1142,7 +1144,7 @@ export default function Orders() {
                 {/* Order Notes */}
                 {viewingOrder.notes && (
                   <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-                    <h3 className="font-semibold text-lg">Notes</h3>
+                    <h3 className="font-semibold text-lg">{t('notesTitle')}</h3>
                     <p className="text-sm whitespace-pre-wrap" data-testid="text-view-notes">{viewingOrder.notes}</p>
                   </div>
                 )}
@@ -1153,7 +1155,7 @@ export default function Orders() {
                     onClick={() => setIsViewModalOpen(false)}
                     data-testid="button-close-view"
                   >
-                    Close
+                    {t('close')}
                   </Button>
                 </div>
               </div>
@@ -1166,14 +1168,14 @@ export default function Orders() {
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" data-testid="modal-print-invoice">
             <DialogHeader>
               <div className="flex justify-between items-center">
-                <DialogTitle>Invoice Preview</DialogTitle>
+                <DialogTitle>{t('invoicePreview')}</DialogTitle>
                 <div className="flex space-x-2">
                   <Button onClick={handlePrint} data-testid="button-print">
                     <Printer className="w-4 h-4 mr-2" />
-                    Print
+                    {t('print')}
                   </Button>
                   <Button variant="outline" onClick={() => setIsPrintModalOpen(false)}>
-                    Close
+                    {t('close')}
                   </Button>
                 </div>
               </div>
@@ -1181,13 +1183,13 @@ export default function Orders() {
             {isLoadingOrderItems ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="text-muted-foreground mt-2">Loading order details...</p>
+                <p className="text-muted-foreground mt-2">{t('loadingOrderDetails')}</p>
               </div>
             ) : orderWithItems ? (
               <Invoice order={orderWithItems} onPrint={handlePrint} />
             ) : (
               <div className="text-center py-8">
-                <p className="text-muted-foreground">Failed to load order details</p>
+                <p className="text-muted-foreground">{t('failedLoadDetails')}</p>
               </div>
             )}
           </DialogContent>
@@ -1197,18 +1199,18 @@ export default function Orders() {
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent data-testid="dialog-delete-order">
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Order</AlertDialogTitle>
+              <AlertDialogTitle>{t('deleteOrderTitle')}</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete this order? This action cannot be undone.
+                {t('deleteOrderConfirmation')}
                 {deletingOrder && (
                   <div className="mt-2 p-2 bg-muted rounded text-sm">
-                    <strong>Order #{deletingOrder.orderNumber}</strong> - {deletingOrder.customer.firstName} {deletingOrder.customer.lastName}
+                    <strong>{t('orderHash')}{deletingOrder.orderNumber}</strong> - {deletingOrder.customer.firstName} {deletingOrder.customer.lastName}
                   </div>
                 )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+              <AlertDialogCancel data-testid="button-cancel-delete">{t('cancel')}</AlertDialogCancel>
               <Button
                 onClick={(e) => {
                   e.preventDefault();
@@ -1218,7 +1220,7 @@ export default function Orders() {
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 data-testid="button-confirm-delete"
               >
-                Delete
+                {t('delete')}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>

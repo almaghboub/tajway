@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus, Box, Search, Filter, AlertTriangle, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,18 +22,17 @@ import { insertInventorySchema } from "@shared/schema";
 import type { Inventory, InsertInventory } from "@shared/schema";
 import { z } from "zod";
 
-const createInventorySchema = z.object({
-  productName: z.string().min(1, "Product name is required"),
-  sku: z.string().min(1, "SKU is required"),
-  quantity: z.string().min(1, "Quantity is required"),
-  unitCost: z.string().min(1, "Unit cost is required"),
-  sellingPrice: z.string().min(1, "Selling price is required"),
-  lowStockThreshold: z.string().min(1, "Low stock threshold is required"),
-});
-
-type CreateInventoryForm = z.infer<typeof createInventorySchema>;
+type CreateInventoryForm = {
+  productName: string;
+  sku: string;
+  quantity: string;
+  unitCost: string;
+  sellingPrice: string;
+  lowStockThreshold: string;
+};
 
 export default function Inventory() {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -42,6 +42,15 @@ export default function Inventory() {
   const [deletingItem, setDeletingItem] = useState<Inventory | null>(null);
   const [stockStatusFilters, setStockStatusFilters] = useState<string[]>(["in-stock", "low-stock", "out-of-stock"]);
   const { toast } = useToast();
+
+  const createInventorySchema = z.object({
+    productName: z.string().min(1, t('productNameValidation')),
+    sku: z.string().min(1, t('skuValidation')),
+    quantity: z.string().min(1, t('quantityValidation')),
+    unitCost: z.string().min(1, t('unitCostValidation')),
+    sellingPrice: z.string().min(1, t('sellingPriceValidation')),
+    lowStockThreshold: z.string().min(1, t('lowStockThresholdValidation')),
+  });
 
   const form = useForm<CreateInventoryForm>({
     resolver: zodResolver(createInventorySchema),
@@ -92,14 +101,14 @@ export default function Inventory() {
       setIsCreateModalOpen(false);
       form.reset();
       toast({
-        title: "Item created",
-        description: "Inventory item has been created successfully.",
+        title: t('itemCreated'),
+        description: t('itemCreatedSuccess'),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to create inventory item. Please try again.",
+        title: t('error'),
+        description: t('failedCreateItem'),
         variant: "destructive",
       });
     },
@@ -117,7 +126,7 @@ export default function Inventory() {
       const response = await apiRequest("PUT", `/api/inventory/${id}`, payload);
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to update inventory item");
+        throw new Error(error.message || t('failedUpdateItem'));
       }
       return response.json();
     },
@@ -127,13 +136,13 @@ export default function Inventory() {
       setEditingItem(null);
       editForm.reset();
       toast({
-        title: "Item updated",
-        description: "Inventory item has been updated successfully.",
+        title: t('itemUpdated'),
+        description: t('itemUpdatedSuccess'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('error'),
         description: error.message,
         variant: "destructive",
       });
@@ -144,23 +153,23 @@ export default function Inventory() {
     mutationFn: async (id: string) => {
       const response = await apiRequest("DELETE", `/api/inventory/${id}`);
       if (!response.ok) {
-        throw new Error("Failed to delete inventory item");
+        throw new Error(t('failedDeleteItem'));
       }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
       toast({
-        title: "Item deleted",
-        description: "Inventory item has been deleted successfully.",
+        title: t('itemDeleted'),
+        description: t('itemDeletedSuccess'),
       });
       setIsDeleteDialogOpen(false);
       setDeletingItem(null);
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to delete inventory item",
+        title: t('error'),
+        description: t('failedDeleteItem'),
         variant: "destructive",
       });
     },
@@ -199,9 +208,9 @@ export default function Inventory() {
   };
 
   const getStockStatus = (quantity: number, threshold: number) => {
-    if (quantity === 0) return { label: "Out of Stock", color: "bg-red-100 text-red-800" };
-    if (quantity <= threshold) return { label: "Low Stock", color: "bg-yellow-100 text-yellow-800" };
-    return { label: "In Stock", color: "bg-green-100 text-green-800" };
+    if (quantity === 0) return { label: t('outOfStock'), color: "bg-red-100 text-red-800" };
+    if (quantity <= threshold) return { label: t('lowStock'), color: "bg-yellow-100 text-yellow-800" };
+    return { label: t('inStock'), color: "bg-green-100 text-green-800" };
   };
 
   const getStockStatusKey = (quantity: number, threshold: number): string => {
@@ -231,35 +240,33 @@ export default function Inventory() {
   return (
     <div className="flex-1 flex flex-col">
       <Header 
-        title="Inventory" 
-        description="Manage stock levels and product information" 
+        title={t('inventoryTitle')} 
+        description={t('inventoryDescription')} 
       />
       
       <div className="flex-1 p-6 space-y-6">
-        {/* Low Stock Alert */}
         {lowStockItems.length > 0 && (
           <Card className="border-yellow-200 bg-yellow-50">
             <CardContent className="pt-6">
               <div className="flex items-center space-x-2">
                 <AlertTriangle className="w-5 h-5 text-yellow-600" />
                 <h3 className="font-medium text-yellow-800">
-                  {lowStockItems.length} item(s) running low on stock
+                  {lowStockItems.length} {t('lowStockAlert')}
                 </h3>
               </div>
               <p className="text-sm text-yellow-700 mt-1">
-                Items need restocking: {lowStockItems.map(item => item.productName).join(", ")}
+                {t('itemsNeedRestocking')} {lowStockItems.map(item => item.productName).join(", ")}
               </p>
             </CardContent>
           </Card>
         )}
 
-        {/* Actions and Search */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search inventory..."
+                placeholder={t('searchInventory')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 w-64"
@@ -270,7 +277,7 @@ export default function Inventory() {
               <PopoverTrigger asChild>
                 <Button variant="outline" data-testid="button-filter-inventory">
                   <Filter className="w-4 h-4 mr-2" />
-                  Filter
+                  {t('filter')}
                   {stockStatusFilters.length < 3 && (
                     <Badge variant="secondary" className="ml-2">
                       {stockStatusFilters.length}
@@ -281,12 +288,12 @@ export default function Inventory() {
               <PopoverContent className="w-64" data-testid="popover-filter-inventory">
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-semibold mb-3">Filter by Stock Status</h4>
+                    <h4 className="font-semibold mb-3">{t('filterByStockStatus')}</h4>
                     <div className="space-y-2">
                       {[
-                        { value: "in-stock", label: "In Stock" },
-                        { value: "low-stock", label: "Low Stock" },
-                        { value: "out-of-stock", label: "Out of Stock" }
+                        { value: "in-stock", label: t('inStock') },
+                        { value: "low-stock", label: t('lowStock') },
+                        { value: "out-of-stock", label: t('outOfStock') }
                       ].map((status) => (
                         <div key={status.value} className="flex items-center space-x-2">
                           <Checkbox
@@ -312,14 +319,14 @@ export default function Inventory() {
                       onClick={() => setStockStatusFilters(["in-stock", "low-stock", "out-of-stock"])}
                       data-testid="button-reset-filters"
                     >
-                      Reset
+                      {t('reset')}
                     </Button>
                     <Button
                       size="sm"
                       onClick={() => setIsFilterOpen(false)}
                       data-testid="button-apply-filters"
                     >
-                      Apply
+                      {t('apply')}
                     </Button>
                   </div>
                 </div>
@@ -328,35 +335,34 @@ export default function Inventory() {
           </div>
           <Button onClick={() => setIsCreateModalOpen(true)} data-testid="button-add-item">
             <Plus className="w-4 h-4 mr-2" />
-            Add Item
+            {t('addItem')}
           </Button>
         </div>
 
-        {/* Inventory Table */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <Box className="w-5 h-5 mr-2" />
-              Inventory ({filteredInventory.length})
+              {t('inventoryCount')} ({filteredInventory.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="text-muted-foreground mt-2">Loading inventory...</p>
+                <p className="text-muted-foreground mt-2">{t('loadingInventory')}</p>
               </div>
             ) : filteredInventory.length === 0 ? (
               <div className="text-center py-8">
                 <Box className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">No inventory items found</h3>
+                <h3 className="text-lg font-medium text-foreground mb-2">{t('noInventoryItems')}</h3>
                 <p className="text-muted-foreground">
-                  {searchTerm ? "No items match your search criteria" : "Get started by adding your first inventory item"}
+                  {searchTerm ? t('noItemsMatch') : t('getStartedInventory')}
                 </p>
                 {!searchTerm && (
                   <Button className="mt-4" onClick={() => setIsCreateModalOpen(true)} data-testid="button-add-first-item">
                     <Plus className="w-4 h-4 mr-2" />
-                    Add First Item
+                    {t('addFirstItem')}
                   </Button>
                 )}
               </div>
@@ -364,13 +370,13 @@ export default function Inventory() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product Name</TableHead>
-                    <TableHead>SKU</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Unit Cost</TableHead>
-                    <TableHead>Selling Price</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t('productName')}</TableHead>
+                    <TableHead>{t('sku')}</TableHead>
+                    <TableHead>{t('quantity')}</TableHead>
+                    <TableHead>{t('unitCost')}</TableHead>
+                    <TableHead>{t('sellingPrice')}</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                    <TableHead>{t('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -407,7 +413,7 @@ export default function Inventory() {
                               onClick={() => openEditModal(item)}
                               data-testid={`button-edit-item-${item.id}`}
                             >
-                              Edit
+                              {t('edit')}
                             </Button>
                             <Button 
                               variant="destructive" 
@@ -429,11 +435,10 @@ export default function Inventory() {
         </Card>
       </div>
 
-      {/* Create Item Modal */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
         <DialogContent className="max-w-2xl" data-testid="modal-create-item">
           <DialogHeader>
-            <DialogTitle>Add New Item</DialogTitle>
+            <DialogTitle>{t('addNewItem')}</DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -443,9 +448,9 @@ export default function Inventory() {
                   name="productName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Product Name *</FormLabel>
+                      <FormLabel>{t('productNameRequired')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter product name" {...field} data-testid="input-name" />
+                        <Input placeholder={t('enterProductName')} {...field} data-testid="input-name" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -456,9 +461,9 @@ export default function Inventory() {
                   name="sku"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>SKU *</FormLabel>
+                      <FormLabel>{t('skuRequired')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter SKU" {...field} data-testid="input-sku" />
+                        <Input placeholder={t('enterSku')} {...field} data-testid="input-sku" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -473,7 +478,7 @@ export default function Inventory() {
                   name="quantity"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Quantity *</FormLabel>
+                      <FormLabel>{t('quantityRequired')}</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="0" {...field} data-testid="input-quantity" />
                       </FormControl>
@@ -486,7 +491,7 @@ export default function Inventory() {
                   name="lowStockThreshold"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Low Stock Threshold *</FormLabel>
+                      <FormLabel>{t('lowStockThresholdRequired')}</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="10" {...field} data-testid="input-threshold" />
                       </FormControl>
@@ -502,7 +507,7 @@ export default function Inventory() {
                   name="unitCost"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Unit Cost *</FormLabel>
+                      <FormLabel>{t('unitCostRequired')}</FormLabel>
                       <FormControl>
                         <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-cost" />
                       </FormControl>
@@ -515,7 +520,7 @@ export default function Inventory() {
                   name="sellingPrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Selling Price *</FormLabel>
+                      <FormLabel>{t('sellingPriceRequired')}</FormLabel>
                       <FormControl>
                         <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-price" />
                       </FormControl>
@@ -533,14 +538,14 @@ export default function Inventory() {
                   onClick={() => setIsCreateModalOpen(false)}
                   data-testid="button-cancel"
                 >
-                  Cancel
+                  {t('cancel')}
                 </Button>
                 <Button
                   type="submit"
                   disabled={createInventoryMutation.isPending}
                   data-testid="button-save"
                 >
-                  {createInventoryMutation.isPending ? "Creating..." : "Create Item"}
+                  {createInventoryMutation.isPending ? t('creatingItem') : t('createItem')}
                 </Button>
               </div>
             </form>
@@ -548,11 +553,10 @@ export default function Inventory() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Inventory Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="sm:max-w-md" data-testid="modal-edit-inventory">
           <DialogHeader>
-            <DialogTitle>Edit Inventory Item</DialogTitle>
+            <DialogTitle>{t('editInventoryItem')}</DialogTitle>
           </DialogHeader>
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
@@ -562,9 +566,9 @@ export default function Inventory() {
                   name="productName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Product Name *</FormLabel>
+                      <FormLabel>{t('productNameRequired')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter product name" {...field} data-testid="input-edit-product-name" />
+                        <Input placeholder={t('enterProductName')} {...field} data-testid="input-edit-product-name" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -575,9 +579,9 @@ export default function Inventory() {
                   name="sku"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>SKU *</FormLabel>
+                      <FormLabel>{t('skuRequired')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter SKU" {...field} data-testid="input-edit-sku" />
+                        <Input placeholder={t('enterSku')} {...field} data-testid="input-edit-sku" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -591,7 +595,7 @@ export default function Inventory() {
                   name="quantity"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Quantity *</FormLabel>
+                      <FormLabel>{t('quantityRequired')}</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="0" {...field} data-testid="input-edit-quantity" />
                       </FormControl>
@@ -604,7 +608,7 @@ export default function Inventory() {
                   name="lowStockThreshold"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Low Stock Threshold *</FormLabel>
+                      <FormLabel>{t('lowStockThresholdRequired')}</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="10" {...field} data-testid="input-edit-threshold" />
                       </FormControl>
@@ -620,7 +624,7 @@ export default function Inventory() {
                   name="unitCost"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Unit Cost *</FormLabel>
+                      <FormLabel>{t('unitCostRequired')}</FormLabel>
                       <FormControl>
                         <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-cost" />
                       </FormControl>
@@ -633,7 +637,7 @@ export default function Inventory() {
                   name="sellingPrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Selling Price *</FormLabel>
+                      <FormLabel>{t('sellingPriceRequired')}</FormLabel>
                       <FormControl>
                         <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-edit-price" />
                       </FormControl>
@@ -650,14 +654,14 @@ export default function Inventory() {
                   onClick={() => setIsEditModalOpen(false)}
                   data-testid="button-cancel-edit"
                 >
-                  Cancel
+                  {t('cancel')}
                 </Button>
                 <Button
                   type="submit"
                   disabled={updateInventoryMutation.isPending}
                   data-testid="button-update-item"
                 >
-                  {updateInventoryMutation.isPending ? "Updating..." : "Update Item"}
+                  {updateInventoryMutation.isPending ? t('updatingItem') : t('updateItem')}
                 </Button>
               </div>
             </form>
@@ -665,22 +669,21 @@ export default function Inventory() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent data-testid="dialog-delete-item">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Inventory Item</AlertDialogTitle>
+            <AlertDialogTitle>{t('deleteInventoryItem')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this inventory item? This action cannot be undone.
+              {t('deleteInventoryConfirmation')}
               {deletingItem && (
                 <div className="mt-2 p-2 bg-muted rounded text-sm">
-                  <strong>{deletingItem.productName}</strong> (SKU: {deletingItem.sku})
+                  <strong>{deletingItem.productName}</strong> ({t('sku')}: {deletingItem.sku})
                 </div>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete">{t('cancel')}</AlertDialogCancel>
             <Button
               onClick={(e) => {
                 e.preventDefault();
@@ -690,7 +693,7 @@ export default function Inventory() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >
-              Delete
+              {t('delete')}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus, Users, Search, Filter, X, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { apiRequest } from "@/lib/queryClient";
 import type { Customer, InsertCustomer } from "@shared/schema";
 
 export default function Customers() {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -70,8 +72,8 @@ export default function Customers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
       toast({
-        title: "Success",
-        description: "Customer created successfully",
+        title: t("success"),
+        description: t("customerCreatedSuccess"),
       });
       setIsModalOpen(false);
       setFormData({
@@ -87,8 +89,8 @@ export default function Customers() {
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to create customer",
+        title: t("error"),
+        description: t("failedCreateCustomer"),
         variant: "destructive",
       });
     },
@@ -106,8 +108,8 @@ export default function Customers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
       toast({
-        title: "Success",
-        description: "Customer updated successfully",
+        title: t("success"),
+        description: t("customerUpdatedSuccess"),
       });
       setIsEditModalOpen(false);
       setEditingCustomer(null);
@@ -124,7 +126,7 @@ export default function Customers() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t("error"),
         description: error.message,
         variant: "destructive",
       });
@@ -142,16 +144,16 @@ export default function Customers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
       toast({
-        title: "Success",
-        description: "Customer deleted successfully",
+        title: t("success"),
+        description: t("customerDeletedSuccess"),
       });
       setIsDeleteDialogOpen(false);
       setDeletingCustomer(null);
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to delete customer",
+        title: t("error"),
+        description: t("failedDeleteCustomer"),
         variant: "destructive",
       });
     },
@@ -218,8 +220,8 @@ export default function Customers() {
   return (
     <div className="flex-1 flex flex-col">
       <Header 
-        title="Customers" 
-        description="Manage customer information and relationships" 
+        title={t("customers")} 
+        description={t("customersDescription")} 
       />
       
       <div className="flex-1 p-6 space-y-6">
@@ -229,7 +231,7 @@ export default function Customers() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search customers..."
+                placeholder={t("searchCustomers")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 w-64"
@@ -240,7 +242,7 @@ export default function Customers() {
               <PopoverTrigger asChild>
                 <Button variant="outline" data-testid="button-filter-customers">
                   <Filter className="w-4 h-4 mr-2" />
-                  Filter
+                  {t("filter")}
                   {countryFilters.length > 0 && (
                     <Badge variant="secondary" className="ml-2">
                       {countryFilters.length}
@@ -251,7 +253,7 @@ export default function Customers() {
               <PopoverContent className="w-64" data-testid="popover-filter-customers">
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-semibold mb-3">Filter by Country</h4>
+                    <h4 className="font-semibold mb-3">{t("filterByCountry")}</h4>
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {uniqueCountries.length > 0 ? (
                         uniqueCountries.map((country) => (
@@ -271,7 +273,7 @@ export default function Customers() {
                           </div>
                         ))
                       ) : (
-                        <p className="text-sm text-muted-foreground">No countries available</p>
+                        <p className="text-sm text-muted-foreground">{t("noCountriesAvailable")}</p>
                       )}
                     </div>
                   </div>
@@ -282,14 +284,14 @@ export default function Customers() {
                       onClick={() => setCountryFilters([])}
                       data-testid="button-reset-filters"
                     >
-                      Reset
+                      {t("reset")}
                     </Button>
                     <Button
                       size="sm"
                       onClick={() => setIsFilterOpen(false)}
                       data-testid="button-apply-filters"
                     >
-                      Apply
+                      {t("apply")}
                     </Button>
                   </div>
                 </div>
@@ -298,7 +300,7 @@ export default function Customers() {
           </div>
           <Button onClick={() => setIsModalOpen(true)} data-testid="button-new-customer">
             <Plus className="w-4 h-4 mr-2" />
-            Add Customer
+            {t("addCustomer")}
           </Button>
         </div>
 
@@ -307,26 +309,26 @@ export default function Customers() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Users className="w-5 h-5 mr-2" />
-              Customers ({filteredCustomers.length})
+              {t("customersCount")} ({filteredCustomers.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="text-muted-foreground mt-2">Loading customers...</p>
+                <p className="text-muted-foreground mt-2">{t("loadingCustomers")}</p>
               </div>
             ) : filteredCustomers.length === 0 ? (
               <div className="text-center py-8">
                 <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">No customers found</h3>
+                <h3 className="text-lg font-medium text-foreground mb-2">{t("noCustomersFound")}</h3>
                 <p className="text-muted-foreground">
-                  {searchTerm ? "No customers match your search criteria" : "Get started by adding your first customer"}
+                  {searchTerm ? t("noCustomersMatch") : t("getStartedFirstCustomer")}
                 </p>
                 {!searchTerm && (
                   <Button className="mt-4" onClick={() => setIsModalOpen(true)} data-testid="button-add-first-customer">
                     <Plus className="w-4 h-4 mr-2" />
-                    Add First Customer
+                    {t("addFirstCustomer")}
                   </Button>
                 )}
               </div>
@@ -334,12 +336,12 @@ export default function Customers() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Country</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t("name")}</TableHead>
+                    <TableHead>{t("email")}</TableHead>
+                    <TableHead>{t("phone")}</TableHead>
+                    <TableHead>{t("country")}</TableHead>
+                    <TableHead>{t("customerCreated")}</TableHead>
+                    <TableHead>{t("actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -352,7 +354,7 @@ export default function Customers() {
                         {customer.email}
                       </TableCell>
                       <TableCell data-testid={`text-phone-${customer.id}`}>
-                        {customer.phone || "—"}
+                        {customer.phone || t("emptyPhone")}
                       </TableCell>
                       <TableCell data-testid={`text-country-${customer.id}`}>
                         {customer.country}
@@ -363,7 +365,7 @@ export default function Customers() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Button variant="outline" size="sm" onClick={() => openEditModal(customer)} data-testid={`button-edit-customer-${customer.id}`}>
-                            Edit
+                            {t("edit")}
                           </Button>
                           <Button 
                             variant="outline" 
@@ -371,7 +373,7 @@ export default function Customers() {
                             onClick={() => openViewModal(customer)}
                             data-testid={`button-view-customer-${customer.id}`}
                           >
-                            View
+                            {t("view")}
                           </Button>
                           <Button 
                             variant="destructive" 
@@ -395,12 +397,12 @@ export default function Customers() {
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent className="max-w-md" data-testid="modal-create-customer">
             <DialogHeader>
-              <DialogTitle>Add New Customer</DialogTitle>
+              <DialogTitle>{t("addNewCustomer")}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="firstName">{t("firstName")}</Label>
                   <Input
                     id="firstName"
                     value={formData.firstName}
@@ -410,7 +412,7 @@ export default function Customers() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="lastName">{t("lastName")}</Label>
                   <Input
                     id="lastName"
                     value={formData.lastName}
@@ -422,7 +424,7 @@ export default function Customers() {
               </div>
               
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -434,7 +436,7 @@ export default function Customers() {
               </div>
 
               <div>
-                <Label htmlFor="phone">Phone</Label>
+                <Label htmlFor="phone">{t("phone")}</Label>
                 <Input
                   id="phone"
                   value={formData.phone || ""}
@@ -444,7 +446,7 @@ export default function Customers() {
               </div>
 
               <div>
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="address">{t("address")}</Label>
                 <Input
                   id="address"
                   value={formData.address || ""}
@@ -455,7 +457,7 @@ export default function Customers() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="city">City</Label>
+                  <Label htmlFor="city">{t("city")}</Label>
                   <Input
                     id="city"
                     value={formData.city || ""}
@@ -464,7 +466,7 @@ export default function Customers() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="postalCode">Postal Code</Label>
+                  <Label htmlFor="postalCode">{t("postalCode")}</Label>
                   <Input
                     id="postalCode"
                     value={formData.postalCode || ""}
@@ -475,7 +477,7 @@ export default function Customers() {
               </div>
 
               <div>
-                <Label htmlFor="country">Country</Label>
+                <Label htmlFor="country">{t("country")}</Label>
                 <Input
                   id="country"
                   value={formData.country}
@@ -492,14 +494,14 @@ export default function Customers() {
                   onClick={() => setIsModalOpen(false)}
                   data-testid="button-cancel"
                 >
-                  Cancel
+                  {t("cancel")}
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={createCustomerMutation.isPending}
                   data-testid="button-save-customer"
                 >
-                  {createCustomerMutation.isPending ? "Creating..." : "Create Customer"}
+                  {createCustomerMutation.isPending ? t("creatingCustomer") : t("createCustomer")}
                 </Button>
               </div>
             </form>
@@ -510,12 +512,12 @@ export default function Customers() {
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
           <DialogContent className="max-w-md" data-testid="modal-edit-customer">
             <DialogHeader>
-              <DialogTitle>Edit Customer</DialogTitle>
+              <DialogTitle>{t("editCustomer")}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit-firstName">First Name *</Label>
+                  <Label htmlFor="edit-firstName">{t("firstNameRequired")}</Label>
                   <Input
                     id="edit-firstName"
                     value={editFormData.firstName}
@@ -525,7 +527,7 @@ export default function Customers() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-lastName">Last Name *</Label>
+                  <Label htmlFor="edit-lastName">{t("lastNameRequired")}</Label>
                   <Input
                     id="edit-lastName"
                     value={editFormData.lastName}
@@ -537,7 +539,7 @@ export default function Customers() {
               </div>
 
               <div>
-                <Label htmlFor="edit-email">Email *</Label>
+                <Label htmlFor="edit-email">{t("emailRequired")}</Label>
                 <Input
                   id="edit-email"
                   type="email"
@@ -549,7 +551,7 @@ export default function Customers() {
               </div>
 
               <div>
-                <Label htmlFor="edit-phone">Phone</Label>
+                <Label htmlFor="edit-phone">{t("phone")}</Label>
                 <Input
                   id="edit-phone"
                   type="tel"
@@ -560,7 +562,7 @@ export default function Customers() {
               </div>
 
               <div>
-                <Label htmlFor="edit-address">Address</Label>
+                <Label htmlFor="edit-address">{t("address")}</Label>
                 <Input
                   id="edit-address"
                   value={editFormData.address || ""}
@@ -571,7 +573,7 @@ export default function Customers() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit-city">City</Label>
+                  <Label htmlFor="edit-city">{t("city")}</Label>
                   <Input
                     id="edit-city"
                     value={editFormData.city || ""}
@@ -580,7 +582,7 @@ export default function Customers() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-postalCode">Postal Code</Label>
+                  <Label htmlFor="edit-postalCode">{t("postalCode")}</Label>
                   <Input
                     id="edit-postalCode"
                     value={editFormData.postalCode || ""}
@@ -591,7 +593,7 @@ export default function Customers() {
               </div>
 
               <div>
-                <Label htmlFor="edit-country">Country *</Label>
+                <Label htmlFor="edit-country">{t("countryRequired")}</Label>
                 <Input
                   id="edit-country"
                   value={editFormData.country}
@@ -608,14 +610,14 @@ export default function Customers() {
                   onClick={() => setIsEditModalOpen(false)}
                   data-testid="button-cancel-edit"
                 >
-                  Cancel
+                  {t("cancel")}
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={updateCustomerMutation.isPending}
                   data-testid="button-update-customer"
                 >
-                  {updateCustomerMutation.isPending ? "Updating..." : "Update Customer"}
+                  {updateCustomerMutation.isPending ? t("updatingCustomer") : t("updateCustomer")}
                 </Button>
               </div>
             </form>
@@ -629,34 +631,34 @@ export default function Customers() {
         }}>
           <DialogContent className="max-w-2xl" data-testid="modal-view-customer">
             <DialogHeader>
-              <DialogTitle>Customer Details</DialogTitle>
+              <DialogTitle>{t("customerDetails")}</DialogTitle>
             </DialogHeader>
             {viewingCustomer && (
               <div className="space-y-6">
                 {/* Personal Information */}
                 <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-                  <h3 className="font-semibold text-lg mb-3">Personal Information</h3>
+                  <h3 className="font-semibold text-lg mb-3">{t("personalInformation")}</h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium text-muted-foreground">Customer ID:</span>
+                      <span className="font-medium text-muted-foreground">{t("customerId")}</span>
                       <p className="mt-1" data-testid="text-view-customer-id">{viewingCustomer.id.substring(0, 8)}...</p>
                     </div>
                     <div>
-                      <span className="font-medium text-muted-foreground">Full Name:</span>
+                      <span className="font-medium text-muted-foreground">{t("fullName")}</span>
                       <p className="mt-1" data-testid="text-view-customer-name">
                         {viewingCustomer.firstName} {viewingCustomer.lastName}
                       </p>
                     </div>
                     <div>
-                      <span className="font-medium text-muted-foreground">Email:</span>
+                      <span className="font-medium text-muted-foreground">{t("emailLabel")}</span>
                       <p className="mt-1" data-testid="text-view-customer-email">{viewingCustomer.email}</p>
                     </div>
                     <div>
-                      <span className="font-medium text-muted-foreground">Phone:</span>
-                      <p className="mt-1" data-testid="text-view-customer-phone">{viewingCustomer.phone || "N/A"}</p>
+                      <span className="font-medium text-muted-foreground">{t("phoneLabel")}</span>
+                      <p className="mt-1" data-testid="text-view-customer-phone">{viewingCustomer.phone || t("naLabel")}</p>
                     </div>
                     <div>
-                      <span className="font-medium text-muted-foreground">Created Date:</span>
+                      <span className="font-medium text-muted-foreground">{t("createdDate")}</span>
                       <p className="mt-1" data-testid="text-view-customer-created">
                         {new Date(viewingCustomer.createdAt).toLocaleString()}
                       </p>
@@ -666,26 +668,26 @@ export default function Customers() {
 
                 {/* Address Information */}
                 <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-                  <h3 className="font-semibold text-lg mb-3">Address Information</h3>
+                  <h3 className="font-semibold text-lg mb-3">{t("addressInformation")}</h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="font-medium text-muted-foreground">Street Address:</span>
+                      <span className="font-medium text-muted-foreground">{t("streetAddress")}</span>
                       <p className="mt-1" data-testid="text-view-customer-address">
-                        {viewingCustomer.address || "N/A"}
+                        {viewingCustomer.address || t("naLabel")}
                       </p>
                     </div>
                     <div>
-                      <span className="font-medium text-muted-foreground">City:</span>
-                      <p className="mt-1" data-testid="text-view-customer-city">{viewingCustomer.city || "N/A"}</p>
+                      <span className="font-medium text-muted-foreground">{t("city")}:</span>
+                      <p className="mt-1" data-testid="text-view-customer-city">{viewingCustomer.city || t("naLabel")}</p>
                     </div>
                     <div>
-                      <span className="font-medium text-muted-foreground">Postal Code:</span>
+                      <span className="font-medium text-muted-foreground">{t("postalCode")}:</span>
                       <p className="mt-1" data-testid="text-view-customer-postal">
-                        {viewingCustomer.postalCode || "N/A"}
+                        {viewingCustomer.postalCode || t("naLabel")}
                       </p>
                     </div>
                     <div>
-                      <span className="font-medium text-muted-foreground">Country:</span>
+                      <span className="font-medium text-muted-foreground">{t("country")}:</span>
                       <p className="mt-1" data-testid="text-view-customer-country">{viewingCustomer.country}</p>
                     </div>
                   </div>
@@ -697,7 +699,7 @@ export default function Customers() {
                     onClick={() => setIsViewModalOpen(false)}
                     data-testid="button-close-view-customer"
                   >
-                    Close
+                    {t("close")}
                   </Button>
                 </div>
               </div>
@@ -709,9 +711,9 @@ export default function Customers() {
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent data-testid="dialog-delete-customer">
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Customer</AlertDialogTitle>
+              <AlertDialogTitle>{t("deleteCustomerTitle")}</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete this customer? This action cannot be undone.
+                {t("deleteCustomerConfirmation")}
                 {deletingCustomer && (
                   <div className="mt-2 p-2 bg-muted rounded text-sm">
                     <strong>{deletingCustomer.firstName} {deletingCustomer.lastName}</strong> - {deletingCustomer.email}
@@ -720,7 +722,7 @@ export default function Customers() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+              <AlertDialogCancel data-testid="button-cancel-delete">{t("cancel")}</AlertDialogCancel>
               <Button
                 onClick={(e) => {
                   e.preventDefault();
@@ -730,7 +732,7 @@ export default function Customers() {
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 data-testid="button-confirm-delete"
               >
-                Delete
+                {t("delete")}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
