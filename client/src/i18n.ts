@@ -105,6 +105,10 @@ const resources = {
       invalidCredentials: "Invalid username or password",
       defaultLoginCredentials: "Default login credentials:",
       
+      // Not Found Page
+      pageNotFoundTitle: "404 Page Not Found",
+      pageNotFoundMessage: "Did you forget to add the page to the router?",
+      
       // Orders Page
       ordersTitle: "Orders",
       ordersDescription: "Manage and track all customer orders",
@@ -386,9 +390,25 @@ const resources = {
       failedToFetchReportData: "Failed to fetch data for report generation",
       unknown: "Unknown",
       
-      // Users
+      // Users / User Management Page
+      usersDescription: "Manage system users and their permissions",
+      searchUsers: "Search users...",
+      addUser: "Add User",
+      addFirstUser: "Add First User",
+      usersCount: "Users",
+      loadingUsers: "Loading users...",
+      noUsersFound: "No users found",
+      noUsersMatch: "No users match your search criteria",
+      getStartedFirstUser: "Get started by adding your first user",
+      filterByRole: "Filter by Role",
+      
+      // User Table Headers
       role: "Role",
-      newUser: "New User",
+      
+      // User Modals
+      createNewUser: "Create New User",
+      editUser: "Edit User",
+      deleteUser: "Delete User",
       
       // User Roles
       owner: "Owner",
@@ -397,12 +417,152 @@ const resources = {
       sorter: "Sorter",
       stockManager: "Stock Manager",
       
+      // User Form Fields
+      confirmPassword: "Confirm Password",
+      newPasswordOptional: "New Password (Optional)",
+      selectRole: "Select a role",
+      
+      // User Form Placeholders
+      firstNamePlaceholder: "John",
+      lastNamePlaceholder: "Doe",
+      usernamePlaceholder: "johndoe",
+      emailPlaceholder: "john@example.com",
+      passwordPlaceholder: "••••••••",
+      
+      // User Status
+      inactive: "Inactive",
+      
+      // User Actions & Buttons
+      createUser: "Create User",
+      updateUser: "Update User",
+      creatingUser: "Creating...",
+      updatingUser: "Updating...",
+      
+      // User Toast Messages
+      userCreatedSuccess: "User created successfully",
+      userCreatedDescription: "The new user has been added to the system.",
+      errorCreatingUser: "Error creating user",
+      failedCreateUser: "Failed to create user",
+      userUpdatedSuccess: "User updated successfully",
+      userUpdatedDescription: "The user has been updated.",
+      errorUpdatingUser: "Error updating user",
+      failedUpdateUser: "Failed to update user",
+      userDeletedSuccess: "User deleted successfully",
+      userDeletedDescription: "The user has been removed from the system.",
+      errorDeletingUser: "Error deleting user",
+      failedDeleteUser: "Failed to delete user",
+      
+      // User Delete Confirmation
+      deleteUserConfirmation: "Are you sure you want to delete this user? This action cannot be undone.",
+      
+      // User Validation Messages
+      passwordMinSixChars: "Password must be at least 6 characters",
+      passwordsDontMatch: "Passwords don't match",
+      
       // Settings
       darkMode: "Dark Mode",
       language: "Language",
       english: "English",
       arabic: "Arabic",
       preferences: "Preferences",
+      
+      // Settings Page
+      settingsDescription: "Configure system preferences and settings",
+      systemSettings: "System Settings",
+      emailNotifications: "Email Notifications",
+      emailNotificationsDesc: "Receive email notifications for order updates",
+      automaticBackup: "Automatic Backup",
+      automaticBackupDesc: "Automatically backup data daily",
+      maintenanceMode: "Maintenance Mode",
+      maintenanceModeDesc: "Enable maintenance mode for system updates",
+      databaseManagement: "Database Management",
+      backupDatabase: "Backup Database",
+      optimizeDatabase: "Optimize Database",
+      connectionStatus: "Connection Status:",
+      connected: "Connected",
+      lastBackup: "Last Backup:",
+      todayAt3AM: "Today at 3:00 AM",
+      databaseSize: "Database Size:",
+      databaseSizeValue: "12.4 MB",
+      securityAccessControl: "Security & Access Control",
+      twoFactorAuth: "Two-Factor Authentication",
+      twoFactorAuthDesc: "Require 2FA for all user logins",
+      autoSessionTimeout: "Auto Session Timeout",
+      autoSessionTimeoutDesc: "Automatically log out inactive users after 30 minutes",
+      viewSecurityLogs: "View Security Logs",
+      resetAllPasswords: "Reset All Passwords",
+      notificationPreferences: "Notification Preferences",
+      orderUpdates: "Order Updates",
+      orderUpdatesDesc: "Notify when orders are created or updated",
+      lowStockAlerts: "Low Stock Alerts",
+      lowStockAlertsDesc: "Alert when inventory items are running low",
+      systemAlerts: "System Alerts",
+      systemAlertsDesc: "Notify about system errors and maintenance",
+      appearance: "Appearance",
+      useDarkTheme: "Use dark theme for the interface",
+      choosePrefLanguage: "Choose your preferred language",
+      selectLanguage: "Select language",
+      arabicWithName: "العربية (Arabic)",
+      currentTheme: "Current Theme",
+      darkThemeActive: "Dark theme is currently active",
+      lightThemeActive: "Light theme is currently active",
+      savingSettings: "Saving settings...",
+      settingUpdated: "Setting updated",
+      settingSavedSuccess: "Your setting has been saved successfully.",
+      failedUpdateSetting: "Failed to update setting. Please try again.",
+      backupInitiated: "Backup initiated",
+      backupStartedNotify: "Database backup has started. You will be notified when complete.",
+      optimizationStarted: "Optimization started",
+      optimizationRunning: "Database optimization is running in the background.",
+      securityLogs: "Security logs",
+      securityLogViewerFuture: "Security log viewer will be implemented in a future update.",
+      passwordReset: "Password reset",
+      passwordResetConfirmation: "This feature requires additional confirmation. Contact system administrator.",
+      languageUpdated: "Language updated",
+      languageChangedToEnglish: "Language changed to English",
+      languageChangedToArabic: "Language changed to Arabic",
+      
+      // Shipping Rates
+      shippingRates: "Shipping Rates",
+      addRate: "Add Rate",
+      editShippingRate: "Edit Shipping Rate",
+      addShippingRate: "Add Shipping Rate",
+      countryPlaceholder: "e.g., China, Turkey, UK",
+      pricePerKg: "Price per KG",
+      pricePlaceholder: "8.00",
+      currency: "Currency",
+      selectCurrency: "Select currency",
+      priceKg: "Price/KG",
+      shippingRateCreatedSuccess: "Shipping rate created successfully",
+      failedCreateShippingRate: "Failed to create shipping rate",
+      shippingRateUpdatedSuccess: "Shipping rate updated successfully",
+      failedUpdateShippingRate: "Failed to update shipping rate",
+      shippingRateDeletedSuccess: "Shipping rate deleted successfully",
+      failedDeleteShippingRate: "Failed to delete shipping rate",
+      
+      // Commission Rules
+      commissionRules: "Commission Rules",
+      addRule: "Add Rule",
+      editCommissionRule: "Edit Commission Rule",
+      addCommissionRule: "Add Commission Rule",
+      minimumOrderValue: "Minimum Order Value",
+      maximumOrderValue: "Maximum Order Value (optional)",
+      leaveEmptyNoLimit: "Leave empty for no limit",
+      commissionPercentage: "Commission Percentage (as decimal)",
+      percentagePlaceholder: "0.1500",
+      fixedFee: "Fixed Fee",
+      minValue: "Min Value",
+      maxValue: "Max Value",
+      percentage: "Percentage",
+      noLimit: "No limit",
+      commissionRuleCreatedSuccess: "Commission rule created successfully",
+      failedCreateCommissionRule: "Failed to create commission rule",
+      commissionRuleUpdatedSuccess: "Commission rule updated successfully",
+      failedUpdateCommissionRule: "Failed to update commission rule",
+      commissionRuleDeletedSuccess: "Commission rule deleted successfully",
+      failedDeleteCommissionRule: "Failed to delete commission rule",
+      update: "Update",
+      create: "Create",
       
       // Invoice
       invoice: "INVOICE",
@@ -548,6 +708,10 @@ const resources = {
       loginFailed: "فشل تسجيل الدخول",
       invalidCredentials: "اسم المستخدم أو كلمة المرور غير صحيحة",
       defaultLoginCredentials: "بيانات الدخول الافتراضية:",
+      
+      // Not Found Page
+      pageNotFoundTitle: "٤٠٤ الصفحة غير موجودة",
+      pageNotFoundMessage: "هل نسيت إضافة الصفحة إلى الموجه؟",
       
       // Orders Page
       ordersTitle: "الطلبات",
@@ -830,9 +994,25 @@ const resources = {
       failedToFetchReportData: "فشل جلب البيانات لإنشاء التقرير",
       unknown: "غير معروف",
       
-      // Users
+      // Users / User Management Page
+      usersDescription: "إدارة مستخدمي النظام وصلاحياتهم",
+      searchUsers: "البحث في المستخدمين...",
+      addUser: "إضافة مستخدم",
+      addFirstUser: "إضافة أول مستخدم",
+      usersCount: "المستخدمون",
+      loadingUsers: "جاري تحميل المستخدمين...",
+      noUsersFound: "لم يتم العثور على مستخدمين",
+      noUsersMatch: "لا يوجد مستخدمون يطابقون معايير البحث",
+      getStartedFirstUser: "ابدأ بإضافة أول مستخدم",
+      filterByRole: "تصفية حسب الدور",
+      
+      // User Table Headers
       role: "الدور",
-      newUser: "مستخدم جديد",
+      
+      // User Modals
+      createNewUser: "إنشاء مستخدم جديد",
+      editUser: "تعديل مستخدم",
+      deleteUser: "حذف مستخدم",
       
       // User Roles
       owner: "المالك",
@@ -841,12 +1021,152 @@ const resources = {
       sorter: "فارز",
       stockManager: "مدير المخزون",
       
+      // User Form Fields
+      confirmPassword: "تأكيد كلمة المرور",
+      newPasswordOptional: "كلمة مرور جديدة (اختياري)",
+      selectRole: "اختر دور",
+      
+      // User Form Placeholders
+      firstNamePlaceholder: "أحمد",
+      lastNamePlaceholder: "محمد",
+      usernamePlaceholder: "ahmad123",
+      emailPlaceholder: "ahmad@example.com",
+      passwordPlaceholder: "••••••••",
+      
+      // User Status
+      inactive: "غير نشط",
+      
+      // User Actions & Buttons
+      createUser: "إنشاء مستخدم",
+      updateUser: "تحديث مستخدم",
+      creatingUser: "جاري الإنشاء...",
+      updatingUser: "جاري التحديث...",
+      
+      // User Toast Messages
+      userCreatedSuccess: "تم إنشاء المستخدم بنجاح",
+      userCreatedDescription: "تمت إضافة المستخدم الجديد إلى النظام.",
+      errorCreatingUser: "خطأ في إنشاء المستخدم",
+      failedCreateUser: "فشل إنشاء المستخدم",
+      userUpdatedSuccess: "تم تحديث المستخدم بنجاح",
+      userUpdatedDescription: "تم تحديث المستخدم.",
+      errorUpdatingUser: "خطأ في تحديث المستخدم",
+      failedUpdateUser: "فشل تحديث المستخدم",
+      userDeletedSuccess: "تم حذف المستخدم بنجاح",
+      userDeletedDescription: "تمت إزالة المستخدم من النظام.",
+      errorDeletingUser: "خطأ في حذف المستخدم",
+      failedDeleteUser: "فشل حذف المستخدم",
+      
+      // User Delete Confirmation
+      deleteUserConfirmation: "هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن التراجع عن هذا الإجراء.",
+      
+      // User Validation Messages
+      passwordMinSixChars: "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
+      passwordsDontMatch: "كلمات المرور غير متطابقة",
+      
       // Settings
       darkMode: "الوضع الداكن",
       language: "اللغة",
       english: "الإنجليزية",
       arabic: "العربية",
       preferences: "التفضيلات",
+      
+      // Settings Page
+      settingsDescription: "تكوين تفضيلات النظام والإعدادات",
+      systemSettings: "إعدادات النظام",
+      emailNotifications: "إشعارات البريد الإلكتروني",
+      emailNotificationsDesc: "تلقي إشعارات البريد الإلكتروني لتحديثات الطلبات",
+      automaticBackup: "النسخ الاحتياطي التلقائي",
+      automaticBackupDesc: "نسخ البيانات احتياطياً تلقائياً يومياً",
+      maintenanceMode: "وضع الصيانة",
+      maintenanceModeDesc: "تمكين وضع الصيانة لتحديثات النظام",
+      databaseManagement: "إدارة قاعدة البيانات",
+      backupDatabase: "نسخ قاعدة البيانات احتياطياً",
+      optimizeDatabase: "تحسين قاعدة البيانات",
+      connectionStatus: "حالة الاتصال:",
+      connected: "متصل",
+      lastBackup: "آخر نسخة احتياطية:",
+      todayAt3AM: "اليوم الساعة 3:00 صباحاً",
+      databaseSize: "حجم قاعدة البيانات:",
+      databaseSizeValue: "12.4 ميجابايت",
+      securityAccessControl: "الأمان والتحكم في الوصول",
+      twoFactorAuth: "المصادقة الثنائية",
+      twoFactorAuthDesc: "طلب المصادقة الثنائية لجميع تسجيلات دخول المستخدمين",
+      autoSessionTimeout: "انتهاء الجلسة التلقائي",
+      autoSessionTimeoutDesc: "تسجيل الخروج التلقائي للمستخدمين غير النشطين بعد 30 دقيقة",
+      viewSecurityLogs: "عرض سجلات الأمان",
+      resetAllPasswords: "إعادة تعيين جميع كلمات المرور",
+      notificationPreferences: "تفضيلات الإشعارات",
+      orderUpdates: "تحديثات الطلبات",
+      orderUpdatesDesc: "الإشعار عند إنشاء أو تحديث الطلبات",
+      lowStockAlerts: "تنبيهات المخزون المنخفض",
+      lowStockAlertsDesc: "التنبيه عندما تكون عناصر المخزون منخفضة",
+      systemAlerts: "تنبيهات النظام",
+      systemAlertsDesc: "الإشعار بأخطاء النظام والصيانة",
+      appearance: "المظهر",
+      useDarkTheme: "استخدام المظهر الداكن للواجهة",
+      choosePrefLanguage: "اختر لغتك المفضلة",
+      selectLanguage: "اختر اللغة",
+      arabicWithName: "العربية (Arabic)",
+      currentTheme: "المظهر الحالي",
+      darkThemeActive: "المظهر الداكن نشط حالياً",
+      lightThemeActive: "المظهر الفاتح نشط حالياً",
+      savingSettings: "جاري حفظ الإعدادات...",
+      settingUpdated: "تم تحديث الإعداد",
+      settingSavedSuccess: "تم حفظ إعدادك بنجاح.",
+      failedUpdateSetting: "فشل تحديث الإعداد. يرجى المحاولة مرة أخرى.",
+      backupInitiated: "تم بدء النسخ الاحتياطي",
+      backupStartedNotify: "بدأ النسخ الاحتياطي لقاعدة البيانات. سيتم إشعارك عند الانتهاء.",
+      optimizationStarted: "بدأ التحسين",
+      optimizationRunning: "يتم تشغيل تحسين قاعدة البيانات في الخلفية.",
+      securityLogs: "سجلات الأمان",
+      securityLogViewerFuture: "سيتم تنفيذ عارض سجلات الأمان في تحديث مستقبلي.",
+      passwordReset: "إعادة تعيين كلمة المرور",
+      passwordResetConfirmation: "تتطلب هذه الميزة تأكيداً إضافياً. اتصل بمسؤول النظام.",
+      languageUpdated: "تم تحديث اللغة",
+      languageChangedToEnglish: "تم تغيير اللغة إلى الإنجليزية",
+      languageChangedToArabic: "تم تغيير اللغة إلى العربية",
+      
+      // Shipping Rates
+      shippingRates: "أسعار الشحن",
+      addRate: "إضافة سعر",
+      editShippingRate: "تعديل سعر الشحن",
+      addShippingRate: "إضافة سعر شحن",
+      countryPlaceholder: "مثال: الصين، تركيا، المملكة المتحدة",
+      pricePerKg: "السعر لكل كيلوغرام",
+      pricePlaceholder: "8.00",
+      currency: "العملة",
+      selectCurrency: "اختر العملة",
+      priceKg: "السعر/كغ",
+      shippingRateCreatedSuccess: "تم إنشاء سعر الشحن بنجاح",
+      failedCreateShippingRate: "فشل في إنشاء سعر الشحن",
+      shippingRateUpdatedSuccess: "تم تحديث سعر الشحن بنجاح",
+      failedUpdateShippingRate: "فشل في تحديث سعر الشحن",
+      shippingRateDeletedSuccess: "تم حذف سعر الشحن بنجاح",
+      failedDeleteShippingRate: "فشل في حذف سعر الشحن",
+      
+      // Commission Rules
+      commissionRules: "قواعد العمولة",
+      addRule: "إضافة قاعدة",
+      editCommissionRule: "تعديل قاعدة العمولة",
+      addCommissionRule: "إضافة قاعدة عمولة",
+      minimumOrderValue: "الحد الأدنى لقيمة الطلب",
+      maximumOrderValue: "الحد الأقصى لقيمة الطلب (اختياري)",
+      leaveEmptyNoLimit: "اتركه فارغاً لعدم وجود حد",
+      commissionPercentage: "نسبة العمولة (كرقم عشري)",
+      percentagePlaceholder: "0.1500",
+      fixedFee: "الرسوم الثابتة",
+      minValue: "الحد الأدنى",
+      maxValue: "الحد الأقصى",
+      percentage: "النسبة المئوية",
+      noLimit: "بدون حد",
+      commissionRuleCreatedSuccess: "تم إنشاء قاعدة العمولة بنجاح",
+      failedCreateCommissionRule: "فشل في إنشاء قاعدة العمولة",
+      commissionRuleUpdatedSuccess: "تم تحديث قاعدة العمولة بنجاح",
+      failedUpdateCommissionRule: "فشل في تحديث قاعدة العمولة",
+      commissionRuleDeletedSuccess: "تم حذف قاعدة العمولة بنجاح",
+      failedDeleteCommissionRule: "فشل في حذف قاعدة العمولة",
+      update: "تحديث",
+      create: "إنشاء",
       
       // Invoice
       invoice: "فاتورة",

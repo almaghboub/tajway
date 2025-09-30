@@ -22,6 +22,7 @@ import { z } from "zod";
 
 // Shipping Commission Manager Component
 function ShippingCommissionManager() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [isShippingDialogOpen, setIsShippingDialogOpen] = useState(false);
   const [isCommissionDialogOpen, setIsCommissionDialogOpen] = useState(false);
@@ -79,10 +80,10 @@ function ShippingCommissionManager() {
       queryClient.invalidateQueries({ queryKey: ["/api/shipping-rates"] });
       setIsShippingDialogOpen(false);
       shippingForm.reset();
-      toast({ title: "Success", description: "Shipping rate created successfully" });
+      toast({ title: t('success'), description: t('shippingRateCreatedSuccess') });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to create shipping rate", variant: "destructive" });
+      toast({ title: t('error'), description: t('failedCreateShippingRate'), variant: "destructive" });
     },
   });
 
@@ -96,10 +97,10 @@ function ShippingCommissionManager() {
       setIsShippingDialogOpen(false);
       setEditingShippingRate(null);
       shippingForm.reset();
-      toast({ title: "Success", description: "Shipping rate updated successfully" });
+      toast({ title: t('success'), description: t('shippingRateUpdatedSuccess') });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to update shipping rate", variant: "destructive" });
+      toast({ title: t('error'), description: t('failedUpdateShippingRate'), variant: "destructive" });
     },
   });
 
@@ -110,10 +111,10 @@ function ShippingCommissionManager() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shipping-rates"] });
-      toast({ title: "Success", description: "Shipping rate deleted successfully" });
+      toast({ title: t('success'), description: t('shippingRateDeletedSuccess') });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to delete shipping rate", variant: "destructive" });
+      toast({ title: t('error'), description: t('failedDeleteShippingRate'), variant: "destructive" });
     },
   });
 
@@ -127,10 +128,10 @@ function ShippingCommissionManager() {
       queryClient.invalidateQueries({ queryKey: ["/api/commission-rules"] });
       setIsCommissionDialogOpen(false);
       commissionForm.reset();
-      toast({ title: "Success", description: "Commission rule created successfully" });
+      toast({ title: t('success'), description: t('commissionRuleCreatedSuccess') });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to create commission rule", variant: "destructive" });
+      toast({ title: t('error'), description: t('failedCreateCommissionRule'), variant: "destructive" });
     },
   });
 
@@ -144,10 +145,10 @@ function ShippingCommissionManager() {
       setIsCommissionDialogOpen(false);
       setEditingCommissionRule(null);
       commissionForm.reset();
-      toast({ title: "Success", description: "Commission rule updated successfully" });
+      toast({ title: t('success'), description: t('commissionRuleUpdatedSuccess') });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to update commission rule", variant: "destructive" });
+      toast({ title: t('error'), description: t('failedUpdateCommissionRule'), variant: "destructive" });
     },
   });
 
@@ -158,10 +159,10 @@ function ShippingCommissionManager() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/commission-rules"] });
-      toast({ title: "Success", description: "Commission rule deleted successfully" });
+      toast({ title: t('success'), description: t('commissionRuleDeletedSuccess') });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to delete commission rule", variant: "destructive" });
+      toast({ title: t('error'), description: t('failedDeleteCommissionRule'), variant: "destructive" });
     },
   });
 
@@ -237,7 +238,7 @@ function ShippingCommissionManager() {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center">
               <Truck className="w-5 h-5 mr-2" />
-              Shipping Rates
+              {t('shippingRates')}
             </CardTitle>
             <Dialog 
               open={isShippingDialogOpen} 
@@ -249,13 +250,13 @@ function ShippingCommissionManager() {
               <DialogTrigger asChild>
                 <Button data-testid="button-add-shipping-rate">
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Rate
+                  {t('addRate')}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>
-                    {editingShippingRate ? "Edit Shipping Rate" : "Add Shipping Rate"}
+                    {editingShippingRate ? t('editShippingRate') : t('addShippingRate')}
                   </DialogTitle>
                 </DialogHeader>
                 <Form {...shippingForm}>
@@ -270,9 +271,9 @@ function ShippingCommissionManager() {
                       name="country"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Country</FormLabel>
+                          <FormLabel>{t('country')}</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., China, Turkey, UK" {...field} data-testid="input-shipping-country" />
+                            <Input placeholder={t('countryPlaceholder')} {...field} data-testid="input-shipping-country" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -283,18 +284,18 @@ function ShippingCommissionManager() {
                       name="category"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Category</FormLabel>
+                          <FormLabel>{t('category')}</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger data-testid="select-shipping-category">
-                                <SelectValue placeholder="Select category" />
+                                <SelectValue placeholder={t('selectCategory')} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="normal">Normal</SelectItem>
-                              <SelectItem value="perfumes">Perfumes</SelectItem>
-                              <SelectItem value="electronics">Electronics</SelectItem>
-                              <SelectItem value="clothing">Clothing</SelectItem>
+                              <SelectItem value="normal">{t('normal')}</SelectItem>
+                              <SelectItem value="perfumes">{t('perfumes')}</SelectItem>
+                              <SelectItem value="electronics">{t('electronics')}</SelectItem>
+                              <SelectItem value="clothing">{t('clothing')}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -306,9 +307,9 @@ function ShippingCommissionManager() {
                       name="pricePerKg"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Price per KG</FormLabel>
+                          <FormLabel>{t('pricePerKg')}</FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" placeholder="8.00" {...field} data-testid="input-shipping-price" />
+                            <Input type="number" step="0.01" placeholder={t('pricePlaceholder')} {...field} data-testid="input-shipping-price" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -319,11 +320,11 @@ function ShippingCommissionManager() {
                       name="currency"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Currency</FormLabel>
+                          <FormLabel>{t('currency')}</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger data-testid="select-shipping-currency">
-                                <SelectValue placeholder="Select currency" />
+                                <SelectValue placeholder={t('selectCurrency')} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -347,14 +348,14 @@ function ShippingCommissionManager() {
                         }}
                         data-testid="button-cancel-shipping"
                       >
-                        Cancel
+                        {t('cancel')}
                       </Button>
                       <Button 
                         type="submit" 
                         disabled={createShippingMutation.isPending || updateShippingMutation.isPending}
                         data-testid="button-save-shipping"
                       >
-                        {editingShippingRate ? "Update" : "Create"}
+                        {editingShippingRate ? t('update') : t('create')}
                       </Button>
                     </div>
                   </form>
@@ -365,16 +366,16 @@ function ShippingCommissionManager() {
         </CardHeader>
         <CardContent>
           {loadingShippingRates ? (
-            <div className="text-center py-4">Loading...</div>
+            <div className="text-center py-4">{t('loading')}</div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Country</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price/KG</TableHead>
-                  <TableHead>Currency</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>{t('country')}</TableHead>
+                  <TableHead>{t('category')}</TableHead>
+                  <TableHead>{t('priceKg')}</TableHead>
+                  <TableHead>{t('currency')}</TableHead>
+                  <TableHead>{t('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -419,7 +420,7 @@ function ShippingCommissionManager() {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center">
               <DollarSign className="w-5 h-5 mr-2" />
-              Commission Rules
+              {t('commissionRules')}
             </CardTitle>
             <Dialog 
               open={isCommissionDialogOpen} 
@@ -431,13 +432,13 @@ function ShippingCommissionManager() {
               <DialogTrigger asChild>
                 <Button data-testid="button-add-commission-rule">
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Rule
+                  {t('addRule')}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>
-                    {editingCommissionRule ? "Edit Commission Rule" : "Add Commission Rule"}
+                    {editingCommissionRule ? t('editCommissionRule') : t('addCommissionRule')}
                   </DialogTitle>
                 </DialogHeader>
                 <Form {...commissionForm}>
@@ -465,9 +466,9 @@ function ShippingCommissionManager() {
                       name="minValue"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Minimum Order Value</FormLabel>
+                          <FormLabel>{t('minimumOrderValue')}</FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-commission-min" />
+                            <Input type="number" step="0.01" placeholder={t('pricePlaceholder').replace('8', '0')} {...field} data-testid="input-commission-min" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -478,9 +479,9 @@ function ShippingCommissionManager() {
                       name="maxValue"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Maximum Order Value (optional)</FormLabel>
+                          <FormLabel>{t('maximumOrderValue')}</FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" placeholder="Leave empty for no limit" {...field} data-testid="input-commission-max" />
+                            <Input type="number" step="0.01" placeholder={t('leaveEmptyNoLimit')} {...field} value={field.value || ""} data-testid="input-commission-max" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -491,9 +492,9 @@ function ShippingCommissionManager() {
                       name="percentage"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Commission Percentage (as decimal)</FormLabel>
+                          <FormLabel>{t('commissionPercentage')}</FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.0001" placeholder="0.1500" {...field} data-testid="input-commission-percentage" />
+                            <Input type="number" step="0.0001" placeholder={t('percentagePlaceholder')} {...field} data-testid="input-commission-percentage" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -504,7 +505,7 @@ function ShippingCommissionManager() {
                       name="fixedFee"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Fixed Fee</FormLabel>
+                          <FormLabel>{t('fixedFee')}</FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} data-testid="input-commission-fixed" />
                           </FormControl>
@@ -522,14 +523,14 @@ function ShippingCommissionManager() {
                         }}
                         data-testid="button-cancel-commission"
                       >
-                        Cancel
+                        {t('cancel')}
                       </Button>
                       <Button 
                         type="submit" 
                         disabled={createCommissionMutation.isPending || updateCommissionMutation.isPending}
                         data-testid="button-save-commission"
                       >
-                        {editingCommissionRule ? "Update" : "Create"}
+                        {editingCommissionRule ? t('update') : t('create')}
                       </Button>
                     </div>
                   </form>
@@ -540,17 +541,17 @@ function ShippingCommissionManager() {
         </CardHeader>
         <CardContent>
           {loadingCommissionRules ? (
-            <div className="text-center py-4">Loading...</div>
+            <div className="text-center py-4">{t('loading')}</div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Country</TableHead>
-                  <TableHead>Min Value</TableHead>
-                  <TableHead>Max Value</TableHead>
-                  <TableHead>Percentage</TableHead>
-                  <TableHead>Fixed Fee</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>{t('country')}</TableHead>
+                  <TableHead>{t('minValue')}</TableHead>
+                  <TableHead>{t('maxValue')}</TableHead>
+                  <TableHead>{t('percentage')}</TableHead>
+                  <TableHead>{t('fixedFee')}</TableHead>
+                  <TableHead>{t('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -558,7 +559,7 @@ function ShippingCommissionManager() {
                   <TableRow key={rule.id} data-testid={`row-commission-rule-${rule.id}`}>
                     <TableCell>{rule.country}</TableCell>
                     <TableCell>${rule.minValue}</TableCell>
-                    <TableCell>{rule.maxValue ? `$${rule.maxValue}` : "No limit"}</TableCell>
+                    <TableCell>{rule.maxValue ? `$${rule.maxValue}` : t('noLimit')}</TableCell>
                     <TableCell>{(parseFloat(rule.percentage) * 100).toFixed(2)}%</TableCell>
                     <TableCell>${rule.fixedFee}</TableCell>
                     <TableCell>
@@ -609,7 +610,7 @@ const DEFAULT_SETTINGS = {
 export default function Settings() {
   const [settingsState, setSettingsState] = useState(DEFAULT_SETTINGS);
   const { toast } = useToast();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // Load settings from API
   const { data: settings = [], isLoading } = useQuery({
@@ -663,14 +664,14 @@ export default function Settings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
       toast({
-        title: "Setting updated",
-        description: "Your setting has been saved successfully.",
+        title: t('settingUpdated'),
+        description: t('settingSavedSuccess'),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to update setting. Please try again.",
+        title: t('error'),
+        description: t('failedUpdateSetting'),
         variant: "destructive",
       });
     },
@@ -683,29 +684,29 @@ export default function Settings() {
 
   const handleDatabaseBackup = () => {
     toast({
-      title: "Backup initiated",
-      description: "Database backup has started. You will be notified when complete.",
+      title: t('backupInitiated'),
+      description: t('backupStartedNotify'),
     });
   };
 
   const handleDatabaseOptimize = () => {
     toast({
-      title: "Optimization started",
-      description: "Database optimization is running in the background.",
+      title: t('optimizationStarted'),
+      description: t('optimizationRunning'),
     });
   };
 
   const handleViewSecurityLogs = () => {
     toast({
-      title: "Security logs",
-      description: "Security log viewer will be implemented in a future update.",
+      title: t('securityLogs'),
+      description: t('securityLogViewerFuture'),
     });
   };
 
   const handleResetPasswords = () => {
     toast({
-      title: "Password reset",
-      description: "This feature requires additional confirmation. Contact system administrator.",
+      title: t('passwordReset'),
+      description: t('passwordResetConfirmation'),
       variant: "destructive",
     });
   };
@@ -713,15 +714,15 @@ export default function Settings() {
   const handleLanguageChange = (language: string) => {
     i18n.changeLanguage(language);
     toast({
-      title: "Language updated",
-      description: `Language changed to ${language === 'en' ? 'English' : 'Arabic'}`,
+      title: t('languageUpdated'),
+      description: language === 'en' ? t('languageChangedToEnglish') : t('languageChangedToArabic'),
     });
   };
   return (
     <div className="flex-1 flex flex-col">
       <Header 
-        title="Settings" 
-        description="Configure system preferences and settings" 
+        title={t('settings')} 
+        description={t('settingsDescription')} 
       />
       
       <div className="flex-1 p-6 space-y-6">
@@ -730,15 +731,15 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <SettingsIcon className="w-5 h-5 mr-2" />
-              System Settings
+              {t('systemSettings')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="notifications">Email Notifications</Label>
+                <Label htmlFor="notifications">{t('emailNotifications')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Receive email notifications for order updates
+                  {t('emailNotificationsDesc')}
                 </p>
               </div>
               <Switch 
@@ -752,9 +753,9 @@ export default function Settings() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="auto-backup">Automatic Backup</Label>
+                <Label htmlFor="auto-backup">{t('automaticBackup')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Automatically backup data daily
+                  {t('automaticBackupDesc')}
                 </p>
               </div>
               <Switch 
@@ -768,9 +769,9 @@ export default function Settings() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="maintenance">Maintenance Mode</Label>
+                <Label htmlFor="maintenance">{t('maintenanceMode')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Enable maintenance mode for system updates
+                  {t('maintenanceModeDesc')}
                 </p>
               </div>
               <Switch 
@@ -789,7 +790,7 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Database className="w-5 h-5 mr-2" />
-              Database Management
+              {t('databaseManagement')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -800,7 +801,7 @@ export default function Settings() {
                 data-testid="button-backup-database"
               >
                 <Database className="w-4 h-4 mr-2" />
-                Backup Database
+                {t('backupDatabase')}
               </Button>
               
               <Button 
@@ -809,24 +810,24 @@ export default function Settings() {
                 data-testid="button-optimize-database"
               >
                 <SettingsIcon className="w-4 h-4 mr-2" />
-                Optimize Database
+                {t('optimizeDatabase')}
               </Button>
             </div>
             
             <div className="p-4 bg-muted/20 rounded-lg">
-              <h4 className="font-medium mb-2">Database Status</h4>
+              <h4 className="font-medium mb-2">{t('databaseStatus')}</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span>Connection Status:</span>
-                  <span className="text-green-600 font-medium">Connected</span>
+                  <span>{t('connectionStatus')}</span>
+                  <span className="text-green-600 font-medium">{t('connected')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Last Backup:</span>
-                  <span>Today at 3:00 AM</span>
+                  <span>{t('lastBackup')}</span>
+                  <span>{t('todayAt3AM')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Database Size:</span>
-                  <span>12.4 MB</span>
+                  <span>{t('databaseSize')}</span>
+                  <span>{t('databaseSizeValue')}</span>
                 </div>
               </div>
             </div>
@@ -838,15 +839,15 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Shield className="w-5 h-5 mr-2" />
-              Security & Access Control
+              {t('securityAccessControl')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="two-factor">Two-Factor Authentication</Label>
+                <Label htmlFor="two-factor">{t('twoFactorAuth')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Require 2FA for all user logins
+                  {t('twoFactorAuthDesc')}
                 </p>
               </div>
               <Switch 
@@ -860,9 +861,9 @@ export default function Settings() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="session-timeout">Auto Session Timeout</Label>
+                <Label htmlFor="session-timeout">{t('autoSessionTimeout')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Automatically log out inactive users after 30 minutes
+                  {t('autoSessionTimeoutDesc')}
                 </p>
               </div>
               <Switch 
@@ -880,14 +881,14 @@ export default function Settings() {
                 onClick={handleViewSecurityLogs}
                 data-testid="button-view-logs"
               >
-                View Security Logs
+                {t('viewSecurityLogs')}
               </Button>
               <Button 
                 variant="outline" 
                 onClick={handleResetPasswords}
                 data-testid="button-reset-passwords"
               >
-                Reset All Passwords
+                {t('resetAllPasswords')}
               </Button>
             </div>
           </CardContent>
@@ -898,15 +899,15 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Bell className="w-5 h-5 mr-2" />
-              Notification Preferences
+              {t('notificationPreferences')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="order-notifications">Order Updates</Label>
+                <Label htmlFor="order-notifications">{t('orderUpdates')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Notify when orders are created or updated
+                  {t('orderUpdatesDesc')}
                 </p>
               </div>
               <Switch 
@@ -920,9 +921,9 @@ export default function Settings() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="inventory-alerts">Low Stock Alerts</Label>
+                <Label htmlFor="inventory-alerts">{t('lowStockAlerts')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Alert when inventory items are running low
+                  {t('lowStockAlertsDesc')}
                 </p>
               </div>
               <Switch 
@@ -936,9 +937,9 @@ export default function Settings() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="system-alerts">System Alerts</Label>
+                <Label htmlFor="system-alerts">{t('systemAlerts')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Notify about system errors and maintenance
+                  {t('systemAlertsDesc')}
                 </p>
               </div>
               <Switch 
@@ -957,15 +958,15 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Palette className="w-5 h-5 mr-2" />
-              Appearance
+              {t('appearance')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="dark-mode">Dark Mode</Label>
+                <Label htmlFor="dark-mode">{t('darkMode')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Use dark theme for the interface
+                  {t('useDarkTheme')}
                 </p>
               </div>
               <Switch 
@@ -979,31 +980,31 @@ export default function Settings() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="language">Language</Label>
+                <Label htmlFor="language">{t('language')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Choose your preferred language
+                  {t('choosePrefLanguage')}
                 </p>
               </div>
               <Select value={i18n.language} onValueChange={handleLanguageChange}>
                 <SelectTrigger className="w-[180px]" data-testid="select-language">
-                  <SelectValue placeholder="Select language" />
+                  <SelectValue placeholder={t('selectLanguage')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="ar">العربية (Arabic)</SelectItem>
+                  <SelectItem value="en">{t('english')}</SelectItem>
+                  <SelectItem value="ar">{t('arabicWithName')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="p-4 bg-muted/20 rounded-lg">
-              <h4 className="font-medium mb-2">Current Theme</h4>
+              <h4 className="font-medium mb-2">{t('currentTheme')}</h4>
               <p className="text-sm text-muted-foreground">
-                {settingsState.darkMode ? "Dark theme is currently active" : "Light theme is currently active"}
+                {settingsState.darkMode ? t('darkThemeActive') : t('lightThemeActive')}
               </p>
               {updateSettingMutation.isPending && (
                 <div className="flex items-center text-sm text-muted-foreground mt-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-                  Saving settings...
+                  {t('savingSettings')}
                 </div>
               )}
             </div>

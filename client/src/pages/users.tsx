@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus, Users2, Search, Filter, X, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,7 @@ import { z } from "zod";
 interface SafeUser {
   id: string;
   username: string;
-  role: string;
+  role: "owner" | "customer_service" | "receptionist" | "sorter" | "stock_manager";
   firstName: string;
   lastName: string;
   email: string;
@@ -32,17 +33,18 @@ interface SafeUser {
   createdAt: string;
 }
 
-// Form schema with password confirmation
-const createUserSchema = insertUserSchema.extend({
-  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+// Form schema with password confirmation - validation messages will use translations
+const getCreateUserSchema = (t: (key: string) => string) => insertUserSchema.extend({
+  confirmPassword: z.string().min(6, t('passwordMinSixChars')),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: t('passwordsDontMatch'),
   path: ["confirmPassword"],
 });
 
-type CreateUserForm = z.infer<typeof createUserSchema>;
+type CreateUserForm = z.infer<ReturnType<typeof getCreateUserSchema>>;
 
 export default function Users() {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -52,6 +54,8 @@ export default function Users() {
   const [deletingUser, setDeletingUser] = useState<SafeUser | null>(null);
   const [roleFilters, setRoleFilters] = useState<string[]>(["owner", "customer_service", "receptionist"]);
   const { toast } = useToast();
+  
+  const createUserSchema = getCreateUserSchema(t);
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["/api/users"],
@@ -84,7 +88,7 @@ export default function Users() {
     }
     return true;
   }, {
-    message: "Passwords don't match",
+    message: t('passwordsDontMatch'),
     path: ["confirmPassword"],
   });
 
@@ -105,7 +109,7 @@ export default function Users() {
       const response = await apiRequest("POST", "/api/users", userData);
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to create user");
+        throw new Error(error.message || t('failedCreateUser'));
       }
       return response.json();
     },
@@ -114,13 +118,13 @@ export default function Users() {
       setIsCreateModalOpen(false);
       form.reset();
       toast({
-        title: "User created successfully",
-        description: "The new user has been added to the system.",
+        title: t('userCreatedSuccess'),
+        description: t('userCreatedDescription'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error creating user",
+        title: t('errorCreatingUser'),
         description: error.message,
         variant: "destructive",
       });
@@ -132,7 +136,7 @@ export default function Users() {
       const response = await apiRequest("PUT", `/api/users/${id}`, userData);
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to update user");
+        throw new Error(error.message || t('failedUpdateUser'));
       }
       return response.json();
     },
@@ -142,13 +146,13 @@ export default function Users() {
       setEditingUser(null);
       editForm.reset();
       toast({
-        title: "User updated successfully",
-        description: "The user has been updated.",
+        title: t('userUpdatedSuccess'),
+        description: t('userUpdatedDescription'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error updating user",
+        title: t('errorUpdatingUser'),
         description: error.message,
         variant: "destructive",
       });
@@ -159,23 +163,23 @@ export default function Users() {
     mutationFn: async (id: string) => {
       const response = await apiRequest("DELETE", `/api/users/${id}`);
       if (!response.ok) {
-        throw new Error("Failed to delete user");
+        throw new Error(t('failedDeleteUser'));
       }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({
-        title: "User deleted successfully",
-        description: "The user has been removed from the system.",
+        title: t('userDeletedSuccess'),
+        description: t('userDeletedDescription'),
       });
       setIsDeleteDialogOpen(false);
       setDeletingUser(null);
     },
     onError: () => {
       toast({
-        title: "Error deleting user",
-        description: "Failed to delete user",
+        title: t('errorDeletingUser'),
+        description: t('failedDeleteUser'),
         variant: "destructive",
       });
     },
@@ -266,8 +270,8 @@ export default function Users() {
   return (
     <div className="flex-1 flex flex-col">
       <Header 
-        title="User Management" 
-        description="Manage system users and their permissions" 
+        title={t('userManagement')} 
+        description={t('usersDescription')} 
       />
       
       <div className="flex-1 p-6 space-y-6">
@@ -277,7 +281,7 @@ export default function Users() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search users..."
+                placeholder={t('searchUsers')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 w-64"
@@ -288,7 +292,7 @@ export default function Users() {
               <PopoverTrigger asChild>
                 <Button variant="outline" data-testid="button-filter-users">
                   <Filter className="w-4 h-4 mr-2" />
-                  Filter
+                  {t('filter')}
                   {roleFilters.length < 3 && (
                     <Badge variant="secondary" className="ml-2">
                       {roleFilters.length}
@@ -299,12 +303,12 @@ export default function Users() {
               <PopoverContent className="w-64" data-testid="popover-filter-users">
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-semibold mb-3">Filter by Role</h4>
+                    <h4 className="font-semibold mb-3">{t('filterByRole')}</h4>
                     <div className="space-y-2">
                       {[
-                        { value: "owner", label: "Owner" },
-                        { value: "customer_service", label: "Customer Service" },
-                        { value: "receptionist", label: "Receptionist" }
+                        { value: "owner", label: t('owner') },
+                        { value: "customer_service", label: t('customerService') },
+                        { value: "receptionist", label: t('receptionist') }
                       ].map((role) => (
                         <div key={role.value} className="flex items-center space-x-2">
                           <Checkbox
@@ -330,14 +334,14 @@ export default function Users() {
                       onClick={() => setRoleFilters(["owner", "customer_service", "receptionist"])}
                       data-testid="button-reset-filters"
                     >
-                      Reset
+                      {t('reset')}
                     </Button>
                     <Button
                       size="sm"
                       onClick={() => setIsFilterOpen(false)}
                       data-testid="button-apply-filters"
                     >
-                      Apply
+                      {t('apply')}
                     </Button>
                   </div>
                 </div>
@@ -346,7 +350,7 @@ export default function Users() {
           </div>
           <Button onClick={openCreateModal} data-testid="button-new-user">
             <Plus className="w-4 h-4 mr-2" />
-            Add User
+            {t('addUser')}
           </Button>
         </div>
 
@@ -355,26 +359,26 @@ export default function Users() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Users2 className="w-5 h-5 mr-2" />
-              Users ({filteredUsers.length})
+              {t('usersCount')} ({filteredUsers.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="text-muted-foreground mt-2">Loading users...</p>
+                <p className="text-muted-foreground mt-2">{t('loadingUsers')}</p>
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="text-center py-8">
                 <Users2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">No users found</h3>
+                <h3 className="text-lg font-medium text-foreground mb-2">{t('noUsersFound')}</h3>
                 <p className="text-muted-foreground">
-                  {searchTerm ? "No users match your search criteria" : "Get started by adding your first user"}
+                  {searchTerm ? t('noUsersMatch') : t('getStartedFirstUser')}
                 </p>
                 {!searchTerm && (
                   <Button className="mt-4" onClick={openCreateModal} data-testid="button-add-first-user">
                     <Plus className="w-4 h-4 mr-2" />
-                    Add First User
+                    {t('addFirstUser')}
                   </Button>
                 )}
               </div>
@@ -382,13 +386,13 @@ export default function Users() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Username</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t('name')}</TableHead>
+                    <TableHead>{t('username')}</TableHead>
+                    <TableHead>{t('email')}</TableHead>
+                    <TableHead>{t('role')}</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                    <TableHead>{t('created')}</TableHead>
+                    <TableHead>{t('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -413,7 +417,7 @@ export default function Users() {
                           className={user.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
                           data-testid={`badge-status-${user.id}`}
                         >
-                          {user.isActive ? "Active" : "Inactive"}
+                          {user.isActive ? t('active') : t('inactive')}
                         </Badge>
                       </TableCell>
                       <TableCell data-testid={`text-created-${user.id}`}>
@@ -427,7 +431,7 @@ export default function Users() {
                             onClick={() => openEditModal(user)}
                             data-testid={`button-edit-user-${user.id}`}
                           >
-                            Edit
+                            {t('edit')}
                           </Button>
                           <Button 
                             variant="destructive" 
@@ -451,7 +455,7 @@ export default function Users() {
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogContent className="sm:max-w-md" data-testid="modal-create-user">
             <DialogHeader>
-              <DialogTitle>Create New User</DialogTitle>
+              <DialogTitle>{t('createNewUser')}</DialogTitle>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleCreateUser)} className="space-y-4">
@@ -461,9 +465,9 @@ export default function Users() {
                     name="firstName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>First Name</FormLabel>
+                        <FormLabel>{t('firstName')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="John" {...field} data-testid="input-first-name" />
+                          <Input placeholder={t('firstNamePlaceholder')} {...field} data-testid="input-first-name" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -474,9 +478,9 @@ export default function Users() {
                     name="lastName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Last Name</FormLabel>
+                        <FormLabel>{t('lastName')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Doe" {...field} data-testid="input-last-name" />
+                          <Input placeholder={t('lastNamePlaceholder')} {...field} data-testid="input-last-name" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -488,9 +492,9 @@ export default function Users() {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel>{t('username')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="johndoe" {...field} data-testid="input-username" />
+                        <Input placeholder={t('usernamePlaceholder')} {...field} data-testid="input-username" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -501,9 +505,9 @@ export default function Users() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t('email')}</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="john@example.com" {...field} data-testid="input-email" />
+                        <Input type="email" placeholder={t('emailPlaceholder')} {...field} data-testid="input-email" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -514,19 +518,19 @@ export default function Users() {
                   name="role"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Role</FormLabel>
+                      <FormLabel>{t('role')}</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-role">
-                            <SelectValue placeholder="Select a role" />
+                            <SelectValue placeholder={t('selectRole')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="owner">Owner</SelectItem>
-                          <SelectItem value="customer_service">Customer Service</SelectItem>
-                          <SelectItem value="receptionist">Receptionist</SelectItem>
-                          <SelectItem value="sorter">Sorter</SelectItem>
-                          <SelectItem value="stock_manager">Stock Manager</SelectItem>
+                          <SelectItem value="owner">{t('owner')}</SelectItem>
+                          <SelectItem value="customer_service">{t('customerService')}</SelectItem>
+                          <SelectItem value="receptionist">{t('receptionist')}</SelectItem>
+                          <SelectItem value="sorter">{t('sorter')}</SelectItem>
+                          <SelectItem value="stock_manager">{t('stockManager')}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -539,9 +543,9 @@ export default function Users() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel>{t('password')}</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} data-testid="input-password" />
+                          <Input type="password" placeholder={t('passwordPlaceholder')} {...field} data-testid="input-password" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -552,9 +556,9 @@ export default function Users() {
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
+                        <FormLabel>{t('confirmPassword')}</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} data-testid="input-confirm-password" />
+                          <Input type="password" placeholder={t('passwordPlaceholder')} {...field} data-testid="input-confirm-password" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -568,14 +572,14 @@ export default function Users() {
                     onClick={() => setIsCreateModalOpen(false)}
                     data-testid="button-cancel-user"
                   >
-                    Cancel
+                    {t('cancel')}
                   </Button>
                   <Button
                     type="submit"
                     disabled={createUserMutation.isPending}
                     data-testid="button-create-user"
                   >
-                    {createUserMutation.isPending ? "Creating..." : "Create User"}
+                    {createUserMutation.isPending ? t('creatingUser') : t('createUser')}
                   </Button>
                 </div>
               </form>
@@ -587,7 +591,7 @@ export default function Users() {
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
           <DialogContent className="sm:max-w-md" data-testid="modal-edit-user">
             <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
+              <DialogTitle>{t('editUser')}</DialogTitle>
             </DialogHeader>
             <Form {...editForm}>
               <form onSubmit={editForm.handleSubmit(handleEditUser)} className="space-y-4">
@@ -597,9 +601,9 @@ export default function Users() {
                     name="firstName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>First Name</FormLabel>
+                        <FormLabel>{t('firstName')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="John" {...field} data-testid="input-edit-first-name" />
+                          <Input placeholder={t('firstNamePlaceholder')} {...field} data-testid="input-edit-first-name" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -610,9 +614,9 @@ export default function Users() {
                     name="lastName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Last Name</FormLabel>
+                        <FormLabel>{t('lastName')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Doe" {...field} data-testid="input-edit-last-name" />
+                          <Input placeholder={t('lastNamePlaceholder')} {...field} data-testid="input-edit-last-name" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -624,9 +628,9 @@ export default function Users() {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel>{t('username')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="johndoe" {...field} data-testid="input-edit-username" />
+                        <Input placeholder={t('usernamePlaceholder')} {...field} data-testid="input-edit-username" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -637,9 +641,9 @@ export default function Users() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t('email')}</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="john@example.com" {...field} data-testid="input-edit-email" />
+                        <Input type="email" placeholder={t('emailPlaceholder')} {...field} data-testid="input-edit-email" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -650,19 +654,19 @@ export default function Users() {
                   name="role"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Role</FormLabel>
+                      <FormLabel>{t('role')}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-edit-role">
-                            <SelectValue placeholder="Select a role" />
+                            <SelectValue placeholder={t('selectRole')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="owner">Owner</SelectItem>
-                          <SelectItem value="customer_service">Customer Service</SelectItem>
-                          <SelectItem value="receptionist">Receptionist</SelectItem>
-                          <SelectItem value="sorter">Sorter</SelectItem>
-                          <SelectItem value="stock_manager">Stock Manager</SelectItem>
+                          <SelectItem value="owner">{t('owner')}</SelectItem>
+                          <SelectItem value="customer_service">{t('customerService')}</SelectItem>
+                          <SelectItem value="receptionist">{t('receptionist')}</SelectItem>
+                          <SelectItem value="sorter">{t('sorter')}</SelectItem>
+                          <SelectItem value="stock_manager">{t('stockManager')}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -675,9 +679,9 @@ export default function Users() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>New Password (Optional)</FormLabel>
+                        <FormLabel>{t('newPasswordOptional')}</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} data-testid="input-edit-password" />
+                          <Input type="password" placeholder={t('passwordPlaceholder')} {...field} data-testid="input-edit-password" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -688,9 +692,9 @@ export default function Users() {
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
+                        <FormLabel>{t('confirmPassword')}</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} data-testid="input-edit-confirm-password" />
+                          <Input type="password" placeholder={t('passwordPlaceholder')} {...field} data-testid="input-edit-confirm-password" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -704,14 +708,14 @@ export default function Users() {
                     onClick={() => setIsEditModalOpen(false)}
                     data-testid="button-cancel-edit-user"
                   >
-                    Cancel
+                    {t('cancel')}
                   </Button>
                   <Button
                     type="submit"
                     disabled={updateUserMutation.isPending}
                     data-testid="button-update-user"
                   >
-                    {updateUserMutation.isPending ? "Updating..." : "Update User"}
+                    {updateUserMutation.isPending ? t('updatingUser') : t('updateUser')}
                   </Button>
                 </div>
               </form>
@@ -723,9 +727,9 @@ export default function Users() {
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent data-testid="dialog-delete-user">
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete User</AlertDialogTitle>
+              <AlertDialogTitle>{t('deleteUser')}</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete this user? This action cannot be undone.
+                {t('deleteUserConfirmation')}
                 {deletingUser && (
                   <div className="mt-2 p-2 bg-muted rounded text-sm">
                     <strong>{deletingUser.firstName} {deletingUser.lastName}</strong> ({deletingUser.username}) - {deletingUser.email}
@@ -734,7 +738,7 @@ export default function Users() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+              <AlertDialogCancel data-testid="button-cancel-delete">{t('cancel')}</AlertDialogCancel>
               <Button
                 onClick={(e) => {
                   e.preventDefault();
@@ -744,7 +748,7 @@ export default function Users() {
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 data-testid="button-confirm-delete"
               >
-                Delete
+                {t('delete')}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
