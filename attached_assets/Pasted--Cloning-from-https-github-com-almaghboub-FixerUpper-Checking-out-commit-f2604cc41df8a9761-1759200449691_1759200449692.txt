@@ -1,0 +1,33 @@
+==> Cloning from https://github.com/almaghboub/FixerUpper
+==> Checking out commit f2604cc41df8a976170d64eb3822c35eee004251 in branch main
+==> Using Node.js version 22.16.0 (default)
+==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+==> Running build command 'npm install && cd client && npx vite build --outDir ../dist/public && cd .. && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist'...
+added 482 packages, and audited 483 packages in 8s
+65 packages are looking for funding
+  run `npm fund` for details
+8 vulnerabilities (3 low, 5 moderate)
+To address issues that do not require attention, run:
+  npm audit fix
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+Run `npm audit` for details.
+vite v5.4.20 building for production...
+(!) outDir /opt/render/project/src/dist/public is not inside project root and will not be emptied.
+Use --emptyOutDir to override.
+transforming...
+✓ 6 modules transformed.
+x Build failed in 401ms
+error during build:
+[vite]: Rollup failed to resolve import "@/components/ui/toaster" from "/opt/render/project/src/client/src/App.tsx".
+This is most likely unintended because it can break your application at runtime.
+If you do want to externalize this module explicitly add it to
+`build.rollupOptions.external`
+    at viteWarn (file:///opt/render/project/src/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:65854:17)
+    at onRollupWarning (file:///opt/render/project/src/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:65886:5)
+    at onwarn (file:///opt/render/project/src/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:65549:7)
+    at file:///opt/render/project/src/node_modules/rollup/dist/es/shared/node-entry.js:19452:13
+    at Object.logger [as onLog] (file:///opt/render/project/src/node_modules/rollup/dist/es/shared/node-entry.js:21178:9)
+    at ModuleLoader.handleInvalidResolvedId (file:///opt/render/project/src/node_modules/rollup/dist/es/shared/node-entry.js:20067:26)
+    at file:///opt/render/project/src/node_modules/rollup/dist/es/shared/node-entry.js:20025:26
+==> Build failed 😞
