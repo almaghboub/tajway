@@ -442,10 +442,10 @@ export default function Orders() {
     const newItems = [...orderItems];
     newItems[index] = { ...newItems[index], [field]: value };
     
-    // Calculate based on discounted price (what customer pays)
-    if (field === "quantity" || field === "discountedPrice") {
-      newItems[index].unitPrice = newItems[index].discountedPrice;
-      newItems[index].totalPrice = newItems[index].quantity * newItems[index].discountedPrice;
+    // Calculate based on ORIGINAL price (what customer pays)
+    if (field === "quantity" || field === "originalPrice" || field === "discountedPrice") {
+      newItems[index].unitPrice = newItems[index].originalPrice;
+      newItems[index].totalPrice = newItems[index].quantity * newItems[index].originalPrice;
     }
     
     setOrderItems(newItems);
