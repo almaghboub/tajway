@@ -302,7 +302,11 @@ export default function Orders() {
     }
 
     try {
-      const response = await apiRequest("GET", `/api/customers/search/phone?phone=${encodeURIComponent(customerPhone)}`);
+      // Use fetch directly to handle 404 without throwing
+      const response = await fetch(`/api/customers/search/phone?phone=${encodeURIComponent(customerPhone)}`, {
+        credentials: "include"
+      });
+      
       if (response.ok) {
         const customer = await response.json();
         setSearchedCustomer(customer);
@@ -313,7 +317,8 @@ export default function Orders() {
           title: t('success'),
           description: `Customer found: ${customer.firstName} ${customer.lastName}`,
         });
-      } else {
+      } else if (response.status === 404) {
+        // Customer not found - show inline creation form
         setSearchedCustomer(null);
         setShowCustomerForm(true);
         setNewCustomer(prev => ({ ...prev, phone: customerPhone }));
@@ -321,6 +326,8 @@ export default function Orders() {
           title: "Customer not found",
           description: "Fill in the details to create a new customer",
         });
+      } else {
+        throw new Error("Failed to search for customer");
       }
     } catch (error) {
       toast({
