@@ -225,6 +225,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/customers/search/phone", requireOperational, async (req, res) => {
+    try {
+      const { phone } = req.query;
+      if (!phone || typeof phone !== "string") {
+        return res.status(400).json({ message: "Phone number is required" });
+      }
+      const customer = await storage.getCustomerByPhone(phone);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      res.json(customer);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to search customer" });
+    }
+  });
+
   app.get("/api/customers/:id", requireOperational, async (req, res) => {
     try {
       const customer = await storage.getCustomerWithOrders(req.params.id);
@@ -331,6 +347,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             orderId: order.id,
           });
           items.push(item);
+        }
+
+        // Create order images if provided
+        if (req.body.images && Array.isArray(req.body.images)) {
+          for (let i = 0; i < Math.min(req.body.images.length, 3); i++) {
+            const imageData = req.body.images[i];
+            if (imageData.url) {
+              await storage.createOrderImage({
+                orderId: order.id,
+                url: imageData.url,
+                altText: imageData.altText || null,
+                position: i,
+              });
+            }
+          }
         }
 
         // Return order with items
