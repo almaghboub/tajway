@@ -7,6 +7,8 @@ import {
   type InsertOrder,
   type OrderItem,
   type InsertOrderItem,
+  type OrderImage,
+  type InsertOrderImage,
   type Inventory,
   type InsertInventory,
   type ShippingRate,
@@ -21,6 +23,7 @@ import {
   customers,
   orders,
   orderItems,
+  orderImages,
   inventory,
   shippingRates,
   commissionRules,
@@ -47,6 +50,7 @@ export interface IStorage {
 
   // Customers
   getCustomer(id: string): Promise<Customer | undefined>;
+  getCustomerByPhone(phone: string): Promise<Customer | undefined>;
   getCustomerWithOrders(id: string): Promise<CustomerWithOrders | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: string, customer: Partial<InsertCustomer>): Promise<Customer | undefined>;
@@ -66,6 +70,11 @@ export interface IStorage {
   createOrderItem(item: InsertOrderItem): Promise<OrderItem>;
   updateOrderItem(id: string, item: Partial<InsertOrderItem>): Promise<OrderItem | undefined>;
   deleteOrderItem(id: string): Promise<boolean>;
+
+  // Order Images
+  getOrderImages(orderId: string): Promise<OrderImage[]>;
+  createOrderImage(image: InsertOrderImage): Promise<OrderImage>;
+  deleteOrderImage(id: string): Promise<boolean>;
 
   // Inventory
   getInventoryItem(id: string): Promise<Inventory | undefined>;

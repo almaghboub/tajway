@@ -23,7 +23,7 @@ export const customers = pgTable("customers", {
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email").notNull(),
-  phone: text("phone"),
+  phone: text("phone").notNull().unique(),
   address: text("address"),
   city: text("city"),
   country: text("country").notNull(),
@@ -39,7 +39,9 @@ export const orders = pgTable("orders", {
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
   shippingCost: decimal("shipping_cost", { precision: 10, scale: 2 }).notNull().default("0"),
   commission: decimal("commission", { precision: 10, scale: 2 }).notNull().default("0"),
-  profit: decimal("profit", { precision: 10, scale: 2 }).notNull().default("0"),
+  shippingProfit: decimal("shipping_profit", { precision: 10, scale: 2 }).notNull().default("0"),
+  itemsProfit: decimal("items_profit", { precision: 10, scale: 2 }).notNull().default("0"),
+  totalProfit: decimal("total_profit", { precision: 10, scale: 2 }).notNull().default("0"),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -49,8 +51,12 @@ export const orderItems = pgTable("order_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   orderId: varchar("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
   productName: text("product_name").notNull(),
+  productUrl: text("product_url"),
   quantity: integer("quantity").notNull(),
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  originalPrice: decimal("original_price", { precision: 10, scale: 2 }),
+  discountedPrice: decimal("discounted_price", { precision: 10, scale: 2 }),
+  markupProfit: decimal("markup_profit", { precision: 10, scale: 2 }).notNull().default("0"),
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
 });
 
@@ -95,6 +101,15 @@ export const settings = pgTable("settings", {
   description: text("description"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const orderImages = pgTable("order_images", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+  altText: text("alt_text"),
+  position: integer("position").notNull().default(1),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // Insert schemas
@@ -143,6 +158,11 @@ export const insertSettingSchema = createInsertSchema(settings).omit({
   updatedAt: true,
 });
 
+export const insertOrderImageSchema = createInsertSchema(orderImages).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Login schema
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -174,12 +194,16 @@ export type CommissionRule = typeof commissionRules.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 export type Setting = typeof settings.$inferSelect;
 
+export type InsertOrderImage = z.infer<typeof insertOrderImageSchema>;
+export type OrderImage = typeof orderImages.$inferSelect;
+
 export type LoginCredentials = z.infer<typeof loginSchema>;
 
 // Extended types for API responses
 export type OrderWithCustomer = Order & {
   customer: Customer;
   items: OrderItem[];
+  images: OrderImage[];
 };
 
 export type CustomerWithOrders = Customer & {
