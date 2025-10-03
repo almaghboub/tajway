@@ -458,6 +458,12 @@ export default function Orders() {
   const calculateTotals = () => {
     const subtotal = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
     
+    // Calculate items profit (markup profit)
+    const itemsProfit = orderItems.reduce((sum, item) => {
+      const markupProfit = (item.originalPrice - item.discountedPrice) * item.quantity;
+      return sum + markupProfit;
+    }, 0);
+    
     // Use dynamic shipping calculation if available
     if (shippingCalculation) {
       // Convert shipping amounts to USD if needed (simplified conversion for demo)
@@ -468,13 +474,16 @@ export default function Orders() {
       const commissionInUSD = shippingCalculation.commission * usdRate;
       
       const total = subtotal + shippingInUSD;
-      const profit = commissionInUSD;
+      const shippingProfit = commissionInUSD;
+      const totalProfit = itemsProfit + shippingProfit;
       
       return { 
         subtotal, 
         total, 
         commission: commissionInUSD, 
-        profit,
+        profit: totalProfit,
+        itemsProfit,
+        shippingProfit,
         shippingCost: shippingInUSD,
         currency: 'USD', // Normalize to USD
         originalCurrency: shippingCalculation.currency,
@@ -485,13 +494,16 @@ export default function Orders() {
       // Fallback to manual calculation
       const total = subtotal + shippingCost;
       const commission = total * 0.15; // Default commission rate
-      const profit = commission;
+      const shippingProfit = commission;
+      const totalProfit = itemsProfit + shippingProfit;
       
       return { 
         subtotal, 
         total, 
         commission, 
-        profit,
+        profit: totalProfit,
+        itemsProfit,
+        shippingProfit,
         shippingCost,
         currency: 'USD'
       };
