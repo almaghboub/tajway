@@ -17,7 +17,7 @@ import { Header } from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Invoice } from "@/components/invoice";
-import type { OrderWithCustomer, Customer, Inventory, InsertOrder, InsertOrderItem } from "@shared/schema";
+import type { OrderWithCustomer, Customer, InsertOrder, InsertOrderItem } from "@shared/schema";
 
 interface OrderItem {
   productId: string;
@@ -100,16 +100,8 @@ export default function Orders() {
     },
   });
 
-  const { data: inventory = [] } = useQuery({
-    queryKey: ["/api/inventory"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/inventory");
-      return response.json() as Promise<Inventory[]>;
-    },
-  });
-
   const createOrderMutation = useMutation({
-    mutationFn: async (orderData: { order: InsertOrder; items: InsertOrderItem[] }) => {
+    mutationFn: async (orderData: { order: InsertOrder; items: InsertOrderItem[]; images?: OrderImage[] }) => {
       const response = await apiRequest("POST", "/api/orders", orderData);
       if (!response.ok) {
         throw new Error("Failed to create order");
@@ -204,6 +196,7 @@ export default function Orders() {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
       setSearchedCustomer(customer);
       setSelectedCustomerId(customer.id);
+      setShippingCountry(customer.country);
       setShowCustomerForm(false);
       setNewCustomer({
         firstName: "",
@@ -314,6 +307,7 @@ export default function Orders() {
         const customer = await response.json();
         setSearchedCustomer(customer);
         setSelectedCustomerId(customer.id);
+        setShippingCountry(customer.country);
         setShowCustomerForm(false);
         toast({
           title: t('success'),
@@ -448,8 +442,10 @@ export default function Orders() {
     const newItems = [...orderItems];
     newItems[index] = { ...newItems[index], [field]: value };
     
-    if (field === "quantity" || field === "unitPrice") {
-      newItems[index].totalPrice = newItems[index].quantity * newItems[index].unitPrice;
+    // Calculate based on discounted price (what customer pays)
+    if (field === "quantity" || field === "discountedPrice") {
+      newItems[index].unitPrice = newItems[index].discountedPrice;
+      newItems[index].totalPrice = newItems[index].quantity * newItems[index].discountedPrice;
     }
     
     setOrderItems(newItems);
@@ -525,25 +521,50 @@ export default function Orders() {
 
     const totals = calculateTotals();
     
+    // Calculate items profit (difference between original and discounted price)
+    const itemsProfit = orderItems.reduce((sum, item) => {
+      const markupProfit = (item.originalPrice - item.discountedPrice) * item.quantity;
+      return sum + markupProfit;
+    }, 0);
+    
+    const shippingProfit = totals.commission;
+    const totalProfit = itemsProfit + shippingProfit;
+    
     const order: InsertOrder = {
       customerId: selectedCustomerId,
       status: "pending",
       totalAmount: totals.total.toFixed(2),
       shippingCost: totals.shippingCost.toFixed(2),
       commission: totals.commission.toFixed(2),
-      profit: totals.profit.toFixed(2),
+      shippingProfit: shippingProfit.toFixed(2),
+      itemsProfit: itemsProfit.toFixed(2),
+      totalProfit: totalProfit.toFixed(2),
       notes: notes || undefined,
     };
 
-    const items: InsertOrderItem[] = orderItems.map(item => ({
-      orderId: "", // Will be set by the backend
-      productName: item.productName,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice.toFixed(2),
-      totalPrice: item.totalPrice.toFixed(2),
-    }));
+    const items: InsertOrderItem[] = orderItems.map(item => {
+      const markupProfit = ((item.originalPrice - item.discountedPrice) * item.quantity).toFixed(2);
+      return {
+        orderId: "", // Will be set by the backend
+        productName: item.productName,
+        productUrl: item.productUrl || null,
+        originalPrice: item.originalPrice.toFixed(2),
+        discountedPrice: item.discountedPrice.toFixed(2),
+        markupProfit: markupProfit,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice.toFixed(2),
+        totalPrice: item.totalPrice.toFixed(2),
+      };
+    });
 
-    createOrderMutation.mutate({ order, items });
+    // Include images
+    const validImages = orderImages.filter(img => img.url.trim() !== "");
+
+    createOrderMutation.mutate({ 
+      order, 
+      items,
+      images: validImages
+    });
   };
 
   const toggleStatusFilter = (status: string) => {
@@ -720,7 +741,7 @@ export default function Orders() {
                         ${parseFloat(order.totalAmount).toFixed(2)}
                       </TableCell>
                       <TableCell data-testid={`text-profit-${order.id}`}>
-                        ${parseFloat(order.profit).toFixed(2)}
+                        ${parseFloat(order.totalProfit).toFixed(2)}
                       </TableCell>
                       <TableCell data-testid={`text-date-${order.id}`}>
                         {new Date(order.createdAt).toLocaleDateString()}
@@ -942,15 +963,15 @@ export default function Orders() {
                     {orderItems.map((item, index) => (
                       <div key={index} className="border rounded-lg p-4 bg-muted/30" data-testid={`order-item-${index}`}>
                         <div className="space-y-4">
-                          {/* First row: Product Name and URL */}
+                          {/* First row: Product Code and URL */}
                           <div className="grid grid-cols-12 gap-4">
                             <div className="col-span-6">
-                              <Label htmlFor={`product-name-${index}`}>Product Name*</Label>
+                              <Label htmlFor={`product-name-${index}`}>Product Code*</Label>
                               <Input
                                 id={`product-name-${index}`}
                                 value={item.productName}
                                 onChange={(e) => updateOrderItem(index, "productName", e.target.value)}
-                                placeholder="Enter product name"
+                                placeholder="Enter product code"
                                 required
                                 data-testid={`input-product-name-${index}`}
                               />
@@ -979,9 +1000,9 @@ export default function Orders() {
                           </div>
 
                           {/* Second row: Prices, Quantity, Total */}
-                          <div className="grid grid-cols-5 gap-4">
+                          <div className="grid grid-cols-4 gap-4">
                             <div>
-                              <Label htmlFor={`original-price-${index}`}>Original Price ($)</Label>
+                              <Label htmlFor={`original-price-${index}`}>Original Price ($)*</Label>
                               <Input
                                 id={`original-price-${index}`}
                                 type="number"
@@ -990,11 +1011,12 @@ export default function Orders() {
                                 value={item.originalPrice}
                                 onChange={(e) => updateOrderItem(index, "originalPrice", parseFloat(e.target.value) || 0)}
                                 placeholder="0.00"
+                                required
                                 data-testid={`input-original-price-${index}`}
                               />
                             </div>
                             <div>
-                              <Label htmlFor={`discounted-price-${index}`}>Discounted Price ($)</Label>
+                              <Label htmlFor={`discounted-price-${index}`}>After Discount ($)*</Label>
                               <Input
                                 id={`discounted-price-${index}`}
                                 type="number"
@@ -1003,6 +1025,7 @@ export default function Orders() {
                                 value={item.discountedPrice}
                                 onChange={(e) => updateOrderItem(index, "discountedPrice", parseFloat(e.target.value) || 0)}
                                 placeholder="0.00"
+                                required
                                 data-testid={`input-discounted-price-${index}`}
                               />
                             </div>
@@ -1019,21 +1042,7 @@ export default function Orders() {
                               />
                             </div>
                             <div>
-                              <Label htmlFor={`unit-price-${index}`}>Unit Price ($)*</Label>
-                              <Input
-                                id={`unit-price-${index}`}
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={item.unitPrice}
-                                onChange={(e) => updateOrderItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
-                                placeholder="0.00"
-                                required
-                                data-testid={`input-unit-price-${index}`}
-                              />
-                            </div>
-                            <div>
-                              <Label>Total</Label>
+                              <Label>Total (Customer Pays)</Label>
                               <div className="h-10 px-3 py-2 border rounded-md bg-muted font-semibold flex items-center" data-testid={`text-item-total-${index}`}>
                                 ${item.totalPrice.toFixed(2)}
                               </div>
@@ -1044,6 +1053,57 @@ export default function Orders() {
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* Order Images Upload */}
+              <div className="space-y-4">
+                <Label>Order Images (Up to 3 photos)</Label>
+                <div className="grid grid-cols-3 gap-4">
+                  {[0, 1, 2].map((index) => (
+                    <div key={index} className="space-y-2">
+                      <Label htmlFor={`image-url-${index}`}>Image {index + 1} URL</Label>
+                      <Input
+                        id={`image-url-${index}`}
+                        value={orderImages[index]?.url || ""}
+                        onChange={(e) => {
+                          const newImages = [...orderImages];
+                          newImages[index] = { 
+                            url: e.target.value, 
+                            altText: newImages[index]?.altText || `Order image ${index + 1}` 
+                          };
+                          setOrderImages(newImages);
+                        }}
+                        placeholder="https://..."
+                        data-testid={`input-image-url-${index}`}
+                      />
+                      {orderImages[index]?.url && (
+                        <div className="relative">
+                          <img 
+                            src={orderImages[index].url} 
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-32 object-cover rounded border"
+                            onError={(e) => {
+                              e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999'%3EInvalid%3C/text%3E%3C/svg%3E";
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute top-1 right-1 bg-white/80 hover:bg-white"
+                            onClick={() => {
+                              const newImages = orderImages.filter((_, i) => i !== index);
+                              setOrderImages(newImages);
+                            }}
+                            data-testid={`button-remove-image-${index}`}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Shipping Configuration and Notes */}
@@ -1410,7 +1470,7 @@ export default function Orders() {
                     </div>
                     <div className="flex justify-between text-green-600">
                       <span>{t('estimatedProfitLabel')}</span>
-                      <span data-testid="text-view-profit">${parseFloat(viewingOrder.profit).toFixed(2)}</span>
+                      <span data-testid="text-view-profit">${parseFloat(viewingOrder.totalProfit).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
