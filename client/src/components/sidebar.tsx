@@ -9,7 +9,6 @@ const navigationItems = [
   { key: "dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"] },
   { key: "orders", href: "/orders", icon: Package, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"] },
   { key: "customers", href: "/customers", icon: Users, roles: ["owner", "customer_service", "receptionist"] },
-  { key: "inventory", href: "/inventory", icon: Box, roles: ["owner", "stock_manager", "sorter"] },
   { key: "profitReports", href: "/profits", icon: TrendingUp, roles: ["owner"] },
   { key: "userManagement", href: "/users", icon: Users2, roles: ["owner"] },
   { key: "settings", href: "/settings", icon: Settings, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"] },

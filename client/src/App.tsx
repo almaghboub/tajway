@@ -10,7 +10,6 @@ import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Orders from "@/pages/orders";
 import Customers from "@/pages/customers";
-import Inventory from "@/pages/inventory";
 import Profits from "@/pages/profits";
 import Users from "@/pages/users";
 import Settings from "@/pages/settings";
@@ -89,12 +88,6 @@ function Router() {
       <Route path="/customers">
         <ProtectedRoute>
           <Customers />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/inventory">
-        <ProtectedRoute>
-          <Inventory />
         </ProtectedRoute>
       </Route>
 
