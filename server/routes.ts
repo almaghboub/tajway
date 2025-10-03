@@ -5,13 +5,12 @@ import { Strategy as LocalStrategy } from "passport-local";
 import session from "express-session";
 import { storage } from "./storage";
 import { hashPassword, verifyPassword } from "./auth";
-import { requireAuth, requireOwner, requireOperational, requireInventoryAccess } from "./middleware";
+import { requireAuth, requireOwner, requireOperational } from "./middleware";
 import {
   insertUserSchema,
   insertCustomerSchema,
   insertOrderSchema,
   insertOrderItemSchema,
-  insertInventorySchema,
   insertShippingRateSchema,
   insertCommissionRuleSchema,
   insertSettingSchema,
@@ -436,71 +435,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(item);
     } catch (error) {
       res.status(500).json({ message: "Failed to create order item" });
-    }
-  });
-
-  // Inventory routes
-  app.get("/api/inventory", requireInventoryAccess, async (req, res) => {
-    try {
-      const inventory = await storage.getAllInventory();
-      res.json(inventory);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch inventory" });
-    }
-  });
-
-  app.get("/api/inventory/:id", requireInventoryAccess, async (req, res) => {
-    try {
-      const item = await storage.getInventoryItem(req.params.id);
-      if (!item) {
-        return res.status(404).json({ message: "Inventory item not found" });
-      }
-      res.json(item);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch inventory item" });
-    }
-  });
-
-  app.post("/api/inventory", requireInventoryAccess, async (req, res) => {
-    try {
-      const result = insertInventorySchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ message: "Invalid inventory data", errors: result.error.errors });
-      }
-
-      const item = await storage.createInventoryItem(result.data);
-      res.status(201).json(item);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to create inventory item" });
-    }
-  });
-
-  app.put("/api/inventory/:id", requireInventoryAccess, async (req, res) => {
-    try {
-      const result = insertInventorySchema.partial().safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ message: "Invalid inventory data", errors: result.error.errors });
-      }
-
-      const item = await storage.updateInventoryItem(req.params.id, result.data);
-      if (!item) {
-        return res.status(404).json({ message: "Inventory item not found" });
-      }
-      res.json(item);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to update inventory item" });
-    }
-  });
-
-  app.delete("/api/inventory/:id", requireInventoryAccess, async (req, res) => {
-    try {
-      const success = await storage.deleteInventoryItem(req.params.id);
-      if (!success) {
-        return res.status(404).json({ message: "Inventory item not found" });
-      }
-      res.json({ message: "Inventory item deleted successfully" });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to delete inventory item" });
     }
   });
 

@@ -9,8 +9,6 @@ import {
   type InsertOrderItem,
   type OrderImage,
   type InsertOrderImage,
-  type Inventory,
-  type InsertInventory,
   type ShippingRate,
   type InsertShippingRate,
   type CommissionRule,
@@ -24,7 +22,6 @@ import {
   orders,
   orderItems,
   orderImages,
-  inventory,
   shippingRates,
   commissionRules,
   settings,
@@ -76,14 +73,6 @@ export interface IStorage {
   createOrderImage(image: InsertOrderImage): Promise<OrderImage>;
   deleteOrderImage(id: string): Promise<boolean>;
 
-  // Inventory
-  getInventoryItem(id: string): Promise<Inventory | undefined>;
-  getInventoryBySku(sku: string): Promise<Inventory | undefined>;
-  createInventoryItem(item: InsertInventory): Promise<Inventory>;
-  updateInventoryItem(id: string, item: Partial<InsertInventory>): Promise<Inventory | undefined>;
-  deleteInventoryItem(id: string): Promise<boolean>;
-  getAllInventory(): Promise<Inventory[]>;
-
   // Shipping Rates
   getShippingRate(id: string): Promise<ShippingRate | undefined>;
   getShippingRateByCountryAndCategory(country: string, category: string): Promise<ShippingRate | undefined>;
@@ -126,7 +115,6 @@ export class MemStorage implements IStorage {
   private customers: Map<string, Customer>;
   private orders: Map<string, Order>;
   private orderItems: Map<string, OrderItem>;
-  private inventory: Map<string, Inventory>;
   private shippingRates: Map<string, ShippingRate>;
   private commissionRules: Map<string, CommissionRule>;
   private settings: Map<string, Setting>;
@@ -137,7 +125,6 @@ export class MemStorage implements IStorage {
     this.customers = new Map();
     this.orders = new Map();
     this.orderItems = new Map();
-    this.inventory = new Map();
     this.shippingRates = new Map();
     this.commissionRules = new Map();
     this.settings = new Map();
@@ -405,47 +392,6 @@ export class MemStorage implements IStorage {
 
   async deleteOrderItem(id: string): Promise<boolean> {
     return this.orderItems.delete(id);
-  }
-
-  // Inventory
-  async getInventoryItem(id: string): Promise<Inventory | undefined> {
-    return this.inventory.get(id);
-  }
-
-  async getInventoryBySku(sku: string): Promise<Inventory | undefined> {
-    return Array.from(this.inventory.values()).find(item => item.sku === sku);
-  }
-
-  async createInventoryItem(insertInventory: InsertInventory): Promise<Inventory> {
-    const id = randomUUID();
-    const now = new Date();
-    const item: Inventory = {
-      ...insertInventory,
-      id,
-      quantity: insertInventory.quantity ?? 0,
-      lowStockThreshold: insertInventory.lowStockThreshold ?? 10,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.inventory.set(id, item);
-    return item;
-  }
-
-  async updateInventoryItem(id: string, itemData: Partial<InsertInventory>): Promise<Inventory | undefined> {
-    const item = this.inventory.get(id);
-    if (!item) return undefined;
-    
-    const updatedItem = { ...item, ...itemData, updatedAt: new Date() };
-    this.inventory.set(id, updatedItem);
-    return updatedItem;
-  }
-
-  async deleteInventoryItem(id: string): Promise<boolean> {
-    return this.inventory.delete(id);
-  }
-
-  async getAllInventory(): Promise<Inventory[]> {
-    return Array.from(this.inventory.values());
   }
 
   // Shipping Rates
@@ -849,40 +795,6 @@ export class PostgreSQLStorage implements IStorage {
   async deleteOrderImage(id: string): Promise<boolean> {
     const result = await db.delete(orderImages).where(eq(orderImages.id, id));
     return result.rowCount > 0;
-  }
-
-  // Inventory
-  async getInventoryItem(id: string): Promise<Inventory | undefined> {
-    const result = await db.select().from(inventory).where(eq(inventory.id, id)).limit(1);
-    return result[0];
-  }
-
-  async getInventoryBySku(sku: string): Promise<Inventory | undefined> {
-    const result = await db.select().from(inventory).where(eq(inventory.sku, sku)).limit(1);
-    return result[0];
-  }
-
-  async createInventoryItem(insertInventory: InsertInventory): Promise<Inventory> {
-    const result = await db.insert(inventory).values(insertInventory).returning();
-    return result[0];
-  }
-
-  async updateInventoryItem(id: string, itemData: Partial<InsertInventory>): Promise<Inventory | undefined> {
-    const updateData = {
-      ...itemData,
-      updatedAt: new Date(),
-    };
-    const result = await db.update(inventory).set(updateData).where(eq(inventory.id, id)).returning();
-    return result[0];
-  }
-
-  async deleteInventoryItem(id: string): Promise<boolean> {
-    const result = await db.delete(inventory).where(eq(inventory.id, id));
-    return result.rowCount > 0;
-  }
-
-  async getAllInventory(): Promise<Inventory[]> {
-    return await db.select().from(inventory).orderBy(inventory.productName);
   }
 
   // Shipping Rates

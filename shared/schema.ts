@@ -60,18 +60,6 @@ export const orderItems = pgTable("order_items", {
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
 });
 
-export const inventory = pgTable("inventory", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  productName: text("product_name").notNull().unique(),
-  sku: text("sku").notNull().unique(),
-  quantity: integer("quantity").notNull().default(0),
-  unitCost: decimal("unit_cost", { precision: 10, scale: 2 }).notNull(),
-  sellingPrice: decimal("selling_price", { precision: 10, scale: 2 }).notNull(),
-  lowStockThreshold: integer("low_stock_threshold").notNull().default(10),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
 export const shippingRates = pgTable("shipping_rates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   country: text("country").notNull(),
@@ -134,12 +122,6 @@ export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
   id: true,
 });
 
-export const insertInventorySchema = createInsertSchema(inventory).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 export const insertShippingRateSchema = createInsertSchema(shippingRates).omit({
   id: true,
   createdAt: true,
@@ -181,9 +163,6 @@ export type Order = typeof orders.$inferSelect;
 
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type OrderItem = typeof orderItems.$inferSelect;
-
-export type InsertInventory = z.infer<typeof insertInventorySchema>;
-export type Inventory = typeof inventory.$inferSelect;
 
 export type InsertShippingRate = z.infer<typeof insertShippingRateSchema>;
 export type ShippingRate = typeof shippingRates.$inferSelect;
