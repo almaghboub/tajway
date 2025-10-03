@@ -713,6 +713,11 @@ export class PostgreSQLStorage implements IStorage {
     return result[0];
   }
 
+  async getCustomerByPhone(phone: string): Promise<Customer | undefined> {
+    const result = await db.select().from(customers).where(eq(customers.phone, phone)).limit(1);
+    return result[0];
+  }
+
   async getCustomerWithOrders(id: string): Promise<CustomerWithOrders | undefined> {
     const customer = await this.getCustomer(id);
     if (!customer) return undefined;
@@ -761,6 +766,7 @@ export class PostgreSQLStorage implements IStorage {
       ...result[0].orders,
       customer: result[0].customers,
       items,
+      images: [],
     };
   }
 
@@ -802,6 +808,7 @@ export class PostgreSQLStorage implements IStorage {
           ...row.orders,
           customer: row.customers,
           items,
+          images: [],
         });
       }
     }
@@ -826,6 +833,21 @@ export class PostgreSQLStorage implements IStorage {
 
   async deleteOrderItem(id: string): Promise<boolean> {
     const result = await db.delete(orderItems).where(eq(orderItems.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Order Images
+  async getOrderImages(orderId: string): Promise<OrderImage[]> {
+    return await db.select().from(orderImages).where(eq(orderImages.orderId, orderId));
+  }
+
+  async createOrderImage(insertOrderImage: InsertOrderImage): Promise<OrderImage> {
+    const result = await db.insert(orderImages).values(insertOrderImage).returning();
+    return result[0];
+  }
+
+  async deleteOrderImage(id: string): Promise<boolean> {
+    const result = await db.delete(orderImages).where(eq(orderImages.id, id));
     return result.rowCount > 0;
   }
 
@@ -972,7 +994,7 @@ export class PostgreSQLStorage implements IStorage {
   // Analytics
   async getTotalProfit(): Promise<number> {
     const result = await db.select({
-      total: sql<number>`COALESCE(SUM(CAST(${orders.profit} AS NUMERIC)), 0)`,
+      total: sql<number>`COALESCE(SUM(CAST(${orders.totalProfit} AS NUMERIC)), 0)`,
     }).from(orders);
     return Number(result[0]?.total || 0);
   }
