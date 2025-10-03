@@ -22,9 +22,17 @@ import type { OrderWithCustomer, Customer, Inventory, InsertOrder, InsertOrderIt
 interface OrderItem {
   productId: string;
   productName: string;
+  productUrl: string;
+  originalPrice: number;
+  discountedPrice: number;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+}
+
+interface OrderImage {
+  url: string;
+  altText: string;
 }
 
 export default function Orders() {
@@ -41,6 +49,20 @@ export default function Orders() {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<any>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [searchedCustomer, setSearchedCustomer] = useState<Customer | null>(null);
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    country: "",
+    address: "",
+    city: "",
+    postalCode: ""
+  });
+  const [orderImages, setOrderImages] = useState<OrderImage[]>([]);
   const [statusFilters, setStatusFilters] = useState<string[]>(["pending", "processing", "shipped", "delivered", "cancelled"]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [editOrderStatus, setEditOrderStatus] = useState("");
@@ -170,6 +192,43 @@ export default function Orders() {
     },
   });
 
+  const createCustomerMutation = useMutation({
+    mutationFn: async (customerData: typeof newCustomer) => {
+      const response = await apiRequest("POST", "/api/customers", customerData);
+      if (!response.ok) {
+        throw new Error("Failed to create customer");
+      }
+      return response.json();
+    },
+    onSuccess: (customer) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      setSearchedCustomer(customer);
+      setSelectedCustomerId(customer.id);
+      setShowCustomerForm(false);
+      setNewCustomer({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        country: "",
+        address: "",
+        city: "",
+        postalCode: ""
+      });
+      toast({
+        title: t('success'),
+        description: t('customerCreatedSuccess'),
+      });
+    },
+    onError: () => {
+      toast({
+        title: t('error'),
+        description: t('failedCreateCustomer'),
+        variant: "destructive",
+      });
+    },
+  });
+
   // Query for order details when printing
   const { data: orderWithItems, isLoading: isLoadingOrderItems } = useQuery({
     queryKey: ["/api/orders", selectedOrderForPrint?.id, "items"],
@@ -239,15 +298,73 @@ export default function Orders() {
     });
   };
 
+  const handlePhoneSearch = async () => {
+    if (!customerPhone.trim()) {
+      toast({
+        title: t('error'),
+        description: "Please enter a phone number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await apiRequest("GET", `/api/customers/search/phone?phone=${encodeURIComponent(customerPhone)}`);
+      if (response.ok) {
+        const customer = await response.json();
+        setSearchedCustomer(customer);
+        setSelectedCustomerId(customer.id);
+        setShowCustomerForm(false);
+        toast({
+          title: t('success'),
+          description: `Customer found: ${customer.firstName} ${customer.lastName}`,
+        });
+      } else {
+        setSearchedCustomer(null);
+        setShowCustomerForm(true);
+        setNewCustomer(prev => ({ ...prev, phone: customerPhone }));
+        toast({
+          title: "Customer not found",
+          description: "Fill in the details to create a new customer",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: t('error'),
+        description: "Failed to search for customer",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateCustomer = (e: React.FormEvent) => {
+    e.preventDefault();
+    createCustomerMutation.mutate(newCustomer);
+  };
+
   const resetForm = () => {
     setSelectedCustomerId("");
+    setCustomerPhone("");
+    setSearchedCustomer(null);
+    setShowCustomerForm(false);
     setOrderItems([]);
+    setOrderImages([]);
     setShippingCost(0);
     setShippingCountry("");
     setShippingCategory("normal");
     setShippingWeight(1);
     setShippingCalculation(null);
     setNotes("");
+    setNewCustomer({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      country: "",
+      address: "",
+      city: "",
+      postalCode: ""
+    });
   };
 
   // Generate hash of order items to detect changes
@@ -318,6 +435,9 @@ export default function Orders() {
     setOrderItems([...orderItems, {
       productId: "",
       productName: "",
+      productUrl: "",
+      originalPrice: 0,
+      discountedPrice: 0,
       quantity: 1,
       unitPrice: 0,
       totalPrice: 0,
@@ -657,21 +777,136 @@ export default function Orders() {
               <DialogTitle>{t('createNewOrder')}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Customer Selection */}
-              <div>
-                <Label htmlFor="customer">{t('customer')}</Label>
-                <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId} required>
-                  <SelectTrigger data-testid="select-customer">
-                    <SelectValue placeholder={t('selectCustomer')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.firstName} {customer.lastName} - {customer.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Customer Phone Search */}
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="customerPhone">Customer Phone Number</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="customerPhone"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="Enter phone number"
+                      data-testid="input-customer-phone"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handlePhoneSearch}
+                      data-testid="button-search-phone"
+                    >
+                      <Search className="w-4 h-4 mr-2" />
+                      Search
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Found Customer Display */}
+                {searchedCustomer && !showCustomerForm && (
+                  <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg" data-testid="customer-found">
+                    <p className="font-semibold text-green-800 dark:text-green-200">
+                      Customer Found: {searchedCustomer.firstName} {searchedCustomer.lastName}
+                    </p>
+                    <p className="text-sm text-green-700 dark:text-green-300">
+                      {searchedCustomer.email} • {searchedCustomer.country}
+                    </p>
+                  </div>
+                )}
+
+                {/* Inline Customer Creation Form */}
+                {showCustomerForm && (
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg space-y-4" data-testid="form-create-customer">
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold text-blue-800 dark:text-blue-200">Create New Customer</p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowCustomerForm(false)}
+                        data-testid="button-cancel-customer"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="firstName">First Name*</Label>
+                        <Input
+                          id="firstName"
+                          value={newCustomer.firstName}
+                          onChange={(e) => setNewCustomer({...newCustomer, firstName: e.target.value})}
+                          required
+                          data-testid="input-first-name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="lastName">Last Name*</Label>
+                        <Input
+                          id="lastName"
+                          value={newCustomer.lastName}
+                          onChange={(e) => setNewCustomer({...newCustomer, lastName: e.target.value})}
+                          required
+                          data-testid="input-last-name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="email">Email*</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={newCustomer.email}
+                          onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})}
+                          required
+                          data-testid="input-email"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="country">Country*</Label>
+                        <Input
+                          id="country"
+                          value={newCustomer.country}
+                          onChange={(e) => setNewCustomer({...newCustomer, country: e.target.value})}
+                          required
+                          data-testid="input-country"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Label htmlFor="address">Address</Label>
+                        <Input
+                          id="address"
+                          value={newCustomer.address}
+                          onChange={(e) => setNewCustomer({...newCustomer, address: e.target.value})}
+                          data-testid="input-address"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="city">City</Label>
+                        <Input
+                          id="city"
+                          value={newCustomer.city}
+                          onChange={(e) => setNewCustomer({...newCustomer, city: e.target.value})}
+                          data-testid="input-city"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="postalCode">Postal Code</Label>
+                        <Input
+                          id="postalCode"
+                          value={newCustomer.postalCode}
+                          onChange={(e) => setNewCustomer({...newCustomer, postalCode: e.target.value})}
+                          data-testid="input-postal-code"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleCreateCustomer}
+                      disabled={createCustomerMutation.isPending}
+                      data-testid="button-create-customer"
+                    >
+                      {createCustomerMutation.isPending ? "Creating..." : "Create Customer"}
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Order Items */}
@@ -706,64 +941,103 @@ export default function Orders() {
                   <div className="space-y-4">
                     {orderItems.map((item, index) => (
                       <div key={index} className="border rounded-lg p-4 bg-muted/30" data-testid={`order-item-${index}`}>
-                        <div className="grid grid-cols-12 gap-4 items-end">
-                          <div className="col-span-5">
-                            <Label htmlFor={`product-name-${index}`}>{t('productNameNumber')}</Label>
-                            <Input
-                              id={`product-name-${index}`}
-                              value={item.productName}
-                              onChange={(e) => updateOrderItem(index, "productName", e.target.value)}
-                              placeholder={t('enterProductName')}
-                              required
-                              data-testid={`input-product-name-${index}`}
-                            />
-                          </div>
-                          
-                          <div className="col-span-2">
-                            <Label htmlFor={`quantity-${index}`}>{t('quantity')}</Label>
-                            <Input
-                              id={`quantity-${index}`}
-                              type="number"
-                              min="1"
-                              value={item.quantity}
-                              onChange={(e) => updateOrderItem(index, "quantity", parseInt(e.target.value) || 1)}
-                              required
-                              data-testid={`input-quantity-${index}`}
-                            />
-                          </div>
-                          
-                          <div className="col-span-2">
-                            <Label htmlFor={`unit-price-${index}`}>{t('unitPriceDollar')}</Label>
-                            <Input
-                              id={`unit-price-${index}`}
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={item.unitPrice}
-                              onChange={(e) => updateOrderItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
-                              placeholder="0.00"
-                              required
-                              data-testid={`input-unit-price-${index}`}
-                            />
-                          </div>
-                          
-                          <div className="col-span-2">
-                            <Label>{t('total')}</Label>
-                            <div className="h-10 px-3 py-2 border rounded-md bg-muted font-semibold flex items-center" data-testid={`text-item-total-${index}`}>
-                              ${item.totalPrice.toFixed(2)}
+                        <div className="space-y-4">
+                          {/* First row: Product Name and URL */}
+                          <div className="grid grid-cols-12 gap-4">
+                            <div className="col-span-6">
+                              <Label htmlFor={`product-name-${index}`}>Product Name*</Label>
+                              <Input
+                                id={`product-name-${index}`}
+                                value={item.productName}
+                                onChange={(e) => updateOrderItem(index, "productName", e.target.value)}
+                                placeholder="Enter product name"
+                                required
+                                data-testid={`input-product-name-${index}`}
+                              />
+                            </div>
+                            <div className="col-span-5">
+                              <Label htmlFor={`product-url-${index}`}>Product Link</Label>
+                              <Input
+                                id={`product-url-${index}`}
+                                value={item.productUrl}
+                                onChange={(e) => updateOrderItem(index, "productUrl", e.target.value)}
+                                placeholder="https://..."
+                                data-testid={`input-product-url-${index}`}
+                              />
+                            </div>
+                            <div className="col-span-1 flex items-end">
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="icon"
+                                onClick={() => removeOrderItem(index)}
+                                data-testid={`button-remove-item-${index}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </div>
                           </div>
-                          
-                          <div className="col-span-1 flex justify-end">
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="icon"
-                              onClick={() => removeOrderItem(index)}
-                              data-testid={`button-remove-item-${index}`}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+
+                          {/* Second row: Prices, Quantity, Total */}
+                          <div className="grid grid-cols-5 gap-4">
+                            <div>
+                              <Label htmlFor={`original-price-${index}`}>Original Price ($)</Label>
+                              <Input
+                                id={`original-price-${index}`}
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={item.originalPrice}
+                                onChange={(e) => updateOrderItem(index, "originalPrice", parseFloat(e.target.value) || 0)}
+                                placeholder="0.00"
+                                data-testid={`input-original-price-${index}`}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`discounted-price-${index}`}>Discounted Price ($)</Label>
+                              <Input
+                                id={`discounted-price-${index}`}
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={item.discountedPrice}
+                                onChange={(e) => updateOrderItem(index, "discountedPrice", parseFloat(e.target.value) || 0)}
+                                placeholder="0.00"
+                                data-testid={`input-discounted-price-${index}`}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`quantity-${index}`}>Quantity*</Label>
+                              <Input
+                                id={`quantity-${index}`}
+                                type="number"
+                                min="1"
+                                value={item.quantity}
+                                onChange={(e) => updateOrderItem(index, "quantity", parseInt(e.target.value) || 1)}
+                                required
+                                data-testid={`input-quantity-${index}`}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`unit-price-${index}`}>Unit Price ($)*</Label>
+                              <Input
+                                id={`unit-price-${index}`}
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={item.unitPrice}
+                                onChange={(e) => updateOrderItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                                placeholder="0.00"
+                                required
+                                data-testid={`input-unit-price-${index}`}
+                              />
+                            </div>
+                            <div>
+                              <Label>Total</Label>
+                              <div className="h-10 px-3 py-2 border rounded-md bg-muted font-semibold flex items-center" data-testid={`text-item-total-${index}`}>
+                                ${item.totalPrice.toFixed(2)}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
