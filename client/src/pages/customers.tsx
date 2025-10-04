@@ -213,12 +213,12 @@ export default function Customers() {
     );
   };
 
-  const uniqueCountries = Array.from(new Set(customers.map(c => c.country).filter(Boolean)));
+  const uniqueCountries = Array.from(new Set(customers.map(c => c.country).filter(Boolean))) as string[];
 
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCountry = countryFilters.length === 0 || countryFilters.includes(customer.country);
+      (customer.email?.toLowerCase() || "").includes(searchTerm.toLowerCase());
+    const matchesCountry = countryFilters.length === 0 || countryFilters.includes(customer.country || "");
     return matchesSearch && matchesCountry;
   });
 
@@ -433,7 +433,7 @@ export default function Customers() {
                 <Input
                   id="email"
                   type="email"
-                  value={formData.email}
+                  value={formData.email || ""}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   required
                   data-testid="input-email"
@@ -485,7 +485,7 @@ export default function Customers() {
                 <Label htmlFor="country">{t("country")}</Label>
                 <Input
                   id="country"
-                  value={formData.country}
+                  value={formData.country || ""}
                   onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
                   required
                   data-testid="input-country"
@@ -558,7 +558,7 @@ export default function Customers() {
                 <Input
                   id="edit-email"
                   type="email"
-                  value={editFormData.email}
+                  value={editFormData.email || ""}
                   onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
                   required
                   data-testid="input-edit-email"
@@ -611,7 +611,7 @@ export default function Customers() {
                 <Label htmlFor="edit-country">{t("countryRequired")}</Label>
                 <Input
                   id="edit-country"
-                  value={editFormData.country}
+                  value={editFormData.country || ""}
                   onChange={(e) => setEditFormData(prev => ({ ...prev, country: e.target.value }))}
                   required
                   data-testid="input-edit-country"
