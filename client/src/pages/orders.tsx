@@ -831,6 +831,7 @@ export default function Orders() {
                   <TableRow>
                     <TableHead>Product Code(s)</TableHead>
                     <TableHead>{t('customer')}</TableHead>
+                    <TableHead>Customer Code</TableHead>
                     <TableHead>{t('status')}</TableHead>
                     <TableHead>{t('total')}</TableHead>
                     <TableHead>Down Payment</TableHead>
@@ -850,6 +851,9 @@ export default function Orders() {
                       </TableCell>
                       <TableCell data-testid={`text-customer-${order.id}`}>
                         {order.customer.firstName} {order.customer.lastName}
+                      </TableCell>
+                      <TableCell data-testid={`text-customer-code-${order.id}`}>
+                        <span className="font-semibold text-primary">{order.customer.shippingCode || "-"}</span>
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(order.status)} data-testid={`badge-status-${order.id}`}>
