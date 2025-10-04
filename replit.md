@@ -4,7 +4,16 @@ This is a comprehensive logistics and order management system built with React, 
 
 # Recent Changes (October 2025)
 
-## Orders Dashboard Enhancements (Latest)
+## Enhanced Customer Search and Dynamic Country Filter (Latest)
+- **Multi-Field Customer Search**: Customer search now supports searching by phone number, first name, last name, or customer code (shippingCode) with single input field
+- **Search Behavior**: Case-insensitive partial matching using PostgreSQL ilike operator; auto-selects if single match found, displays clickable list for multiple matches
+- **Backend Enhancement**: New `searchCustomers(query)` method in storage interface and `/api/customers/search` endpoint with multi-field OR query
+- **Dynamic Country Filter**: Country filter now shows ALL available countries from shipping_rates table (not limited to existing orders)
+- **Country Source**: New `/api/shipping-countries` endpoint fetches all unique countries from shipping_rates table
+- **Bilingual Support**: Country filter automatically handles both Arabic and English country names as stored in database
+- **Auto-Updating**: New countries automatically appear in filter when added to shipping rates
+
+## Orders Dashboard Enhancements
 - **Country Filtering**: Added country filter to orders dashboard with checkboxes in filter popover for filtering orders by shipping destination country
 - **Shipping Code Column**: Replaced "Product Code(s)" column with "Shipping Code" column displaying customer shipping codes (shippingCode) in orders table for easier tracking
 - **Enhanced Down Payment Visibility**: Down payment amounts now displayed in green color (text-green-600) in orders table for better visual distinction
