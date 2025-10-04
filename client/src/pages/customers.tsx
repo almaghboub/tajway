@@ -51,6 +51,8 @@ export default function Customers() {
     postalCode: "",
     shippingCode: "",
   });
+  const [editingTotalDownPayment, setEditingTotalDownPayment] = useState<number>(0);
+  const [editingTotalAmount, setEditingTotalAmount] = useState<number>(0);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -176,10 +178,35 @@ export default function Customers() {
     createCustomerMutation.mutate(formData);
   };
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingCustomer) return;
-    updateCustomerMutation.mutate({ id: editingCustomer.id, customerData: editFormData });
+    
+    try {
+      const response = await apiRequest("PUT", `/api/customers/${editingCustomer.id}/update-with-payment`, {
+        customerData: editFormData,
+        totalDownPayment: editingTotalDownPayment
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to update customer");
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      toast({
+        title: t("success"),
+        description: "Customer and payment information updated successfully",
+      });
+      setIsEditModalOpen(false);
+      setEditingCustomer(null);
+    } catch (error) {
+      toast({
+        title: t("error"),
+        description: "Failed to update customer",
+        variant: "destructive",
+      });
+    }
   };
 
   const openEditModal = (customer: Customer) => {
@@ -195,6 +222,13 @@ export default function Customers() {
       postalCode: customer.postalCode || "",
       shippingCode: customer.shippingCode || "",
     });
+    
+    const customerOrders = orders.filter(order => order.customerId === customer.id);
+    const totalAmount = customerOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount), 0);
+    const totalDownPayment = customerOrders.reduce((sum, order) => sum + parseFloat(order.downPayment || "0"), 0);
+    
+    setEditingTotalAmount(totalAmount);
+    setEditingTotalDownPayment(totalDownPayment);
     setIsEditModalOpen(true);
   };
 
@@ -529,6 +563,52 @@ export default function Customers() {
                   onChange={(e) => setEditFormData(prev => ({ ...prev, shippingCode: e.target.value }))}
                   data-testid="input-edit-shipping-code"
                 />
+              </div>
+
+              <div className="border-t pt-4 space-y-3">
+                <h4 className="font-semibold text-sm">Payment Information</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="edit-total-amount">Total Amount</Label>
+                    <Input
+                      id="edit-total-amount"
+                      type="number"
+                      step="0.01"
+                      value={editingTotalAmount.toFixed(2)}
+                      disabled
+                      className="bg-muted"
+                      data-testid="input-edit-total-amount"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-down-payment">Down Payment ($)*</Label>
+                    <Input
+                      id="edit-down-payment"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max={editingTotalAmount}
+                      value={editingTotalDownPayment}
+                      onChange={(e) => setEditingTotalDownPayment(parseFloat(e.target.value) || 0)}
+                      data-testid="input-edit-customer-down-payment"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-remaining">Remaining Balance</Label>
+                    <Input
+                      id="edit-remaining"
+                      type="number"
+                      step="0.01"
+                      value={(editingTotalAmount - editingTotalDownPayment).toFixed(2)}
+                      disabled
+                      className="bg-muted"
+                      data-testid="input-edit-remaining-balance"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  This will update the down payment across all orders for this customer proportionally.
+                </p>
               </div>
 
               <div className="flex justify-end space-x-2 pt-4">

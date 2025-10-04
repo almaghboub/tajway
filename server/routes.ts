@@ -284,6 +284,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/customers/:id/update-with-payment", requireOperational, async (req, res) => {
+    try {
+      const { customerData, totalDownPayment } = req.body;
+      
+      const result = insertCustomerSchema.partial().safeParse(customerData);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid customer data", errors: result.error.errors });
+      }
+
+      if (typeof totalDownPayment !== 'number' || totalDownPayment < 0 || isNaN(totalDownPayment)) {
+        return res.status(400).json({ message: "Invalid down payment value" });
+      }
+
+      const customerOrders = await storage.getOrdersByCustomerId(req.params.id);
+      
+      if (customerOrders.length > 0) {
+        const totalOrderAmount = customerOrders.reduce((sum: number, order) => sum + parseFloat(order.totalAmount), 0);
+        
+        if (totalOrderAmount <= 0 || isNaN(totalOrderAmount)) {
+          return res.status(400).json({ message: "No valid orders to distribute payment to" });
+        }
+      }
+
+      const customer = await storage.updateCustomer(req.params.id, result.data);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+
+      if (customerOrders.length > 0) {
+        const totalOrderAmount = customerOrders.reduce((sum: number, order) => sum + parseFloat(order.totalAmount), 0);
+        const cappedDownPayment = Math.min(totalDownPayment, totalOrderAmount);
+        
+        for (const order of customerOrders) {
+          const orderAmount = parseFloat(order.totalAmount);
+          const proportion = orderAmount / totalOrderAmount;
+          const orderDownPayment = cappedDownPayment * proportion;
+          const orderRemaining = Math.max(0, orderAmount - orderDownPayment);
+          
+          await storage.updateOrder(order.id, {
+            downPayment: orderDownPayment.toFixed(2),
+            remainingBalance: orderRemaining.toFixed(2)
+          });
+        }
+      }
+
+      res.json({ customer, message: "Customer and payments updated successfully" });
+    } catch (error) {
+      console.error("Error updating customer with payment:", error);
+      res.status(500).json({ message: "Failed to update customer", error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
   app.delete("/api/customers/:id", requireOperational, async (req, res) => {
     try {
       const success = await storage.deleteCustomer(req.params.id);

@@ -57,6 +57,7 @@ export interface IStorage {
   // Orders
   getOrder(id: string): Promise<Order | undefined>;
   getOrderWithCustomer(id: string): Promise<OrderWithCustomer | undefined>;
+  getOrdersByCustomerId(customerId: string): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrder(id: string, order: Partial<InsertOrder>): Promise<Order | undefined>;
   deleteOrder(id: string): Promise<boolean>;
@@ -362,6 +363,10 @@ export class MemStorage implements IStorage {
     const images = Array.from(this.orderImages.values()).filter(image => image.orderId === id);
     
     return { ...order, customer, items, images };
+  }
+
+  async getOrdersByCustomerId(customerId: string): Promise<Order[]> {
+    return Array.from(this.orders.values()).filter(order => order.customerId === customerId);
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
@@ -862,6 +867,10 @@ export class PostgreSQLStorage implements IStorage {
       items,
       images: [],
     };
+  }
+
+  async getOrdersByCustomerId(customerId: string): Promise<Order[]> {
+    return await db.select().from(orders).where(eq(orders.customerId, customerId));
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
