@@ -366,7 +366,8 @@ export class MemStorage implements IStorage {
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
     const id = randomUUID();
-    const orderNumber = `ORD-${String(this.orderCounter++).padStart(4, '0')}`;
+    // Use provided orderNumber or generate one
+    const orderNumber = insertOrder.orderNumber || `LY-${Date.now()}`;
     const now = new Date();
     
     const order: Order = {
@@ -864,7 +865,8 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
-    const orderNumber = `LY-${Date.now()}`;
+    // Use provided orderNumber or generate one
+    const orderNumber = insertOrder.orderNumber || `LY-${Date.now()}`;
     const result = await db.insert(orders).values({
       ...insertOrder,
       orderNumber,

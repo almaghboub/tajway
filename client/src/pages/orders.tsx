@@ -53,15 +53,11 @@ export default function Orders() {
   const [searchedCustomer, setSearchedCustomer] = useState<Customer | null>(null);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    country: "",
-    address: "",
+    fullName: "",
     city: "",
-    postalCode: ""
+    phone: ""
   });
+  const [customOrderCode, setCustomOrderCode] = useState("");
   const [orderImages, setOrderImages] = useState<OrderImage[]>([]);
   const [statusFilters, setStatusFilters] = useState<string[]>(["pending", "processing", "shipped", "delivered", "cancelled"]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
@@ -205,7 +201,23 @@ export default function Orders() {
 
   const createCustomerMutation = useMutation({
     mutationFn: async (customerData: typeof newCustomer) => {
-      const response = await apiRequest("POST", "/api/customers", customerData);
+      // Split fullName into firstName and lastName
+      const nameParts = customerData.fullName.trim().split(/\s+/);
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || firstName;
+      
+      const payload = {
+        firstName,
+        lastName,
+        phone: customerData.phone,
+        city: customerData.city,
+        email: "",
+        country: "",
+        address: "",
+        postalCode: ""
+      };
+      
+      const response = await apiRequest("POST", "/api/customers", payload);
       if (!response.ok) {
         throw new Error("Failed to create customer");
       }
@@ -215,17 +227,12 @@ export default function Orders() {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
       setSearchedCustomer(customer);
       setSelectedCustomerId(customer.id);
-      setShippingCountry(customer.country);
+      setShippingCountry(customer.country || "");
       setShowCustomerForm(false);
       setNewCustomer({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        country: "",
-        address: "",
+        fullName: "",
         city: "",
-        postalCode: ""
+        phone: ""
       });
       toast({
         title: t('success'),
@@ -415,15 +422,11 @@ export default function Orders() {
     setShippingWeight(1);
     setShippingCalculation(null);
     setNotes("");
+    setCustomOrderCode("");
     setNewCustomer({
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      country: "",
-      address: "",
+      fullName: "",
       city: "",
-      postalCode: ""
+      phone: ""
     });
   };
 
@@ -618,6 +621,7 @@ export default function Orders() {
       itemsProfit: itemsProfit.toFixed(2),
       totalProfit: totalProfit.toFixed(2),
       notes: notes || undefined,
+      orderNumber: customOrderCode || undefined,
     };
 
     const items: InsertOrderItem[] = orderItems.map(item => {
@@ -926,84 +930,55 @@ export default function Orders() {
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4">
                       <div>
-                        <Label htmlFor="firstName">First Name*</Label>
+                        <Label htmlFor="fullName">Name*</Label>
                         <Input
-                          id="firstName"
-                          value={newCustomer.firstName}
-                          onChange={(e) => setNewCustomer({...newCustomer, firstName: e.target.value})}
+                          id="fullName"
+                          value={newCustomer.fullName}
+                          onChange={(e) => setNewCustomer({...newCustomer, fullName: e.target.value})}
                           required
-                          data-testid="input-first-name"
+                          placeholder="Enter full name"
+                          data-testid="input-full-name"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="lastName">Last Name*</Label>
-                        <Input
-                          id="lastName"
-                          value={newCustomer.lastName}
-                          onChange={(e) => setNewCustomer({...newCustomer, lastName: e.target.value})}
-                          required
-                          data-testid="input-last-name"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="email">Email*</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={newCustomer.email}
-                          onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})}
-                          required
-                          data-testid="input-email"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="country">Country*</Label>
-                        <Input
-                          id="country"
-                          value={newCustomer.country}
-                          onChange={(e) => setNewCustomer({...newCustomer, country: e.target.value})}
-                          required
-                          data-testid="input-country"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Label htmlFor="address">Address</Label>
-                        <Input
-                          id="address"
-                          value={newCustomer.address}
-                          onChange={(e) => setNewCustomer({...newCustomer, address: e.target.value})}
-                          data-testid="input-address"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="city">City</Label>
+                        <Label htmlFor="city">City*</Label>
                         <Input
                           id="city"
                           value={newCustomer.city}
                           onChange={(e) => setNewCustomer({...newCustomer, city: e.target.value})}
+                          required
+                          placeholder="Enter city"
                           data-testid="input-city"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="postalCode">Postal Code</Label>
-                        <Input
-                          id="postalCode"
-                          value={newCustomer.postalCode}
-                          onChange={(e) => setNewCustomer({...newCustomer, postalCode: e.target.value})}
-                          data-testid="input-postal-code"
                         />
                       </div>
                     </div>
                     <Button
                       type="button"
                       onClick={handleCreateCustomer}
-                      disabled={createCustomerMutation.isPending}
+                      disabled={createCustomerMutation.isPending || !newCustomer.fullName || !newCustomer.city}
                       data-testid="button-create-customer"
                     >
                       {createCustomerMutation.isPending ? "Creating..." : "Create Customer"}
                     </Button>
+                  </div>
+                )}
+
+                {/* Custom Order Code */}
+                {selectedCustomerId && (
+                  <div className="mt-4">
+                    <Label htmlFor="orderCode">Custom Order Code (Optional)</Label>
+                    <Input
+                      id="orderCode"
+                      value={customOrderCode}
+                      onChange={(e) => setCustomOrderCode(e.target.value)}
+                      placeholder="e.g., LY-1759535106379"
+                      data-testid="input-order-code"
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Leave empty to auto-generate
+                    </p>
                   </div>
                 )}
               </div>

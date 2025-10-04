@@ -22,11 +22,11 @@ export const customers = pgTable("customers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  email: text("email").notNull(),
+  email: text("email"),
   phone: text("phone").notNull().unique(),
   address: text("address"),
   city: text("city"),
-  country: text("country").notNull(),
+  country: text("country"),
   postalCode: text("postal_code"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -113,9 +113,10 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
 
 export const insertOrderSchema = createInsertSchema(orders).omit({
   id: true,
-  orderNumber: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  orderNumber: z.string().optional(),
 });
 
 export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
