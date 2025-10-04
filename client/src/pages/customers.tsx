@@ -506,67 +506,14 @@ export default function Customers() {
               </div>
 
               <div>
-                <Label htmlFor="edit-email">{t("emailRequired")}</Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  value={editFormData.email || ""}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
-                  required
-                  data-testid="input-edit-email"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="edit-phone">{t("phone")}</Label>
+                <Label htmlFor="edit-phone">{t("phone")}*</Label>
                 <Input
                   id="edit-phone"
                   type="tel"
                   value={editFormData.phone || ""}
                   onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  data-testid="input-edit-phone"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="edit-address">{t("address")}</Label>
-                <Input
-                  id="edit-address"
-                  value={editFormData.address || ""}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, address: e.target.value }))}
-                  data-testid="input-edit-address"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-city">{t("city")}</Label>
-                  <Input
-                    id="edit-city"
-                    value={editFormData.city || ""}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, city: e.target.value }))}
-                    data-testid="input-edit-city"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-postalCode">{t("postalCode")}</Label>
-                  <Input
-                    id="edit-postalCode"
-                    value={editFormData.postalCode || ""}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, postalCode: e.target.value }))}
-                    data-testid="input-edit-postal-code"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="edit-country">{t("countryRequired")}</Label>
-                <Input
-                  id="edit-country"
-                  value={editFormData.country || ""}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, country: e.target.value }))}
                   required
-                  data-testid="input-edit-country"
+                  data-testid="input-edit-phone"
                 />
               </div>
 

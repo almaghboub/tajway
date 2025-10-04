@@ -135,10 +135,12 @@ export default function Orders() {
   });
 
   const updateOrderMutation = useMutation({
-    mutationFn: async ({ id, status, notes, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount }: { 
+    mutationFn: async ({ id, status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount }: { 
       id: string; 
       status: string; 
       notes: string; 
+      downPayment?: string;
+      remainingBalance?: string;
       shippingWeight?: string;
       shippingCountry?: string;
       shippingCategory?: string;
@@ -146,7 +148,7 @@ export default function Orders() {
       commission?: string;
       totalAmount?: string;
     }) => {
-      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount });
+      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount });
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Failed to update order");
@@ -353,6 +355,8 @@ export default function Orders() {
       updateOrderMutation.mutate({
         id: editingOrder.id,
         status: editOrderStatus,
+        downPayment: editingOrder.downPayment,
+        remainingBalance: editingOrder.remainingBalance,
         shippingWeight: editingOrder.shippingWeight,
         shippingCountry: editingOrder.shippingCountry || undefined,
         shippingCategory: editingOrder.shippingCategory || undefined,
@@ -1057,7 +1061,7 @@ export default function Orders() {
                         <div className="space-y-4">
                           {/* First row: Shipping Code, Product Code */}
                           <div className="grid grid-cols-12 gap-4">
-                            <div className="col-span-5">
+                            <div className="col-span-11">
                               <Label htmlFor={`product-name-${index}`}>Shipping Code*</Label>
                               <Input
                                 id={`product-name-${index}`}
@@ -1066,16 +1070,6 @@ export default function Orders() {
                                 placeholder="Enter shipping code"
                                 required
                                 data-testid={`input-product-name-${index}`}
-                              />
-                            </div>
-                            <div className="col-span-6">
-                              <Label htmlFor={`product-code-${index}`}>Product Code</Label>
-                              <Input
-                                id={`product-code-${index}`}
-                                value={item.productCode}
-                                onChange={(e) => updateOrderItem(index, "productCode", e.target.value)}
-                                placeholder="SKU or code"
-                                data-testid={`input-product-code-${index}`}
                               />
                             </div>
                             <div className="col-span-1 flex items-end">
@@ -1522,7 +1516,7 @@ export default function Orders() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="edit-status">{t('orderStatus')}</Label>
                       <Select value={editOrderStatus} onValueChange={setEditOrderStatus}>
@@ -1537,6 +1531,30 @@ export default function Orders() {
                           <SelectItem value="cancelled">{t('cancelled')}</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-down-payment">Down Payment ($)</Label>
+                      <Input
+                        id="edit-down-payment"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={editingOrder.downPayment || 0}
+                        onChange={(e) => {
+                          const newDownPayment = parseFloat(e.target.value) || 0;
+                          const total = parseFloat(editingOrder.totalAmount || "0");
+                          const newRemaining = total - newDownPayment;
+                          setEditingOrder(prev => {
+                            if (!prev) return null;
+                            return {
+                              ...prev,
+                              downPayment: newDownPayment.toFixed(2),
+                              remainingBalance: newRemaining.toFixed(2)
+                            };
+                          });
+                        }}
+                        data-testid="input-edit-down-payment"
+                      />
                     </div>
                     <div>
                       <Label htmlFor="edit-shipping-weight">Shipping Weight (kg)</Label>
