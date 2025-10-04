@@ -192,7 +192,7 @@ export default function Orders() {
   });
 
   const updateOrderItemMutation = useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; quantity?: number; originalPrice?: string; discountedPrice?: string; unitPrice?: string }) => {
+    mutationFn: async ({ id, ...data }: { id: string; quantity?: number; originalPrice?: string; discountedPrice?: string; unitPrice?: string; weight?: string; productCode?: string }) => {
       const response = await apiRequest("PUT", `/api/order-items/${id}`, data);
       if (!response.ok) {
         throw new Error("Failed to update order item");
@@ -334,6 +334,8 @@ export default function Orders() {
             originalPrice: item.originalPrice?.toString(),
             discountedPrice: item.discountedPrice?.toString(),
             unitPrice: item.unitPrice?.toString(),
+            weight: item.weight?.toString(),
+            productCode: item.productCode,
           })
         )
       );
@@ -1390,6 +1392,8 @@ export default function Orders() {
                             <thead className="bg-muted/50">
                               <tr>
                                 <th className="px-3 py-2 text-left">{t('product')}</th>
+                                <th className="px-3 py-2 text-left">Code</th>
+                                <th className="px-3 py-2 text-right">Weight (kg)</th>
                                 <th className="px-3 py-2 text-center">{t('quantity')}</th>
                                 <th className="px-3 py-2 text-right">{t('originalPrice')}</th>
                                 <th className="px-3 py-2 text-right">{t('discountedPrice')}</th>
@@ -1400,6 +1404,28 @@ export default function Orders() {
                               {editableItems.map((item, index) => (
                                 <tr key={item.id} className="border-t">
                                   <td className="px-3 py-2">{item.productName}</td>
+                                  <td className="px-3 py-2">
+                                    <Input
+                                      type="text"
+                                      value={item.productCode || ''}
+                                      onChange={(e) => handleItemChange(index, 'productCode', e.target.value)}
+                                      className="w-24"
+                                      placeholder="SKU"
+                                      data-testid={`input-edit-product-code-${index}`}
+                                    />
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      value={item.weight || ''}
+                                      onChange={(e) => handleItemChange(index, 'weight', e.target.value)}
+                                      className="w-20 text-right"
+                                      placeholder="0.00"
+                                      data-testid={`input-edit-weight-${index}`}
+                                    />
+                                  </td>
                                   <td className="px-3 py-2">
                                     <Input
                                       type="number"
