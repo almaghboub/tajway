@@ -135,8 +135,16 @@ export default function Orders() {
   });
 
   const updateOrderMutation = useMutation({
-    mutationFn: async ({ id, status, notes, shippingWeight }: { id: string; status: string; notes: string; shippingWeight?: string }) => {
-      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, shippingWeight });
+    mutationFn: async ({ id, status, notes, shippingWeight, shippingCost, commission, totalAmount }: { 
+      id: string; 
+      status: string; 
+      notes: string; 
+      shippingWeight?: string;
+      shippingCost?: string;
+      commission?: string;
+      totalAmount?: string;
+    }) => {
+      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, shippingWeight, shippingCost, commission, totalAmount });
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Failed to update order");
@@ -344,6 +352,9 @@ export default function Orders() {
         id: editingOrder.id,
         status: editOrderStatus,
         shippingWeight: editingOrder.shippingWeight,
+        shippingCost: editingOrder.shippingCost,
+        commission: editingOrder.commission,
+        totalAmount: editingOrder.totalAmount,
         notes: notes
       });
     } catch (error) {
@@ -627,6 +638,8 @@ export default function Orders() {
       remainingBalance: remainingBalance.toFixed(2),
       shippingCost: totals.shippingCost.toFixed(2),
       shippingWeight: shippingWeight.toFixed(2),
+      shippingCountry: shippingCountry || undefined,
+      shippingCategory: shippingCategory || undefined,
       commission: totals.commission.toFixed(2),
       shippingProfit: shippingProfit.toFixed(2),
       itemsProfit: itemsProfit.toFixed(2),
@@ -1523,14 +1536,75 @@ export default function Orders() {
                         step="0.1"
                         min="0.1"
                         value={editingOrder.shippingWeight || 1}
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const newWeight = parseFloat(e.target.value) || 1;
-                          setEditingOrder(prev => prev ? { ...prev, shippingWeight: newWeight.toString() } : null);
+
+                          // Recalculate shipping if country and category are available
+                          if (editingOrder.shippingCountry && editingOrder.shippingCategory && editableItems.length > 0) {
+                            try {
+                              const itemsTotal = editableItems.reduce((sum, item) => 
+                                sum + (parseFloat(item.totalPrice as any) || 0), 0
+                              );
+                              
+                              const response = await fetch('/api/calculate-shipping', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({
+                                  country: editingOrder.shippingCountry,
+                                  category: editingOrder.shippingCategory,
+                                  weight: newWeight,
+                                  orderValue: itemsTotal
+                                })
+                              });
+
+                              if (response.ok) {
+                                const calc = await response.json();
+                                const newShippingCost = parseFloat(calc.base_shipping);
+                                const newCommission = parseFloat(calc.commission);
+                                const newTotal = itemsTotal + newShippingCost + newCommission;
+                                
+                                setEditingOrder(prev => {
+                                  if (!prev) return null;
+                                  return {
+                                    ...prev,
+                                    shippingWeight: newWeight.toFixed(2),
+                                    shippingCost: newShippingCost.toFixed(2),
+                                    commission: newCommission.toFixed(2),
+                                    totalAmount: newTotal.toFixed(2),
+                                  };
+                                });
+                                
+                                toast({
+                                  title: "Shipping Recalculated",
+                                  description: `Weight: ${newWeight}kg, Shipping: $${newShippingCost.toFixed(2)}, Total: $${newTotal.toFixed(2)}`,
+                                });
+                              }
+                            } catch (error) {
+                              console.error('Error recalculating shipping:', error);
+                            }
+                          } else {
+                            // If shipping info not available, just update the weight
+                            setEditingOrder(prev => {
+                              if (!prev) return null;
+                              return { ...prev, shippingWeight: newWeight.toFixed(2) };
+                            });
+                          }
                         }}
                         data-testid="input-edit-shipping-weight"
                       />
                     </div>
                   </div>
+
+                  {editingOrder.shippingCountry && editingOrder.shippingCategory && (
+                    <div className="bg-blue-50 p-3 rounded text-sm space-y-1">
+                      <div className="font-medium">Shipping Details:</div>
+                      <div>Country: {editingOrder.shippingCountry}, Category: {editingOrder.shippingCategory}</div>
+                      <div>Shipping Cost: ${parseFloat(editingOrder.shippingCost || "0").toFixed(2)}</div>
+                      <div>Commission: ${parseFloat(editingOrder.commission || "0").toFixed(2)}</div>
+                      <div className="font-medium pt-1 border-t border-blue-200">Total: ${parseFloat(editingOrder.totalAmount || "0").toFixed(2)}</div>
+                    </div>
+                  )}
 
                   <div>
                     <Label htmlFor="edit-notes">{t('orderNotesLabel')}</Label>

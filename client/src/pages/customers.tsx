@@ -413,100 +413,44 @@ export default function Customers() {
               <DialogTitle>{t("addNewCustomer")}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="firstName">{t("firstName")}</Label>
-                  <Input
-                    id="firstName"
-                    value={formData.firstName}
-                    onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                    required
-                    data-testid="input-first-name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="lastName">{t("lastName")}</Label>
-                  <Input
-                    id="lastName"
-                    value={formData.lastName}
-                    onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                    required
-                    data-testid="input-last-name"
-                  />
-                </div>
-              </div>
-              
               <div>
-                <Label htmlFor="email">{t("email")}</Label>
+                <Label htmlFor="fullName">Full Name*</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  value={formData.email || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  id="fullName"
+                  value={formData.firstName + (formData.lastName ? ' ' + formData.lastName : '')}
+                  onChange={(e) => {
+                    const nameParts = e.target.value.trim().split(/\s+/);
+                    const firstName = nameParts[0] || "";
+                    const lastName = nameParts.slice(1).join(" ") || "";
+                    setFormData(prev => ({ ...prev, firstName, lastName }));
+                  }}
+                  placeholder="Enter full name"
                   required
-                  data-testid="input-email"
+                  data-testid="input-full-name"
                 />
               </div>
 
               <div>
-                <Label htmlFor="phone">{t("phone")}</Label>
+                <Label htmlFor="phone">Phone*</Label>
                 <Input
                   id="phone"
                   value={formData.phone || ""}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="Enter phone number"
+                  required
                   data-testid="input-phone"
                 />
               </div>
 
               <div>
-                <Label htmlFor="address">{t("address")}</Label>
+                <Label htmlFor="city">City*</Label>
                 <Input
-                  id="address"
-                  value={formData.address || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                  data-testid="input-address"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="city">{t("city")}</Label>
-                  <Input
-                    id="city"
-                    value={formData.city || ""}
-                    onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                    data-testid="input-city"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="postalCode">{t("postalCode")}</Label>
-                  <Input
-                    id="postalCode"
-                    value={formData.postalCode || ""}
-                    onChange={(e) => setFormData(prev => ({ ...prev, postalCode: e.target.value }))}
-                    data-testid="input-postal-code"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="country">{t("country")}</Label>
-                <Input
-                  id="country"
-                  value={formData.country || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
+                  id="city"
+                  value={formData.city || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                  placeholder="Enter city"
                   required
-                  data-testid="input-country"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="shippingCode">{t("shippingCode")}</Label>
-                <Input
-                  id="shippingCode"
-                  value={formData.shippingCode || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, shippingCode: e.target.value }))}
-                  data-testid="input-shipping-code"
+                  data-testid="input-city"
                 />
               </div>
 
