@@ -350,6 +350,7 @@ export default function Customers() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("name")}</TableHead>
+                    <TableHead>Customer Code</TableHead>
                     <TableHead>{t("email")}</TableHead>
                     <TableHead>{t("phone")}</TableHead>
                     <TableHead>{t("country")}</TableHead>
@@ -362,6 +363,9 @@ export default function Customers() {
                     <TableRow key={customer.id} data-testid={`row-customer-${customer.id}`}>
                       <TableCell className="font-medium" data-testid={`text-name-${customer.id}`}>
                         {customer.firstName} {customer.lastName}
+                      </TableCell>
+                      <TableCell data-testid={`text-customer-code-${customer.id}`}>
+                        <span className="font-semibold text-primary">{customer.shippingCode || "-"}</span>
                       </TableCell>
                       <TableCell data-testid={`text-email-${customer.id}`}>
                         {customer.email}
@@ -574,12 +578,16 @@ export default function Customers() {
                       </p>
                     </div>
                     <div>
-                      <span className="font-medium text-muted-foreground">{t("emailLabel")}</span>
-                      <p className="mt-1" data-testid="text-view-customer-email">{viewingCustomer.email}</p>
+                      <span className="font-medium text-muted-foreground">Customer Code</span>
+                      <p className="mt-1 font-semibold text-primary" data-testid="text-view-customer-code">{viewingCustomer.shippingCode || t("naLabel")}</p>
                     </div>
                     <div>
                       <span className="font-medium text-muted-foreground">{t("phoneLabel")}</span>
                       <p className="mt-1" data-testid="text-view-customer-phone">{viewingCustomer.phone || t("naLabel")}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">{t("emailLabel")}</span>
+                      <p className="mt-1" data-testid="text-view-customer-email">{viewingCustomer.email}</p>
                     </div>
                     <div>
                       <span className="font-medium text-muted-foreground">{t("createdDate")}</span>
@@ -614,12 +622,6 @@ export default function Customers() {
                       <span className="font-medium text-muted-foreground">{t("country")}:</span>
                       <p className="mt-1" data-testid="text-view-customer-country">{viewingCustomer.country}</p>
                     </div>
-                    {viewingCustomer.shippingCode && (
-                      <div className="col-span-2">
-                        <span className="font-medium text-muted-foreground">Shipping Code:</span>
-                        <p className="mt-1" data-testid="text-view-customer-shipping-code">{viewingCustomer.shippingCode}</p>
-                      </div>
-                    )}
                   </div>
                 </div>
 
