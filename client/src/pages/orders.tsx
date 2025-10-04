@@ -466,6 +466,7 @@ export default function Orders() {
     setShippingCategory("normal");
     setShippingWeight(1);
     setClothingSize("");
+    setDownPayment(0);
     setShippingCalculation(null);
     setNotes("");
     setCustomOrderCode("");
@@ -1404,49 +1405,36 @@ export default function Orders() {
                         {calculateTotals().currency} {calculateTotals().total.toFixed(2)}
                       </span>
                     </div>
-                    <div className="flex justify-between text-green-600 font-medium">
+                    <div className="border-t pt-3 space-y-3">
+                      <div>
+                        <Label htmlFor="down-payment" className="text-sm">Down Payment (Optional)</Label>
+                        <Input
+                          id="down-payment"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max={calculateTotals().total}
+                          value={downPayment}
+                          onChange={(e) => setDownPayment(parseFloat(e.target.value) || 0)}
+                          placeholder="0.00"
+                          className="mt-1"
+                          data-testid="input-down-payment"
+                        />
+                      </div>
+                      {downPayment > 0 && (
+                        <div className="flex justify-between text-orange-600 font-medium">
+                          <span>Remaining Balance:</span>
+                          <span data-testid="text-payment-remaining">${(calculateTotals().total - downPayment).toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex justify-between text-green-600 font-medium border-t pt-2">
                       <span>{t('estimatedProfit')}</span>
                       <span data-testid="text-profit">
                         {calculateTotals().currency} {calculateTotals().profit.toFixed(2)}
                       </span>
                     </div>
                   </div>
-                </div>
-              )}
-
-              {/* Down Payment Section */}
-              {orderItems.length > 0 && shippingCalculation && (
-                <div className="border-t pt-4 space-y-4">
-                  <div>
-                    <Label htmlFor="down-payment">Down Payment (Optional)</Label>
-                    <Input
-                      id="down-payment"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max={calculateTotals().total}
-                      value={downPayment}
-                      onChange={(e) => setDownPayment(parseFloat(e.target.value) || 0)}
-                      placeholder="0.00"
-                      data-testid="input-down-payment"
-                    />
-                  </div>
-                  {downPayment > 0 && (
-                    <div className="bg-blue-50 p-3 rounded space-y-2 text-sm">
-                      <div className="flex justify-between font-medium">
-                        <span>Total Amount:</span>
-                        <span data-testid="text-payment-total">${calculateTotals().total.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-blue-700">
-                        <span>Down Payment:</span>
-                        <span data-testid="text-payment-down">${downPayment.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-red-700 font-medium border-t border-blue-200 pt-2">
-                        <span>Remaining Balance:</span>
-                        <span data-testid="text-payment-remaining">${(calculateTotals().total - downPayment).toFixed(2)}</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
 
