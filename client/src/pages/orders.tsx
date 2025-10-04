@@ -24,7 +24,6 @@ interface OrderItem {
   productName: string;
   productCode: string;
   productUrl: string;
-  weight: number;
   originalPrice: number;
   discountedPrice: number;
   quantity: number;
@@ -69,6 +68,7 @@ export default function Orders() {
   const [shippingCountry, setShippingCountry] = useState("");
   const [shippingCategory, setShippingCategory] = useState("normal");
   const [shippingWeight, setShippingWeight] = useState(1);
+  const [downPayment, setDownPayment] = useState(0);
   const [shippingCalculation, setShippingCalculation] = useState<{
     base_shipping: number;
     commission: number;
@@ -192,7 +192,7 @@ export default function Orders() {
   });
 
   const updateOrderItemMutation = useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; quantity?: number; originalPrice?: string; discountedPrice?: string; unitPrice?: string; weight?: string; productCode?: string }) => {
+    mutationFn: async ({ id, ...data }: { id: string; quantity?: number; originalPrice?: string; discountedPrice?: string; unitPrice?: string; productCode?: string }) => {
       const response = await apiRequest("PUT", `/api/order-items/${id}`, data);
       if (!response.ok) {
         throw new Error("Failed to update order item");
@@ -334,7 +334,6 @@ export default function Orders() {
             originalPrice: item.originalPrice?.toString(),
             discountedPrice: item.discountedPrice?.toString(),
             unitPrice: item.unitPrice?.toString(),
-            weight: item.weight?.toString(),
             productCode: item.productCode,
           })
         )
@@ -504,7 +503,6 @@ export default function Orders() {
       productName: "",
       productCode: "",
       productUrl: "",
-      weight: 0,
       originalPrice: 0,
       discountedPrice: 0,
       quantity: 1,
@@ -617,10 +615,15 @@ export default function Orders() {
     const shippingProfit = totals.commission;
     const totalProfit = itemsProfit + shippingProfit;
     
+    // Calculate remaining balance
+    const remainingBalance = totals.total - downPayment;
+    
     const order: InsertOrder = {
       customerId: selectedCustomerId,
       status: "pending",
       totalAmount: totals.total.toFixed(2),
+      downPayment: downPayment.toFixed(2),
+      remainingBalance: remainingBalance.toFixed(2),
       shippingCost: totals.shippingCost.toFixed(2),
       commission: totals.commission.toFixed(2),
       shippingProfit: shippingProfit.toFixed(2),
@@ -637,7 +640,6 @@ export default function Orders() {
         productName: item.productName,
         productCode: item.productCode || null,
         productUrl: item.productUrl || null,
-        weight: item.weight ? item.weight.toFixed(2) : null,
         originalPrice: item.originalPrice.toFixed(2),
         discountedPrice: item.discountedPrice.toFixed(2),
         markupProfit: markupProfit,
@@ -1024,20 +1026,20 @@ export default function Orders() {
                     {orderItems.map((item, index) => (
                       <div key={index} className="border rounded-lg p-4 bg-muted/30" data-testid={`order-item-${index}`}>
                         <div className="space-y-4">
-                          {/* First row: Product Name, Product Code, Weight */}
+                          {/* First row: Shipping Code, Product Code */}
                           <div className="grid grid-cols-12 gap-4">
-                            <div className="col-span-4">
-                              <Label htmlFor={`product-name-${index}`}>Product Name*</Label>
+                            <div className="col-span-5">
+                              <Label htmlFor={`product-name-${index}`}>Shipping Code*</Label>
                               <Input
                                 id={`product-name-${index}`}
                                 value={item.productName}
                                 onChange={(e) => updateOrderItem(index, "productName", e.target.value)}
-                                placeholder="Enter product name"
+                                placeholder="Enter shipping code"
                                 required
                                 data-testid={`input-product-name-${index}`}
                               />
                             </div>
-                            <div className="col-span-4">
+                            <div className="col-span-6">
                               <Label htmlFor={`product-code-${index}`}>Product Code</Label>
                               <Input
                                 id={`product-code-${index}`}
@@ -1045,19 +1047,6 @@ export default function Orders() {
                                 onChange={(e) => updateOrderItem(index, "productCode", e.target.value)}
                                 placeholder="SKU or code"
                                 data-testid={`input-product-code-${index}`}
-                              />
-                            </div>
-                            <div className="col-span-3">
-                              <Label htmlFor={`weight-${index}`}>Weight (kg)</Label>
-                              <Input
-                                id={`weight-${index}`}
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={item.weight}
-                                onChange={(e) => updateOrderItem(index, "weight", parseFloat(e.target.value) || 0)}
-                                placeholder="0.00"
-                                data-testid={`input-weight-${index}`}
                               />
                             </div>
                             <div className="col-span-1 flex items-end">
@@ -1310,6 +1299,42 @@ export default function Orders() {
                 </div>
               )}
 
+              {/* Down Payment Section */}
+              {orderItems.length > 0 && shippingCalculation && (
+                <div className="border-t pt-4 space-y-4">
+                  <div>
+                    <Label htmlFor="down-payment">Down Payment (Optional)</Label>
+                    <Input
+                      id="down-payment"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max={calculateTotals().total}
+                      value={downPayment}
+                      onChange={(e) => setDownPayment(parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      data-testid="input-down-payment"
+                    />
+                  </div>
+                  {downPayment > 0 && (
+                    <div className="bg-blue-50 p-3 rounded space-y-2 text-sm">
+                      <div className="flex justify-between font-medium">
+                        <span>Total Amount:</span>
+                        <span data-testid="text-payment-total">${calculateTotals().total.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-blue-700">
+                        <span>Down Payment:</span>
+                        <span data-testid="text-payment-down">${downPayment.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-red-700 font-medium border-t border-blue-200 pt-2">
+                        <span>Remaining Balance:</span>
+                        <span data-testid="text-payment-remaining">${(calculateTotals().total - downPayment).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Form Actions */}
               <div className="space-y-2">
                 {!shippingCalculation && orderItems.length > 0 && (
@@ -1391,9 +1416,8 @@ export default function Orders() {
                           <table className="w-full text-sm">
                             <thead className="bg-muted/50">
                               <tr>
-                                <th className="px-3 py-2 text-left">{t('product')}</th>
-                                <th className="px-3 py-2 text-left">Code</th>
-                                <th className="px-3 py-2 text-right">Weight (kg)</th>
+                                <th className="px-3 py-2 text-left">Shipping Code</th>
+                                <th className="px-3 py-2 text-left">Product Code</th>
                                 <th className="px-3 py-2 text-center">{t('quantity')}</th>
                                 <th className="px-3 py-2 text-right">{t('originalPrice')}</th>
                                 <th className="px-3 py-2 text-right">{t('discountedPrice')}</th>
@@ -1412,18 +1436,6 @@ export default function Orders() {
                                       className="w-24"
                                       placeholder="SKU"
                                       data-testid={`input-edit-product-code-${index}`}
-                                    />
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      value={item.weight || ''}
-                                      onChange={(e) => handleItemChange(index, 'weight', e.target.value)}
-                                      className="w-20 text-right"
-                                      placeholder="0.00"
-                                      data-testid={`input-edit-weight-${index}`}
                                     />
                                   </td>
                                   <td className="px-3 py-2">
