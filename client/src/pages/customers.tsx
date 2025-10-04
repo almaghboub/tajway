@@ -38,6 +38,7 @@ export default function Customers() {
     city: "",
     country: "",
     postalCode: "",
+    shippingCode: "",
   });
   const [editFormData, setEditFormData] = useState<InsertCustomer>({
     firstName: "",
@@ -48,6 +49,7 @@ export default function Customers() {
     city: "",
     country: "",
     postalCode: "",
+    shippingCode: "",
   });
 
   const { toast } = useToast();
@@ -85,6 +87,7 @@ export default function Customers() {
         city: "",
         country: "",
         postalCode: "",
+        shippingCode: "",
       });
     },
     onError: (error) => {
@@ -122,6 +125,7 @@ export default function Customers() {
         city: "",
         country: "",
         postalCode: "",
+        shippingCode: "",
       });
     },
     onError: (error: Error) => {
@@ -181,6 +185,7 @@ export default function Customers() {
       city: customer.city || "",
       country: customer.country || "",
       postalCode: customer.postalCode || "",
+      shippingCode: customer.shippingCode || "",
     });
     setIsEditModalOpen(true);
   };
@@ -487,6 +492,16 @@ export default function Customers() {
                 />
               </div>
 
+              <div>
+                <Label htmlFor="shippingCode">{t("shippingCode")}</Label>
+                <Input
+                  id="shippingCode"
+                  value={formData.shippingCode || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, shippingCode: e.target.value }))}
+                  data-testid="input-shipping-code"
+                />
+              </div>
+
               <div className="flex justify-end space-x-2 pt-4">
                 <Button 
                   type="button" 
@@ -600,6 +615,16 @@ export default function Customers() {
                   onChange={(e) => setEditFormData(prev => ({ ...prev, country: e.target.value }))}
                   required
                   data-testid="input-edit-country"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-shippingCode">{t("shippingCode")}</Label>
+                <Input
+                  id="edit-shippingCode"
+                  value={editFormData.shippingCode || ""}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, shippingCode: e.target.value }))}
+                  data-testid="input-edit-shipping-code"
                 />
               </div>
 

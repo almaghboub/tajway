@@ -28,6 +28,7 @@ export const customers = pgTable("customers", {
   city: text("city"),
   country: text("country"),
   postalCode: text("postal_code"),
+  shippingCode: text("shipping_code"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -51,7 +52,9 @@ export const orderItems = pgTable("order_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   orderId: varchar("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
   productName: text("product_name").notNull(),
+  productCode: text("product_code"),
   productUrl: text("product_url"),
+  weight: decimal("weight", { precision: 10, scale: 2 }),
   quantity: integer("quantity").notNull(),
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
   originalPrice: decimal("original_price", { precision: 10, scale: 2 }),
