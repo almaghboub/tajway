@@ -22,7 +22,9 @@ import type { OrderWithCustomer, Customer, InsertOrder, InsertOrderItem } from "
 interface OrderItem {
   productId: string;
   productName: string;
+  productCode: string;
   productUrl: string;
+  weight: number;
   originalPrice: number;
   discountedPrice: number;
   quantity: number;
@@ -498,7 +500,9 @@ export default function Orders() {
     setOrderItems([...orderItems, {
       productId: "",
       productName: "",
+      productCode: "",
       productUrl: "",
+      weight: 0,
       originalPrice: 0,
       discountedPrice: 0,
       quantity: 1,
@@ -629,7 +633,9 @@ export default function Orders() {
       return {
         orderId: "", // Will be set by the backend
         productName: item.productName,
+        productCode: item.productCode || null,
         productUrl: item.productUrl || null,
+        weight: item.weight ? item.weight.toFixed(2) : null,
         originalPrice: item.originalPrice.toFixed(2),
         discountedPrice: item.discountedPrice.toFixed(2),
         markupProfit: markupProfit,
@@ -1016,27 +1022,40 @@ export default function Orders() {
                     {orderItems.map((item, index) => (
                       <div key={index} className="border rounded-lg p-4 bg-muted/30" data-testid={`order-item-${index}`}>
                         <div className="space-y-4">
-                          {/* First row: Product Code and URL */}
+                          {/* First row: Product Name, Product Code, Weight */}
                           <div className="grid grid-cols-12 gap-4">
-                            <div className="col-span-6">
-                              <Label htmlFor={`product-name-${index}`}>Product Code*</Label>
+                            <div className="col-span-4">
+                              <Label htmlFor={`product-name-${index}`}>Product Name*</Label>
                               <Input
                                 id={`product-name-${index}`}
                                 value={item.productName}
                                 onChange={(e) => updateOrderItem(index, "productName", e.target.value)}
-                                placeholder="Enter product code"
+                                placeholder="Enter product name"
                                 required
                                 data-testid={`input-product-name-${index}`}
                               />
                             </div>
-                            <div className="col-span-5">
-                              <Label htmlFor={`product-url-${index}`}>Product Link</Label>
+                            <div className="col-span-4">
+                              <Label htmlFor={`product-code-${index}`}>Product Code</Label>
                               <Input
-                                id={`product-url-${index}`}
-                                value={item.productUrl}
-                                onChange={(e) => updateOrderItem(index, "productUrl", e.target.value)}
-                                placeholder="https://..."
-                                data-testid={`input-product-url-${index}`}
+                                id={`product-code-${index}`}
+                                value={item.productCode}
+                                onChange={(e) => updateOrderItem(index, "productCode", e.target.value)}
+                                placeholder="SKU or code"
+                                data-testid={`input-product-code-${index}`}
+                              />
+                            </div>
+                            <div className="col-span-3">
+                              <Label htmlFor={`weight-${index}`}>Weight (kg)</Label>
+                              <Input
+                                id={`weight-${index}`}
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={item.weight}
+                                onChange={(e) => updateOrderItem(index, "weight", parseFloat(e.target.value) || 0)}
+                                placeholder="0.00"
+                                data-testid={`input-weight-${index}`}
                               />
                             </div>
                             <div className="col-span-1 flex items-end">
@@ -1052,7 +1071,21 @@ export default function Orders() {
                             </div>
                           </div>
 
-                          {/* Second row: Prices, Quantity, Total */}
+                          {/* Second row: Product URL */}
+                          <div className="grid grid-cols-1 gap-4">
+                            <div>
+                              <Label htmlFor={`product-url-${index}`}>Product Link</Label>
+                              <Input
+                                id={`product-url-${index}`}
+                                value={item.productUrl}
+                                onChange={(e) => updateOrderItem(index, "productUrl", e.target.value)}
+                                placeholder="https://..."
+                                data-testid={`input-product-url-${index}`}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Third row: Prices, Quantity, Total */}
                           <div className="grid grid-cols-4 gap-4">
                             <div>
                               <Label htmlFor={`original-price-${index}`}>Original Price ($)*</Label>
@@ -1110,7 +1143,7 @@ export default function Orders() {
 
               {/* Order Images Upload */}
               <div className="space-y-4">
-                <Label>Order Images (Up to 3 photos)</Label>
+                <Label>Order Images (Optional - Up to 3 photos)</Label>
                 <div className="grid grid-cols-3 gap-4">
                   {[0, 1, 2].map((index) => (
                     <div key={index} className="space-y-2">
