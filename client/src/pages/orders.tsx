@@ -135,8 +135,8 @@ export default function Orders() {
   });
 
   const updateOrderMutation = useMutation({
-    mutationFn: async ({ id, status, notes }: { id: string; status: string; notes: string }) => {
-      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes });
+    mutationFn: async ({ id, status, notes, shippingWeight }: { id: string; status: string; notes: string; shippingWeight?: string }) => {
+      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, shippingWeight });
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Failed to update order");
@@ -343,6 +343,7 @@ export default function Orders() {
       updateOrderMutation.mutate({
         id: editingOrder.id,
         status: editOrderStatus,
+        shippingWeight: editingOrder.shippingWeight,
         notes: notes
       });
     } catch (error) {
@@ -625,6 +626,7 @@ export default function Orders() {
       downPayment: downPayment.toFixed(2),
       remainingBalance: remainingBalance.toFixed(2),
       shippingCost: totals.shippingCost.toFixed(2),
+      shippingWeight: shippingWeight.toFixed(2),
       commission: totals.commission.toFixed(2),
       shippingProfit: shippingProfit.toFixed(2),
       itemsProfit: itemsProfit.toFixed(2),
@@ -806,10 +808,12 @@ export default function Orders() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t('orderNumber')}</TableHead>
+                    <TableHead>Product Code(s)</TableHead>
                     <TableHead>{t('customer')}</TableHead>
                     <TableHead>{t('status')}</TableHead>
                     <TableHead>{t('total')}</TableHead>
+                    <TableHead>Down Payment</TableHead>
+                    <TableHead>Remaining</TableHead>
                     <TableHead>{t('profit')}</TableHead>
                     <TableHead>{t('createdAt')}</TableHead>
                     <TableHead>{t('actions')}</TableHead>
@@ -818,8 +822,10 @@ export default function Orders() {
                 <TableBody>
                   {filteredOrders.map((order) => (
                     <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
-                      <TableCell className="font-medium" data-testid={`text-order-number-${order.id}`}>
-                        {order.orderNumber}
+                      <TableCell className="font-medium" data-testid={`text-product-codes-${order.id}`}>
+                        {order.items && order.items.length > 0 
+                          ? order.items.map(item => item.productCode || item.productName).join(', ')
+                          : 'N/A'}
                       </TableCell>
                       <TableCell data-testid={`text-customer-${order.id}`}>
                         {order.customer.firstName} {order.customer.lastName}
@@ -831,6 +837,12 @@ export default function Orders() {
                       </TableCell>
                       <TableCell data-testid={`text-total-${order.id}`}>
                         ${parseFloat(order.totalAmount).toFixed(2)}
+                      </TableCell>
+                      <TableCell data-testid={`text-down-payment-${order.id}`}>
+                        ${parseFloat(order.downPayment || "0").toFixed(2)}
+                      </TableCell>
+                      <TableCell data-testid={`text-remaining-${order.id}`}>
+                        ${parseFloat(order.remainingBalance || "0").toFixed(2)}
                       </TableCell>
                       <TableCell data-testid={`text-profit-${order.id}`}>
                         ${parseFloat(order.totalProfit).toFixed(2)}
@@ -1487,20 +1499,37 @@ export default function Orders() {
                     </div>
                   )}
 
-                  <div>
-                    <Label htmlFor="edit-status">{t('orderStatus')}</Label>
-                    <Select value={editOrderStatus} onValueChange={setEditOrderStatus}>
-                      <SelectTrigger id="edit-status" data-testid="select-edit-status">
-                        <SelectValue placeholder={t('selectStatus')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">{t('pending')}</SelectItem>
-                        <SelectItem value="processing">{t('processing')}</SelectItem>
-                        <SelectItem value="shipped">{t('shipped')}</SelectItem>
-                        <SelectItem value="delivered">{t('delivered')}</SelectItem>
-                        <SelectItem value="cancelled">{t('cancelled')}</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="edit-status">{t('orderStatus')}</Label>
+                      <Select value={editOrderStatus} onValueChange={setEditOrderStatus}>
+                        <SelectTrigger id="edit-status" data-testid="select-edit-status">
+                          <SelectValue placeholder={t('selectStatus')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">{t('pending')}</SelectItem>
+                          <SelectItem value="processing">{t('processing')}</SelectItem>
+                          <SelectItem value="shipped">{t('shipped')}</SelectItem>
+                          <SelectItem value="delivered">{t('delivered')}</SelectItem>
+                          <SelectItem value="cancelled">{t('cancelled')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-shipping-weight">Shipping Weight (kg)</Label>
+                      <Input
+                        id="edit-shipping-weight"
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        value={editingOrder.shippingWeight || 1}
+                        onChange={(e) => {
+                          const newWeight = parseFloat(e.target.value) || 1;
+                          setEditingOrder(prev => prev ? { ...prev, shippingWeight: newWeight.toString() } : null);
+                        }}
+                        data-testid="input-edit-shipping-weight"
+                      />
+                    </div>
                   </div>
 
                   <div>
