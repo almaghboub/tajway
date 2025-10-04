@@ -61,6 +61,7 @@ export default function Orders() {
   const [customOrderCode, setCustomOrderCode] = useState("");
   const [orderImages, setOrderImages] = useState<OrderImage[]>([]);
   const [statusFilters, setStatusFilters] = useState<string[]>(["pending", "processing", "shipped", "delivered", "cancelled"]);
+  const [countryFilters, setCountryFilters] = useState<string[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [editOrderStatus, setEditOrderStatus] = useState("");
   const [editableItems, setEditableItems] = useState<any[]>([]);
@@ -68,6 +69,7 @@ export default function Orders() {
   const [shippingCountry, setShippingCountry] = useState("");
   const [shippingCategory, setShippingCategory] = useState("normal");
   const [shippingWeight, setShippingWeight] = useState(1);
+  const [clothingSize, setClothingSize] = useState("");
   const [downPayment, setDownPayment] = useState(0);
   const [shippingCalculation, setShippingCalculation] = useState<{
     base_shipping: number;
@@ -443,6 +445,7 @@ export default function Orders() {
     setShippingCountry("");
     setShippingCategory("normal");
     setShippingWeight(1);
+    setClothingSize("");
     setShippingCalculation(null);
     setNotes("");
     setCustomOrderCode("");
@@ -615,15 +618,6 @@ export default function Orders() {
       return;
     }
 
-    if (!shippingCalculation) {
-      toast({
-        title: t('validationError'),
-        description: t('calculateShippingBeforeOrder'),
-        variant: "destructive",
-      });
-      return;
-    }
-
     const totals = calculateTotals();
     
     // Calculate items profit (difference between original and discounted price)
@@ -637,6 +631,12 @@ export default function Orders() {
     
     // Calculate remaining balance
     const remainingBalance = totals.total - downPayment;
+    
+    // Add clothing size to notes if provided
+    let finalNotes = notes;
+    if (clothingSize && shippingCategory === "clothing") {
+      finalNotes = finalNotes ? `${finalNotes} | Size: ${clothingSize}` : `Size: ${clothingSize}`;
+    }
     
     const order: InsertOrder = {
       customerId: selectedCustomerId,
@@ -652,7 +652,7 @@ export default function Orders() {
       shippingProfit: shippingProfit.toFixed(2),
       itemsProfit: itemsProfit.toFixed(2),
       totalProfit: totalProfit.toFixed(2),
-      notes: notes || undefined,
+      notes: finalNotes || undefined,
       orderNumber: customOrderCode || undefined,
     };
 
@@ -694,8 +694,19 @@ export default function Orders() {
     const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       `${order.customer.firstName} ${order.customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilters.includes(order.status);
-    return matchesSearch && matchesStatus;
+    const matchesCountry = countryFilters.length === 0 || (order.shippingCountry && countryFilters.includes(order.shippingCountry));
+    return matchesSearch && matchesStatus && matchesCountry;
   });
+  
+  const toggleCountryFilter = (country: string) => {
+    setCountryFilters(prev =>
+      prev.includes(country)
+        ? prev.filter(c => c !== country)
+        : [...prev, country]
+    );
+  };
+  
+  const uniqueCountries = Array.from(new Set(orders.map(o => o.shippingCountry).filter(Boolean))) as string[];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -747,7 +758,7 @@ export default function Orders() {
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-64" data-testid="popover-filter-orders">
+              <PopoverContent className="w-64 max-h-96 overflow-y-auto" data-testid="popover-filter-orders">
                 <div className="space-y-4">
                   <div>
                     <h4 className="font-semibold mb-3">{t('filterByStatus')}</h4>
@@ -770,11 +781,37 @@ export default function Orders() {
                       ))}
                     </div>
                   </div>
+                  {uniqueCountries.length > 0 && (
+                    <div className="border-t pt-3">
+                      <h4 className="font-semibold mb-3">Filter by Country</h4>
+                      <div className="space-y-2">
+                        {uniqueCountries.map((country) => (
+                          <div key={country} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`filter-country-${country}`}
+                              checked={countryFilters.includes(country)}
+                              onCheckedChange={() => toggleCountryFilter(country)}
+                              data-testid={`checkbox-filter-country-${country}`}
+                            />
+                            <Label
+                              htmlFor={`filter-country-${country}`}
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              {country}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex justify-between pt-2 border-t">
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setStatusFilters(["pending", "processing", "shipped", "delivered", "cancelled"])}
+                      onClick={() => {
+                        setStatusFilters(["pending", "processing", "shipped", "delivered", "cancelled"]);
+                        setCountryFilters([]);
+                      }}
                       data-testid="button-reset-filters"
                     >
                       {t('reset')}
@@ -829,7 +866,7 @@ export default function Orders() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product Code(s)</TableHead>
+                    <TableHead>Shipping Code</TableHead>
                     <TableHead>{t('customer')}</TableHead>
                     <TableHead>Customer Code</TableHead>
                     <TableHead>{t('status')}</TableHead>
@@ -844,10 +881,8 @@ export default function Orders() {
                 <TableBody>
                   {filteredOrders.map((order) => (
                     <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
-                      <TableCell className="font-medium" data-testid={`text-product-codes-${order.id}`}>
-                        {order.items && order.items.length > 0 
-                          ? order.items.map(item => item.productCode || item.productName).join(', ')
-                          : 'N/A'}
+                      <TableCell className="font-medium" data-testid={`text-shipping-code-${order.id}`}>
+                        <span className="font-semibold text-primary">{order.customer.shippingCode || "-"}</span>
                       </TableCell>
                       <TableCell data-testid={`text-customer-${order.id}`}>
                         {order.customer.firstName} {order.customer.lastName}
@@ -864,7 +899,7 @@ export default function Orders() {
                         ${parseFloat(order.totalAmount).toFixed(2)}
                       </TableCell>
                       <TableCell data-testid={`text-down-payment-${order.id}`}>
-                        ${parseFloat(order.downPayment || "0").toFixed(2)}
+                        <span className="font-semibold text-green-600">${parseFloat(order.downPayment || "0").toFixed(2)}</span>
                       </TableCell>
                       <TableCell data-testid={`text-remaining-${order.id}`}>
                         ${parseFloat(order.remainingBalance || "0").toFixed(2)}
@@ -1256,6 +1291,19 @@ export default function Orders() {
                   </div>
                 </div>
                 
+                {shippingCategory === "clothing" && (
+                  <div>
+                    <Label htmlFor="clothing-size">Clothing Size (Optional)</Label>
+                    <Input
+                      id="clothing-size"
+                      value={clothingSize}
+                      onChange={(e) => setClothingSize(e.target.value)}
+                      placeholder="e.g., S, M, L, XL, 42, etc."
+                      data-testid="input-clothing-size"
+                    />
+                  </div>
+                )}
+                
                 <div className="flex items-center gap-4">
                   <Button
                     type="button"
@@ -1365,13 +1413,13 @@ export default function Orders() {
               {/* Form Actions */}
               <div className="space-y-2">
                 {!shippingCalculation && orderItems.length > 0 && (
-                  <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded" data-testid="text-shipping-required">
-                    {t('pleaseCalculateShipping')}
+                  <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded" data-testid="text-shipping-optional">
+                    {t('shippingOptional') || 'Shipping calculation is optional. You can add shipping details later.'}
                   </div>
                 )}
                 {shippingCalculation && isShippingCalculationStale() && (
-                  <div className="text-sm text-red-600 bg-red-50 p-2 rounded" data-testid="text-shipping-stale">
-                    {t('recalculateShipping')}
+                  <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded" data-testid="text-shipping-stale">
+                    {t('recalculateShipping') || 'Items have changed. Consider recalculating shipping.'}
                   </div>
                 )}
                 <div className="flex justify-end space-x-2 pt-2">
@@ -1388,9 +1436,7 @@ export default function Orders() {
                     disabled={
                       createOrderMutation.isPending || 
                       !selectedCustomerId || 
-                      orderItems.length === 0 || 
-                      !shippingCalculation || 
-                      isShippingCalculationStale()
+                      orderItems.length === 0
                     }
                     data-testid="button-create-order"
                   >
