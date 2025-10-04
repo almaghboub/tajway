@@ -135,16 +135,18 @@ export default function Orders() {
   });
 
   const updateOrderMutation = useMutation({
-    mutationFn: async ({ id, status, notes, shippingWeight, shippingCost, commission, totalAmount }: { 
+    mutationFn: async ({ id, status, notes, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount }: { 
       id: string; 
       status: string; 
       notes: string; 
       shippingWeight?: string;
+      shippingCountry?: string;
+      shippingCategory?: string;
       shippingCost?: string;
       commission?: string;
       totalAmount?: string;
     }) => {
-      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, shippingWeight, shippingCost, commission, totalAmount });
+      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount });
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Failed to update order");
@@ -352,6 +354,8 @@ export default function Orders() {
         id: editingOrder.id,
         status: editOrderStatus,
         shippingWeight: editingOrder.shippingWeight,
+        shippingCountry: editingOrder.shippingCountry || undefined,
+        shippingCategory: editingOrder.shippingCategory || undefined,
         shippingCost: editingOrder.shippingCost,
         commission: editingOrder.commission,
         totalAmount: editingOrder.totalAmount,
@@ -1512,6 +1516,12 @@ export default function Orders() {
                     </div>
                   )}
 
+                  {!editingOrder.shippingCountry && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
+                      <strong>Note:</strong> To enable automatic shipping recalculation when changing weight, please select the shipping country and category below.
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="edit-status">{t('orderStatus')}</Label>
@@ -1539,7 +1549,13 @@ export default function Orders() {
                         onChange={async (e) => {
                           const newWeight = parseFloat(e.target.value) || 1;
 
-                          // Recalculate shipping if country and category are available
+                          // Always update the weight first
+                          setEditingOrder(prev => {
+                            if (!prev) return null;
+                            return { ...prev, shippingWeight: newWeight.toFixed(2) };
+                          });
+
+                          // Then recalculate shipping if country and category are available
                           if (editingOrder.shippingCountry && editingOrder.shippingCategory && editableItems.length > 0) {
                             try {
                               const itemsTotal = editableItems.reduce((sum, item) => 
@@ -1583,16 +1599,151 @@ export default function Orders() {
                             } catch (error) {
                               console.error('Error recalculating shipping:', error);
                             }
-                          } else {
-                            // If shipping info not available, just update the weight
-                            setEditingOrder(prev => {
-                              if (!prev) return null;
-                              return { ...prev, shippingWeight: newWeight.toFixed(2) };
-                            });
                           }
                         }}
                         data-testid="input-edit-shipping-weight"
                       />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="edit-shipping-country">Shipping Country</Label>
+                      <Select 
+                        value={editingOrder.shippingCountry || ""} 
+                        onValueChange={async (value) => {
+                          setEditingOrder(prev => {
+                            if (!prev) return null;
+                            return { ...prev, shippingCountry: value };
+                          });
+
+                          // Trigger recalculation if all data available
+                          if (value && editingOrder.shippingCategory && editableItems.length > 0) {
+                            try {
+                              const itemsTotal = editableItems.reduce((sum, item) => 
+                                sum + (parseFloat(item.totalPrice as any) || 0), 0
+                              );
+                              const weight = parseFloat(editingOrder.shippingWeight || "1");
+                              
+                              const response = await fetch('/api/calculate-shipping', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({
+                                  country: value,
+                                  category: editingOrder.shippingCategory,
+                                  weight: weight,
+                                  orderValue: itemsTotal
+                                })
+                              });
+
+                              if (response.ok) {
+                                const calc = await response.json();
+                                const newShippingCost = parseFloat(calc.base_shipping);
+                                const newCommission = parseFloat(calc.commission);
+                                const newTotal = itemsTotal + newShippingCost + newCommission;
+                                
+                                setEditingOrder(prev => {
+                                  if (!prev) return null;
+                                  return {
+                                    ...prev,
+                                    shippingCountry: value,
+                                    shippingCost: newShippingCost.toFixed(2),
+                                    commission: newCommission.toFixed(2),
+                                    totalAmount: newTotal.toFixed(2),
+                                  };
+                                });
+                                
+                                toast({
+                                  title: "Shipping Recalculated",
+                                  description: `Shipping: $${newShippingCost.toFixed(2)}, Total: $${newTotal.toFixed(2)}`,
+                                });
+                              }
+                            } catch (error) {
+                              console.error('Error recalculating shipping:', error);
+                            }
+                          }
+                        }}
+                      >
+                        <SelectTrigger id="edit-shipping-country" data-testid="select-edit-shipping-country">
+                          <SelectValue placeholder="Select country" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {shippingCountries.map((country) => (
+                            <SelectItem key={country} value={country}>
+                              {country}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-shipping-category">Shipping Category</Label>
+                      <Select 
+                        value={editingOrder.shippingCategory || ""} 
+                        onValueChange={async (value) => {
+                          // Always update category first
+                          setEditingOrder(prev => {
+                            if (!prev) return null;
+                            return { ...prev, shippingCategory: value };
+                          });
+
+                          // Trigger recalculation if all data available
+                          if (editingOrder.shippingCountry && value && editableItems.length > 0) {
+                            try {
+                              const itemsTotal = editableItems.reduce((sum, item) => 
+                                sum + (parseFloat(item.totalPrice as any) || 0), 0
+                              );
+                              const weight = parseFloat(editingOrder.shippingWeight || "1");
+                              
+                              const response = await fetch('/api/calculate-shipping', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({
+                                  country: editingOrder.shippingCountry,
+                                  category: value,
+                                  weight: weight,
+                                  orderValue: itemsTotal
+                                })
+                              });
+
+                              if (response.ok) {
+                                const calc = await response.json();
+                                const newShippingCost = parseFloat(calc.base_shipping);
+                                const newCommission = parseFloat(calc.commission);
+                                const newTotal = itemsTotal + newShippingCost + newCommission;
+                                
+                                setEditingOrder(prev => {
+                                  if (!prev) return null;
+                                  return {
+                                    ...prev,
+                                    shippingCategory: value,
+                                    shippingCost: newShippingCost.toFixed(2),
+                                    commission: newCommission.toFixed(2),
+                                    totalAmount: newTotal.toFixed(2),
+                                  };
+                                });
+                                
+                                toast({
+                                  title: "Shipping Recalculated",
+                                  description: `Shipping: $${newShippingCost.toFixed(2)}, Total: $${newTotal.toFixed(2)}`,
+                                });
+                              }
+                            } catch (error) {
+                              console.error('Error recalculating shipping:', error);
+                            }
+                          }
+                        }}
+                      >
+                        <SelectTrigger id="edit-shipping-category" data-testid="select-edit-shipping-category">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="normal">Normal</SelectItem>
+                          <SelectItem value="express">Express</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
