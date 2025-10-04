@@ -316,10 +316,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const totalOrderAmount = customerOrders.reduce((sum: number, order) => sum + parseFloat(order.totalAmount), 0);
         const cappedDownPayment = Math.min(totalDownPayment, totalOrderAmount);
         
-        for (const order of customerOrders) {
+        let distributedSoFar = 0;
+        
+        for (let i = 0; i < customerOrders.length; i++) {
+          const order = customerOrders[i];
           const orderAmount = parseFloat(order.totalAmount);
-          const proportion = orderAmount / totalOrderAmount;
-          const orderDownPayment = cappedDownPayment * proportion;
+          
+          let orderDownPayment: number;
+          if (i === customerOrders.length - 1) {
+            orderDownPayment = Math.min(cappedDownPayment - distributedSoFar, orderAmount);
+          } else {
+            const proportion = orderAmount / totalOrderAmount;
+            orderDownPayment = Math.min(cappedDownPayment * proportion, orderAmount);
+            distributedSoFar += orderDownPayment;
+          }
+          
           const orderRemaining = Math.max(0, orderAmount - orderDownPayment);
           
           await storage.updateOrder(order.id, {

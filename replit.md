@@ -4,8 +4,21 @@ This is a comprehensive logistics and order management system built with React, 
 
 # Recent Changes (October 2025)
 
+## Customer-Level Down Payment Management (Latest)
+- **Down Payment Moved to Customer Level**: Down payment editing moved from individual orders to customer edit modal for centralized management
+- **Customer Edit Modal Enhanced**: Now shows Total Amount (sum of all customer orders), Down Payment (editable), and Remaining Balance (auto-calculated)
+- **Proportional Distribution**: When editing customer down payment, the amount is automatically distributed proportionally across all customer orders based on each order's total amount
+- **Robust Validation**: Backend validates down payment is non-negative, caps at total order amount, and prevents division by zero
+- **Rounding Fix**: Last order absorbs any rounding differences to ensure exact distribution with no negative balances
+- **API Endpoint**: New `/api/customers/:id/update-with-payment` endpoint handles atomic customer and payment updates
+
+## Customer Code Display Enhancement
+- **Customer Code in Invoices**: Customer code (shippingCode) now displayed in invoice Bill To section with red color highlight
+- **Customer Code in Orders Table**: Added Customer Code column to orders list (displayed after customer name)
+- **Customer Code in Customers Table**: Added Customer Code column to customers list (displayed after name)
+- **Customer View Modal**: Customer code moved to Personal Information section for better visibility
+
 ## Data Entry Simplification
-- **Editable Down Payments**: Order edit modal now includes a down payment field that automatically recalculates remaining balance when changed (remaining = total - down payment)
 - **Simplified Customer Editing**: Customer edit modal streamlined to show only essential fields: First Name, Last Name, Phone, and Customer Code (removed email, address, city, postal code, country from edit view)
 - **Product Code Workflow**: Product Code field removed from create new order form for faster data entry; users can add product codes later when editing orders
 
