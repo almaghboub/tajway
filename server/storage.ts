@@ -115,6 +115,7 @@ export class MemStorage implements IStorage {
   private customers: Map<string, Customer>;
   private orders: Map<string, Order>;
   private orderItems: Map<string, OrderItem>;
+  private orderImages: Map<string, OrderImage>;
   private shippingRates: Map<string, ShippingRate>;
   private commissionRules: Map<string, CommissionRule>;
   private settings: Map<string, Setting>;
@@ -125,6 +126,7 @@ export class MemStorage implements IStorage {
     this.customers = new Map();
     this.orders = new Map();
     this.orderItems = new Map();
+    this.orderImages = new Map();
     this.shippingRates = new Map();
     this.commissionRules = new Map();
     this.settings = new Map();
@@ -154,62 +156,107 @@ export class MemStorage implements IStorage {
       {
         id: randomUUID(),
         country: "China",
-        baseRate: "25.00",
-        perKgRate: "8.00",
-        commissionRate: "0.1800",
+        category: "normal",
+        pricePerKg: "8.00",
+        currency: "USD",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        country: "China",
+        category: "perfumes",
+        pricePerKg: "12.00",
+        currency: "USD",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
         id: randomUUID(),
         country: "Turkey",
-        baseRate: "30.00",
-        perKgRate: "12.00",
-        commissionRate: "0.2000",
+        category: "normal",
+        pricePerKg: "12.00",
+        currency: "USD",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
         id: randomUUID(),
         country: "UK",
-        baseRate: "35.00",
-        perKgRate: "15.00",
-        commissionRate: "0.1500",
+        category: "normal",
+        pricePerKg: "15.00",
+        currency: "GBP",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
         id: randomUUID(),
         country: "UAE",
-        baseRate: "40.00",
-        perKgRate: "18.00",
-        commissionRate: "0.1200",
+        category: "normal",
+        pricePerKg: "18.00",
+        currency: "USD",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     ];
 
     defaultRates.forEach(rate => this.shippingRates.set(rate.id, rate));
 
-    // Create sample inventory
-    const sampleInventory: Inventory[] = [
+    // Create default commission rules
+    const defaultCommissionRules: CommissionRule[] = [
       {
         id: randomUUID(),
-        productName: "Premium Widget",
-        sku: "PWG-001",
-        quantity: 50,
-        unitCost: "25.00",
-        sellingPrice: "45.00",
-        lowStockThreshold: 10,
+        country: "China",
+        minValue: "0.00",
+        maxValue: "100.00",
+        percentage: "0.1800",
+        fixedFee: "0.00",
         createdAt: new Date(),
         updatedAt: new Date(),
       },
       {
         id: randomUUID(),
-        productName: "Standard Gadget",
-        sku: "SGD-002",
-        quantity: 75,
-        unitCost: "15.00",
-        sellingPrice: "35.00",
-        lowStockThreshold: 15,
+        country: "China",
+        minValue: "100.01",
+        maxValue: null,
+        percentage: "0.1500",
+        fixedFee: "1.00",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        country: "Turkey",
+        minValue: "0.00",
+        maxValue: null,
+        percentage: "0.2000",
+        fixedFee: "0.00",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        country: "UK",
+        minValue: "0.00",
+        maxValue: null,
+        percentage: "0.1500",
+        fixedFee: "0.00",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        country: "UAE",
+        minValue: "0.00",
+        maxValue: null,
+        percentage: "0.1200",
+        fixedFee: "0.00",
         createdAt: new Date(),
         updatedAt: new Date(),
       },
     ];
 
-    sampleInventory.forEach(item => this.inventory.set(item.id, item));
+    defaultCommissionRules.forEach(rule => this.commissionRules.set(rule.id, rule));
   }
 
   // Users
@@ -256,6 +303,10 @@ export class MemStorage implements IStorage {
     return this.customers.get(id);
   }
 
+  async getCustomerByPhone(phone: string): Promise<Customer | undefined> {
+    return Array.from(this.customers.values()).find(customer => customer.phone === phone);
+  }
+
   async getCustomerWithOrders(id: string): Promise<CustomerWithOrders | undefined> {
     const customer = this.customers.get(id);
     if (!customer) return undefined;
@@ -269,10 +320,9 @@ export class MemStorage implements IStorage {
     const customer: Customer = {
       ...insertCustomer,
       id,
-      phone: insertCustomer.phone || null,
-      address: insertCustomer.address || null,
-      city: insertCustomer.city || null,
-      postalCode: insertCustomer.postalCode || null,
+      address: insertCustomer.address ?? null,
+      city: insertCustomer.city ?? null,
+      postalCode: insertCustomer.postalCode ?? null,
       createdAt: new Date(),
     };
     this.customers.set(id, customer);
@@ -309,8 +359,9 @@ export class MemStorage implements IStorage {
     if (!customer) return undefined;
     
     const items = Array.from(this.orderItems.values()).filter(item => item.orderId === id);
+    const images = Array.from(this.orderImages.values()).filter(image => image.orderId === id);
     
-    return { ...order, customer, items };
+    return { ...order, customer, items, images };
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
@@ -325,7 +376,9 @@ export class MemStorage implements IStorage {
       status: insertOrder.status || "pending",
       shippingCost: insertOrder.shippingCost || "0.00",
       commission: insertOrder.commission || "0.00",
-      profit: insertOrder.profit || "0.00",
+      shippingProfit: insertOrder.shippingProfit || "0.00",
+      itemsProfit: insertOrder.itemsProfit || "0.00",
+      totalProfit: insertOrder.totalProfit || "0.00",
       notes: insertOrder.notes || null,
       createdAt: now,
       updatedAt: now,
@@ -359,7 +412,8 @@ export class MemStorage implements IStorage {
       const customer = this.customers.get(order.customerId);
       if (customer) {
         const items = Array.from(this.orderItems.values()).filter(item => item.orderId === order.id);
-        orders.push({ ...order, customer, items });
+        const images = Array.from(this.orderImages.values()).filter(image => image.orderId === order.id);
+        orders.push({ ...order, customer, items, images });
       }
     }
     
@@ -376,6 +430,10 @@ export class MemStorage implements IStorage {
     const item: OrderItem = {
       ...insertOrderItem,
       id,
+      productUrl: insertOrderItem.productUrl ?? null,
+      originalPrice: insertOrderItem.originalPrice ?? null,
+      discountedPrice: insertOrderItem.discountedPrice ?? null,
+      markupProfit: insertOrderItem.markupProfit ?? "0.00",
     };
     this.orderItems.set(id, item);
     return item;
@@ -394,21 +452,48 @@ export class MemStorage implements IStorage {
     return this.orderItems.delete(id);
   }
 
+  // Order Images
+  async getOrderImages(orderId: string): Promise<OrderImage[]> {
+    return Array.from(this.orderImages.values()).filter(image => image.orderId === orderId);
+  }
+
+  async createOrderImage(insertOrderImage: InsertOrderImage): Promise<OrderImage> {
+    const id = randomUUID();
+    const image: OrderImage = {
+      ...insertOrderImage,
+      id,
+      altText: insertOrderImage.altText ?? null,
+      position: insertOrderImage.position ?? 1,
+      createdAt: new Date(),
+    };
+    this.orderImages.set(id, image);
+    return image;
+  }
+
+  async deleteOrderImage(id: string): Promise<boolean> {
+    return this.orderImages.delete(id);
+  }
+
   // Shipping Rates
   async getShippingRate(id: string): Promise<ShippingRate | undefined> {
     return this.shippingRates.get(id);
   }
 
-  async getShippingRateByCountry(country: string): Promise<ShippingRate | undefined> {
-    return Array.from(this.shippingRates.values()).find(rate => rate.country === country);
+  async getShippingRateByCountryAndCategory(country: string, category: string): Promise<ShippingRate | undefined> {
+    return Array.from(this.shippingRates.values()).find(
+      rate => rate.country === country && rate.category === category
+    );
   }
 
   async createShippingRate(insertShippingRate: InsertShippingRate): Promise<ShippingRate> {
     const id = randomUUID();
+    const now = new Date();
     const rate: ShippingRate = {
       ...insertShippingRate,
       id,
-      commissionRate: insertShippingRate.commissionRate || "0.15",
+      currency: insertShippingRate.currency ?? "USD",
+      createdAt: now,
+      updatedAt: now,
     };
     this.shippingRates.set(id, rate);
     return rate;
@@ -431,10 +516,92 @@ export class MemStorage implements IStorage {
     return Array.from(this.shippingRates.values());
   }
 
+  // Commission Rules
+  async getCommissionRule(id: string): Promise<CommissionRule | undefined> {
+    return this.commissionRules.get(id);
+  }
+
+  async getCommissionRuleByCountryAndValue(country: string, orderValue: number): Promise<CommissionRule | undefined> {
+    return Array.from(this.commissionRules.values()).find(rule => {
+      const minValue = parseFloat(rule.minValue);
+      const maxValue = rule.maxValue ? parseFloat(rule.maxValue) : null;
+      return rule.country === country && 
+             minValue <= orderValue && 
+             (maxValue === null || maxValue >= orderValue);
+    });
+  }
+
+  async createCommissionRule(insertCommissionRule: InsertCommissionRule): Promise<CommissionRule> {
+    const id = randomUUID();
+    const now = new Date();
+    const rule: CommissionRule = {
+      ...insertCommissionRule,
+      id,
+      maxValue: insertCommissionRule.maxValue ?? null,
+      fixedFee: insertCommissionRule.fixedFee ?? "0.00",
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.commissionRules.set(id, rule);
+    return rule;
+  }
+
+  async updateCommissionRule(id: string, ruleData: Partial<InsertCommissionRule>): Promise<CommissionRule | undefined> {
+    const rule = this.commissionRules.get(id);
+    if (!rule) return undefined;
+    
+    const updatedRule = { 
+      ...rule, 
+      ...ruleData,
+      updatedAt: new Date(),
+    };
+    this.commissionRules.set(id, updatedRule);
+    return updatedRule;
+  }
+
+  async deleteCommissionRule(id: string): Promise<boolean> {
+    return this.commissionRules.delete(id);
+  }
+
+  async getAllCommissionRules(): Promise<CommissionRule[]> {
+    return Array.from(this.commissionRules.values());
+  }
+
+  // Shipping Calculation
+  async calculateShipping(country: string, category: string, weight: number, orderValue: number): Promise<{
+    base_shipping: number;
+    commission: number;
+    total: number;
+    currency: string;
+  }> {
+    const shippingRate = await this.getShippingRateByCountryAndCategory(country, category);
+    if (!shippingRate) {
+      throw new Error(`No shipping rate found for country: ${country}, category: ${category}`);
+    }
+
+    const baseShipping = weight * parseFloat(shippingRate.pricePerKg);
+
+    const commissionRule = await this.getCommissionRuleByCountryAndValue(country, orderValue);
+    let commission = 0;
+    
+    if (commissionRule) {
+      const percentageCommission = orderValue * parseFloat(commissionRule.percentage);
+      const fixedFee = parseFloat(commissionRule.fixedFee);
+      commission = percentageCommission + fixedFee;
+    }
+
+    return {
+      base_shipping: baseShipping,
+      commission,
+      total: baseShipping + commission,
+      currency: shippingRate.currency,
+    };
+  }
+
   // Analytics
   async getTotalProfit(): Promise<number> {
     const orders = Array.from(this.orders.values());
-    return orders.reduce((total, order) => total + parseFloat(order.profit), 0);
+    return orders.reduce((total, order) => total + parseFloat(order.totalProfit), 0);
   }
 
   async getTotalRevenue(): Promise<number> {
@@ -454,11 +621,14 @@ export class MemStorage implements IStorage {
 
   async createSetting(insertSetting: InsertSetting): Promise<Setting> {
     const id = randomUUID();
+    const now = new Date();
     const setting: Setting = {
       ...insertSetting,
       id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      type: insertSetting.type ?? "string",
+      description: insertSetting.description ?? null,
+      createdAt: now,
+      updatedAt: now,
     };
     this.settings.set(setting.key, setting);
     return setting;
@@ -591,29 +761,6 @@ export class PostgreSQLStorage implements IStorage {
         ]);
       }
 
-      // Check if inventory exists
-      const existingInventory = await this.getAllInventory();
-      if (existingInventory.length === 0) {
-        // Create sample inventory
-        await db.insert(inventory).values([
-          {
-            productName: "Premium Widget",
-            sku: "PWG-001",
-            quantity: 50,
-            unitCost: "25.00",
-            sellingPrice: "45.00",
-            lowStockThreshold: 10,
-          },
-          {
-            productName: "Standard Gadget",
-            sku: "SGD-002",
-            quantity: 75,
-            unitCost: "15.00",
-            sellingPrice: "35.00",
-            lowStockThreshold: 15,
-          },
-        ]);
-      }
     } catch (error) {
       console.error("Error initializing default data:", error);
     }
@@ -937,7 +1084,7 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async updateSetting(key: string, value: string, type?: string): Promise<Setting | undefined> {
-    const updateData: Partial<InsertSetting> = { 
+    const updateData: any = { 
       value, 
       updatedAt: new Date() 
     };
