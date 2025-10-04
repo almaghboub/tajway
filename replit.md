@@ -1,6 +1,19 @@
 # Overview
 
-This is a comprehensive logistics and order management system built with React, Express, and PostgreSQL. The application provides role-based access control for different user types (owner, customer service, receptionist, sorter, stock manager) with distinct capabilities for managing orders, customers, inventory, profits, and system administration. The system features modern authentication, real-time data management, and a responsive UI designed for logistics operations.
+This is a comprehensive logistics and order management system built with React, Express, and PostgreSQL. The application provides role-based access control for different user types (owner, customer service, receptionist, sorter, stock manager) with distinct capabilities for managing orders, customers, inventory, profits, and system administration. The system features modern authentication, real-time data management, bilingual support (English/Arabic), and a responsive UI designed for logistics operations with streamlined data entry workflows.
+
+# Recent Changes (October 2025)
+
+## Data Entry Simplification
+- **Editable Down Payments**: Order edit modal now includes a down payment field that automatically recalculates remaining balance when changed (remaining = total - down payment)
+- **Simplified Customer Editing**: Customer edit modal streamlined to show only essential fields: First Name, Last Name, Phone, and Customer Code (removed email, address, city, postal code, country from edit view)
+- **Product Code Workflow**: Product Code field removed from create new order form for faster data entry; users can add product codes later when editing orders
+
+## Shipping Calculation Improvements  
+- Orders can now be updated with shipping country and category selections for proper shipping recalculation
+- Warning banner displays for orders missing shipping data with inline selection fields
+- Shipping weight and category persist correctly through async recalculation flow
+- Fixed state management race conditions in shipping recalculation
 
 # User Preferences
 

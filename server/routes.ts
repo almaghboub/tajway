@@ -279,7 +279,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(customer);
     } catch (error) {
-      res.status(500).json({ message: "Failed to update customer" });
+      console.error("Error updating customer:", error);
+      res.status(500).json({ message: "Failed to update customer", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
