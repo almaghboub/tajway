@@ -4,7 +4,15 @@ This is a comprehensive logistics and order management system built with React, 
 
 # Recent Changes (October 2025)
 
-## Enhanced Customer Search and Dynamic Country Filter (Latest)
+## Down Payment Integration in Create Order Form (Latest)
+- **Integrated Down Payment Field**: Down payment input field now embedded directly in Order Summary section of Create New Order modal
+- **Position**: Appears after Total line and before Estimated Profit, providing seamless data entry workflow
+- **Remaining Balance Display**: Automatically calculates and displays remaining balance (Total - Down Payment) in orange text when down payment > 0
+- **Always Available**: Down payment field now available whenever order items exist (removed dependency on shipping calculation completion)
+- **Form Reset**: Down payment properly resets to 0 when creating new orders, preventing stale values from previous orders
+- **Removed Duplicate**: Eliminated separate down payment section that previously appeared below order summary
+
+## Enhanced Customer Search and Dynamic Country Filter
 - **Multi-Field Customer Search**: Customer search now supports searching by phone number, first name, last name, or customer code (shippingCode) with single input field
 - **Search Behavior**: Case-insensitive partial matching using PostgreSQL ilike operator; auto-selects if single match found, displays clickable list for multiple matches
 - **Backend Enhancement**: New `searchCustomers(query)` method in storage interface and `/api/customers/search` endpoint with multi-field OR query
