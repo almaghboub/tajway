@@ -1938,6 +1938,14 @@ export default function Orders() {
                       <span data-testid="text-view-total">${parseFloat(viewingOrder.totalAmount).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-green-600">
+                      <span>Down Payment:</span>
+                      <span data-testid="text-view-down-payment">${parseFloat(viewingOrder.downPayment || "0").toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold text-orange-600">
+                      <span>Remaining Balance:</span>
+                      <span data-testid="text-view-remaining-balance">${parseFloat(viewingOrder.remainingBalance || "0").toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground border-t pt-2">
                       <span>{t('estimatedProfitLabel')}</span>
                       <span data-testid="text-view-profit">${parseFloat(viewingOrder.totalProfit).toFixed(2)}</span>
                     </div>

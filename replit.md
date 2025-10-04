@@ -12,6 +12,15 @@ This is a comprehensive logistics and order management system built with React, 
 - **Rounding Fix**: Last order absorbs any rounding differences to ensure exact distribution with no negative balances
 - **API Endpoint**: New `/api/customers/:id/update-with-payment` endpoint handles atomic customer and payment updates
 
+## Customer Dashboard Payment Display (Latest Update)
+- **Email Column Removed**: Removed email column from customer dashboard table
+- **Total Amount Column Added**: Displays sum of all customer orders with proper aggregation
+- **Down Payment Column Added**: Shows total down payments across all customer orders (green text)
+- **Payment Details in Order Modals**: Both View Order Details and Print Invoice modals now display:
+  - Down Payment (green text)
+  - Remaining Balance (orange text, prominently displayed)
+  - Proper calculation verification (Down Payment + Remaining Balance = Total)
+
 ## Customer Code Display Enhancement
 - **Customer Code in Invoices**: Customer code (shippingCode) now displayed in invoice Bill To section with red color highlight
 - **Customer Code in Orders Table**: Added Customer Code column to orders list (displayed after customer name)
