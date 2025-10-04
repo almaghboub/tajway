@@ -4,7 +4,15 @@ This is a comprehensive logistics and order management system built with React, 
 
 # Recent Changes (October 2025)
 
-## Customer-Level Down Payment Management (Latest)
+## Orders Dashboard Enhancements (Latest)
+- **Country Filtering**: Added country filter to orders dashboard with checkboxes in filter popover for filtering orders by shipping destination country
+- **Shipping Code Column**: Replaced "Product Code(s)" column with "Shipping Code" column displaying customer shipping codes (shippingCode) in orders table for easier tracking
+- **Enhanced Down Payment Visibility**: Down payment amounts now displayed in green color (text-green-600) in orders table for better visual distinction
+- **Conditional Clothing Size Field**: Added optional size input field that appears when shipping category is "clothing", with size automatically appended to order notes
+- **Truly Optional Shipping Calculation**: Removed validation requiring shipping calculation before order creation - orders can now be created without pre-calculating shipping, with blue informational message indicating shipping is optional and can be added later
+- **Flexible Order Creation**: Create Order button now enabled as soon as customer and items are selected, regardless of shipping calculation status
+
+## Customer-Level Down Payment Management
 - **Down Payment Moved to Customer Level**: Down payment editing moved from individual orders to customer edit modal for centralized management
 - **Customer Edit Modal Enhanced**: Now shows Total Amount (sum of all customer orders), Down Payment (editable), and Remaining Balance (auto-calculated)
 - **Proportional Distribution**: When editing customer down payment, the amount is automatically distributed proportionally across all customer orders based on each order's total amount
