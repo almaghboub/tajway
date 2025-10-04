@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { Customer, InsertCustomer } from "@shared/schema";
+import type { Customer, InsertCustomer, OrderWithCustomer } from "@shared/schema";
 
 export default function Customers() {
   const { t } = useTranslation();
@@ -60,6 +60,14 @@ export default function Customers() {
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/customers");
       return response.json() as Promise<Customer[]>;
+    },
+  });
+
+  const { data: orders = [] } = useQuery({
+    queryKey: ["/api/orders"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/orders");
+      return response.json() as Promise<OrderWithCustomer[]>;
     },
   });
 
@@ -715,8 +723,46 @@ export default function Customers() {
                       <span className="font-medium text-muted-foreground">{t("country")}:</span>
                       <p className="mt-1" data-testid="text-view-customer-country">{viewingCustomer.country}</p>
                     </div>
+                    {viewingCustomer.shippingCode && (
+                      <div className="col-span-2">
+                        <span className="font-medium text-muted-foreground">Shipping Code:</span>
+                        <p className="mt-1" data-testid="text-view-customer-shipping-code">{viewingCustomer.shippingCode}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
+
+                {/* Payment Information */}
+                {(() => {
+                  const customerOrders = orders.filter(order => order.customerId === viewingCustomer.id);
+                  const totalAmount = customerOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount), 0);
+                  const totalDownPayment = customerOrders.reduce((sum, order) => sum + parseFloat(order.downPayment || "0"), 0);
+                  const totalRemainingBalance = customerOrders.reduce((sum, order) => sum + parseFloat(order.remainingBalance || "0"), 0);
+                  
+                  return (
+                    <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                      <h3 className="font-semibold text-lg mb-3">Payment Summary</h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-muted-foreground">Total Orders:</span>
+                          <p className="mt-1" data-testid="text-view-total-orders">{customerOrders.length}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Total Order Amount:</span>
+                          <p className="mt-1 font-semibold" data-testid="text-view-total-amount">${totalAmount.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Total Down Payment:</span>
+                          <p className="mt-1 text-blue-600 font-semibold" data-testid="text-view-total-down-payment">${totalDownPayment.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Total Remaining Balance:</span>
+                          <p className="mt-1 text-red-600 font-semibold" data-testid="text-view-total-remaining-balance">${totalRemainingBalance.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div className="flex justify-end pt-4 border-t">
                   <Button 
