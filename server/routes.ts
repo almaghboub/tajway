@@ -240,6 +240,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/customers/search", requireOperational, async (req, res) => {
+    try {
+      const { query } = req.query;
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+      const customers = await storage.searchCustomers(query);
+      res.json(customers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to search customers" });
+    }
+  });
+
   app.get("/api/customers/:id", requireOperational, async (req, res) => {
     try {
       const customer = await storage.getCustomerWithOrders(req.params.id);

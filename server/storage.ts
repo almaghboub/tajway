@@ -30,7 +30,7 @@ import { randomUUID } from "crypto";
 import { hashPassword } from "./auth";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, or, ilike } from "drizzle-orm";
 
 // Database connection
 const client = neon(process.env.DATABASE_URL!);
@@ -48,6 +48,7 @@ export interface IStorage {
   // Customers
   getCustomer(id: string): Promise<Customer | undefined>;
   getCustomerByPhone(phone: string): Promise<Customer | undefined>;
+  searchCustomers(query: string): Promise<Customer[]>;
   getCustomerWithOrders(id: string): Promise<CustomerWithOrders | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: string, customer: Partial<InsertCustomer>): Promise<Customer | undefined>;
@@ -306,6 +307,16 @@ export class MemStorage implements IStorage {
 
   async getCustomerByPhone(phone: string): Promise<Customer | undefined> {
     return Array.from(this.customers.values()).find(customer => customer.phone === phone);
+  }
+
+  async searchCustomers(query: string): Promise<Customer[]> {
+    const lowerQuery = query.toLowerCase();
+    return Array.from(this.customers.values()).filter(customer => 
+      customer.phone.includes(query) ||
+      customer.firstName.toLowerCase().includes(lowerQuery) ||
+      customer.lastName.toLowerCase().includes(lowerQuery) ||
+      (customer.shippingCode && customer.shippingCode.toLowerCase().includes(lowerQuery))
+    );
   }
 
   async getCustomerWithOrders(id: string): Promise<CustomerWithOrders | undefined> {
@@ -815,6 +826,22 @@ export class PostgreSQLStorage implements IStorage {
   async getCustomerByPhone(phone: string): Promise<Customer | undefined> {
     const result = await db.select().from(customers).where(eq(customers.phone, phone)).limit(1);
     return result[0];
+  }
+
+  async searchCustomers(query: string): Promise<Customer[]> {
+    const result = await db
+      .select()
+      .from(customers)
+      .where(
+        or(
+          ilike(customers.phone, `%${query}%`),
+          ilike(customers.firstName, `%${query}%`),
+          ilike(customers.lastName, `%${query}%`),
+          ilike(customers.shippingCode, `%${query}%`)
+        )
+      )
+      .orderBy(desc(customers.createdAt));
+    return result;
   }
 
   async getCustomerWithOrders(id: string): Promise<CustomerWithOrders | undefined> {

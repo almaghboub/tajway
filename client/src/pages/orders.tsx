@@ -50,7 +50,8 @@ export default function Orders() {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<any>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerSearchQuery, setCustomerSearchQuery] = useState("");
+  const [searchedCustomers, setSearchedCustomers] = useState<Customer[]>([]);
   const [searchedCustomer, setSearchedCustomer] = useState<Customer | null>(null);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
@@ -382,51 +383,69 @@ export default function Orders() {
     setEditableItems(updatedItems);
   };
 
-  const handlePhoneSearch = async () => {
-    if (!customerPhone.trim()) {
+  const handleCustomerSearch = async () => {
+    if (!customerSearchQuery.trim()) {
       toast({
         title: t('error'),
-        description: "Please enter a phone number",
+        description: "Please enter phone, name, or customer code",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      // Use fetch directly to handle 404 without throwing
-      const response = await fetch(`/api/customers/search/phone?phone=${encodeURIComponent(customerPhone)}`, {
+      const response = await fetch(`/api/customers/search?query=${encodeURIComponent(customerSearchQuery)}`, {
         credentials: "include"
       });
       
       if (response.ok) {
-        const customer = await response.json();
-        setSearchedCustomer(customer);
-        setSelectedCustomerId(customer.id);
-        setShippingCountry(customer.country);
-        setShowCustomerForm(false);
-        toast({
-          title: t('success'),
-          description: `Customer found: ${customer.firstName} ${customer.lastName}`,
-        });
-      } else if (response.status === 404) {
-        // Customer not found - show inline creation form
-        setSearchedCustomer(null);
-        setShowCustomerForm(true);
-        setNewCustomer(prev => ({ ...prev, phone: customerPhone }));
-        toast({
-          title: "Customer not found",
-          description: "Fill in the details to create a new customer",
-        });
+        const customers = await response.json();
+        if (customers.length === 0) {
+          // No customers found - show creation form
+          setSearchedCustomers([]);
+          setSearchedCustomer(null);
+          setShowCustomerForm(true);
+          setNewCustomer(prev => ({ ...prev, phone: customerSearchQuery }));
+          toast({
+            title: "No customers found",
+            description: "Fill in the details to create a new customer",
+          });
+        } else if (customers.length === 1) {
+          // Single customer found - auto select
+          const customer = customers[0];
+          setSearchedCustomer(customer);
+          setSelectedCustomerId(customer.id);
+          setShippingCountry(customer.country);
+          setSearchedCustomers([]);
+          setShowCustomerForm(false);
+          toast({
+            title: t('success'),
+            description: `Customer found: ${customer.firstName} ${customer.lastName}`,
+          });
+        } else {
+          // Multiple customers found - show list
+          setSearchedCustomers(customers);
+          setSearchedCustomer(null);
+          setShowCustomerForm(false);
+        }
       } else {
-        throw new Error("Failed to search for customer");
+        throw new Error("Failed to search for customers");
       }
     } catch (error) {
       toast({
         title: t('error'),
-        description: "Failed to search for customer",
+        description: "Failed to search for customers",
         variant: "destructive",
       });
     }
+  };
+
+  const handleSelectCustomer = (customer: Customer) => {
+    setSearchedCustomer(customer);
+    setSelectedCustomerId(customer.id);
+    setShippingCountry(customer.country || "");
+    setSearchedCustomers([]);
+    setShowCustomerForm(false);
   };
 
   const handleCreateCustomer = (e: React.FormEvent) => {
@@ -436,7 +455,8 @@ export default function Orders() {
 
   const resetForm = () => {
     setSelectedCustomerId("");
-    setCustomerPhone("");
+    setCustomerSearchQuery("");
+    setSearchedCustomers([]);
     setSearchedCustomer(null);
     setShowCustomerForm(false);
     setOrderItems([]);
@@ -705,8 +725,6 @@ export default function Orders() {
         : [...prev, country]
     );
   };
-  
-  const uniqueCountries = Array.from(new Set(orders.map(o => o.shippingCountry).filter(Boolean))) as string[];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -781,11 +799,11 @@ export default function Orders() {
                       ))}
                     </div>
                   </div>
-                  {uniqueCountries.length > 0 && (
+                  {shippingCountries.length > 0 && (
                     <div className="border-t pt-3">
                       <h4 className="font-semibold mb-3">Filter by Country</h4>
                       <div className="space-y-2">
-                        {uniqueCountries.map((country) => (
+                        {shippingCountries.map((country) => (
                           <div key={country} className="flex items-center space-x-2">
                             <Checkbox
                               id={`filter-country-${country}`}
@@ -962,28 +980,50 @@ export default function Orders() {
               <DialogTitle>{t('createNewOrder')}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Customer Phone Search */}
+              {/* Customer Search */}
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="customerPhone">Customer Phone Number</Label>
+                  <Label htmlFor="customerSearch">Search Customer (Phone, Name, or Code)</Label>
                   <div className="flex gap-2">
                     <Input
-                      id="customerPhone"
-                      value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder="Enter phone number"
-                      data-testid="input-customer-phone"
+                      id="customerSearch"
+                      value={customerSearchQuery}
+                      onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                      placeholder="Enter phone, name, or customer code"
+                      data-testid="input-customer-search"
+                      onKeyPress={(e) => e.key === 'Enter' && handleCustomerSearch()}
                     />
                     <Button
                       type="button"
-                      onClick={handlePhoneSearch}
-                      data-testid="button-search-phone"
+                      onClick={handleCustomerSearch}
+                      data-testid="button-search-customer"
                     >
                       <Search className="w-4 h-4 mr-2" />
                       Search
                     </Button>
                   </div>
                 </div>
+
+                {/* Multiple Search Results */}
+                {searchedCustomers.length > 0 && (
+                  <div className="border rounded-lg divide-y max-h-60 overflow-y-auto" data-testid="customer-search-results">
+                    {searchedCustomers.map((customer) => (
+                      <div
+                        key={customer.id}
+                        className="p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+                        onClick={() => handleSelectCustomer(customer)}
+                        data-testid={`customer-result-${customer.id}`}
+                      >
+                        <p className="font-semibold">
+                          {customer.firstName} {customer.lastName}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {customer.phone} • {customer.shippingCode || 'No code'} • {customer.country || 'No country'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Found Customer Display */}
                 {searchedCustomer && !showCustomerForm && (
@@ -992,7 +1032,7 @@ export default function Orders() {
                       Customer Found: {searchedCustomer.firstName} {searchedCustomer.lastName}
                     </p>
                     <p className="text-sm text-green-700 dark:text-green-300">
-                      {searchedCustomer.email} • {searchedCustomer.country}
+                      {searchedCustomer.phone} • {searchedCustomer.shippingCode || 'No code'} • {searchedCustomer.country}
                     </p>
                   </div>
                 )}
