@@ -66,6 +66,7 @@ export default function Orders() {
   const [statusFilters, setStatusFilters] = useState<string[]>(["pending", "processing", "shipped", "delivered", "cancelled"]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [editOrderStatus, setEditOrderStatus] = useState("");
+  const [editableItems, setEditableItems] = useState<any[]>([]);
   const [shippingCost, setShippingCost] = useState(0);
   const [shippingCountry, setShippingCountry] = useState("");
   const [shippingCategory, setShippingCategory] = useState("normal");
@@ -97,6 +98,14 @@ export default function Orders() {
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/customers");
       return response.json() as Promise<Customer[]>;
+    },
+  });
+
+  const { data: shippingCountries = [] } = useQuery({
+    queryKey: ["/api/shipping-countries"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/shipping-countries");
+      return response.json() as Promise<string[]>;
     },
   });
 
@@ -184,6 +193,16 @@ export default function Orders() {
     },
   });
 
+  const updateOrderItemMutation = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string; quantity?: number; originalPrice?: string; discountedPrice?: string; unitPrice?: string }) => {
+      const response = await apiRequest("PUT", `/api/order-items/${id}`, data);
+      if (!response.ok) {
+        throw new Error("Failed to update order item");
+      }
+      return response.json();
+    },
+  });
+
   const createCustomerMutation = useMutation({
     mutationFn: async (customerData: typeof newCustomer) => {
       const response = await apiRequest("POST", "/api/customers", customerData);
@@ -259,10 +278,21 @@ export default function Orders() {
     window.print();
   };
 
-  const openEditModal = (order: OrderWithCustomer) => {
+  const openEditModal = async (order: OrderWithCustomer) => {
     setEditingOrder(order);
     setEditOrderStatus(order.status);
     setNotes(order.notes || "");
+    
+    // Fetch order items
+    try {
+      const itemsResponse = await apiRequest("GET", `/api/orders/${order.id}/items`);
+      const items = await itemsResponse.json();
+      setEditableItems(items);
+    } catch (error) {
+      console.error("Failed to fetch order items:", error);
+      setEditableItems([]);
+    }
+    
     setIsEditModalOpen(true);
   };
 
@@ -281,14 +311,43 @@ export default function Orders() {
     deleteOrderMutation.mutate(deletingOrder.id);
   };
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingOrder) return;
-    updateOrderMutation.mutate({
-      id: editingOrder.id,
-      status: editOrderStatus,
-      notes: notes
-    });
+    
+    try {
+      // Update all modified order items
+      await Promise.all(
+        editableItems.map(item => 
+          updateOrderItemMutation.mutateAsync({
+            id: item.id,
+            quantity: item.quantity,
+            originalPrice: item.originalPrice?.toString(),
+            discountedPrice: item.discountedPrice?.toString(),
+            unitPrice: item.unitPrice?.toString(),
+          })
+        )
+      );
+      
+      // Update the order
+      updateOrderMutation.mutate({
+        id: editingOrder.id,
+        status: editOrderStatus,
+        notes: notes
+      });
+    } catch (error) {
+      toast({
+        title: t('error'),
+        description: "Failed to update order items",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleItemChange = (index: number, field: string, value: any) => {
+    const updatedItems = [...editableItems];
+    updatedItems[index] = { ...updatedItems[index], [field]: value };
+    setEditableItems(updatedItems);
   };
 
   const handlePhoneSearch = async () => {
@@ -1135,11 +1194,11 @@ export default function Orders() {
                         <SelectValue placeholder={t('selectCountry')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="China">{t('china')}</SelectItem>
-                        <SelectItem value="Turkey">{t('turkey')}</SelectItem>
-                        <SelectItem value="UK">{t('uk')}</SelectItem>
-                        <SelectItem value="UAE">{t('uae')}</SelectItem>
-                        <SelectItem value="Germany">{t('germany')}</SelectItem>
+                        {shippingCountries.map((country) => (
+                          <SelectItem key={country} value={country}>
+                            {country}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1313,6 +1372,75 @@ export default function Orders() {
 
                 {/* Editable Fields */}
                 <div className="space-y-4">
+                  {/* Order Items */}
+                  {editableItems.length > 0 && (
+                    <div>
+                      <Label className="mb-2 block">{t('orderItems')}</Label>
+                      <div className="border rounded-lg overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead className="bg-muted/50">
+                              <tr>
+                                <th className="px-3 py-2 text-left">{t('product')}</th>
+                                <th className="px-3 py-2 text-center">{t('quantity')}</th>
+                                <th className="px-3 py-2 text-right">{t('originalPrice')}</th>
+                                <th className="px-3 py-2 text-right">{t('discountedPrice')}</th>
+                                <th className="px-3 py-2 text-right">{t('unitPrice')}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {editableItems.map((item, index) => (
+                                <tr key={item.id} className="border-t">
+                                  <td className="px-3 py-2">{item.productName}</td>
+                                  <td className="px-3 py-2">
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      value={item.quantity}
+                                      onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value))}
+                                      className="w-20 text-center"
+                                      data-testid={`input-edit-quantity-${index}`}
+                                    />
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      value={item.originalPrice || ''}
+                                      onChange={(e) => handleItemChange(index, 'originalPrice', e.target.value)}
+                                      className="w-24 text-right"
+                                      data-testid={`input-edit-original-price-${index}`}
+                                    />
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      value={item.discountedPrice || ''}
+                                      onChange={(e) => handleItemChange(index, 'discountedPrice', e.target.value)}
+                                      className="w-24 text-right"
+                                      data-testid={`input-edit-discounted-price-${index}`}
+                                    />
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      value={item.unitPrice || ''}
+                                      onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
+                                      className="w-24 text-right"
+                                      data-testid={`input-edit-unit-price-${index}`}
+                                    />
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <Label htmlFor="edit-status">{t('orderStatus')}</Label>
                     <Select value={editOrderStatus} onValueChange={setEditOrderStatus}>

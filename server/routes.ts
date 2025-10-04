@@ -438,6 +438,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/order-items/:id", requireOperational, async (req, res) => {
+    try {
+      const result = insertOrderItemSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid order item data", errors: result.error.errors });
+      }
+
+      const item = await storage.updateOrderItem(req.params.id, result.data);
+      if (!item) {
+        return res.status(404).json({ message: "Order item not found" });
+      }
+
+      // Recalculate order totals
+      const allItems = await storage.getOrderItems(item.orderId);
+      const order = await storage.getOrder(item.orderId);
+      
+      if (order) {
+        // Calculate new totals
+        const itemsSubtotal = allItems.reduce((sum, i) => {
+          const originalPrice = parseFloat(i.originalPrice || '0');
+          const discountedPrice = parseFloat(i.discountedPrice || '0');
+          const quantity = i.quantity;
+          return sum + (originalPrice * quantity);
+        }, 0);
+
+        const itemsProfit = allItems.reduce((sum, i) => {
+          const originalPrice = parseFloat(i.originalPrice || '0');
+          const discountedPrice = parseFloat(i.discountedPrice || '0');
+          const quantity = i.quantity;
+          return sum + ((originalPrice - discountedPrice) * quantity);
+        }, 0);
+
+        const shippingCost = parseFloat(order.shippingCost || '0');
+        const commission = parseFloat(order.commission || '0');
+        const totalAmount = itemsSubtotal + shippingCost + commission;
+        const shippingProfit = parseFloat(order.shippingProfit || '0');
+        const totalProfit = itemsProfit + shippingProfit;
+
+        // Update order with new totals
+        await storage.updateOrder(item.orderId, {
+          totalAmount: totalAmount.toFixed(2),
+          itemsProfit: itemsProfit.toFixed(2),
+          totalProfit: totalProfit.toFixed(2),
+        });
+      }
+
+      res.json(item);
+    } catch (error) {
+      console.error("Failed to update order item:", error);
+      res.status(500).json({ message: "Failed to update order item" });
+    }
+  });
+
   // Shipping rates routes
   app.get("/api/shipping-rates", requireAuth, async (req, res) => {
     try {
@@ -600,6 +653,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Shipping rate deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete shipping rate" });
+    }
+  });
+
+  app.get("/api/shipping-countries", requireAuth, async (req, res) => {
+    try {
+      const shippingRates = await storage.getAllShippingRates();
+      const countriesSet = new Set(shippingRates.map(rate => rate.country));
+      const uniqueCountries = Array.from(countriesSet);
+      res.json(uniqueCountries);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch shipping countries" });
     }
   });
 
