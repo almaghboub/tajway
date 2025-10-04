@@ -6,6 +6,8 @@ interface OrderWithItems {
   orderNumber: string;
   status: string;
   totalAmount: string;
+  downPayment: string;
+  remainingBalance: string;
   shippingCost: string;
   commission: string;
   profit: string;
@@ -76,9 +78,11 @@ function numberToWords(num: number): string {
 export function Invoice({ order, onPrint }: InvoiceProps) {
   const { t } = useTranslation();
   const subtotal = order.items?.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) || 0;
-  const shipping = parseFloat(order.shippingCost);
-  const commission = parseFloat(order.commission);
-  const total = parseFloat(order.totalAmount);
+  const shipping = parseFloat(order.shippingCost || "0");
+  const commission = parseFloat(order.commission || "0");
+  const total = parseFloat(order.totalAmount || "0");
+  const downPayment = parseFloat(order.downPayment || "0");
+  const remainingBalance = parseFloat(order.remainingBalance || "0");
   const totalInWords = numberToWords(total);
 
   return (
@@ -189,6 +193,16 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
               <div className="flex justify-between items-center">
                 <span className="text-lg font-bold text-red-700">{t('total')}:</span>
                 <span className="text-2xl font-bold text-red-700">${total.toFixed(2)}</span>
+              </div>
+            </div>
+            <div className="border-t-2 border-gray-300 pt-3 mt-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Down Payment:</span>
+                <span className="font-semibold text-green-600">${downPayment.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-lg font-bold text-orange-600">Remaining Balance:</span>
+                <span className="text-xl font-bold text-orange-600">${remainingBalance.toFixed(2)}</span>
               </div>
             </div>
           </div>

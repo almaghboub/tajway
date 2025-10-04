@@ -224,7 +224,7 @@ export default function Customers() {
     });
     
     const customerOrders = orders.filter(order => order.customerId === customer.id);
-    const totalAmount = customerOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount), 0);
+    const totalAmount = customerOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount || "0"), 0);
     const totalDownPayment = customerOrders.reduce((sum, order) => sum + parseFloat(order.downPayment || "0"), 0);
     
     setEditingTotalAmount(totalAmount);
@@ -385,7 +385,8 @@ export default function Customers() {
                   <TableRow>
                     <TableHead>{t("name")}</TableHead>
                     <TableHead>Customer Code</TableHead>
-                    <TableHead>{t("email")}</TableHead>
+                    <TableHead>Total Amount</TableHead>
+                    <TableHead>Down Payment</TableHead>
                     <TableHead>{t("phone")}</TableHead>
                     <TableHead>{t("country")}</TableHead>
                     <TableHead>{t("customerCreated")}</TableHead>
@@ -393,51 +394,60 @@ export default function Customers() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCustomers.map((customer) => (
-                    <TableRow key={customer.id} data-testid={`row-customer-${customer.id}`}>
-                      <TableCell className="font-medium" data-testid={`text-name-${customer.id}`}>
-                        {customer.firstName} {customer.lastName}
-                      </TableCell>
-                      <TableCell data-testid={`text-customer-code-${customer.id}`}>
-                        <span className="font-semibold text-primary">{customer.shippingCode || "-"}</span>
-                      </TableCell>
-                      <TableCell data-testid={`text-email-${customer.id}`}>
-                        {customer.email}
-                      </TableCell>
-                      <TableCell data-testid={`text-phone-${customer.id}`}>
-                        {customer.phone || t("emptyPhone")}
-                      </TableCell>
-                      <TableCell data-testid={`text-country-${customer.id}`}>
-                        {customer.country}
-                      </TableCell>
-                      <TableCell data-testid={`text-created-${customer.id}`}>
-                        {new Date(customer.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" onClick={() => openEditModal(customer)} data-testid={`button-edit-customer-${customer.id}`}>
-                            {t("edit")}
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => openViewModal(customer)}
-                            data-testid={`button-view-customer-${customer.id}`}
-                          >
-                            {t("view")}
-                          </Button>
-                          <Button 
-                            variant="destructive" 
-                            size="sm" 
-                            onClick={() => openDeleteDialog(customer)}
-                            data-testid={`button-delete-customer-${customer.id}`}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredCustomers.map((customer) => {
+                    const customerOrders = orders.filter(order => order.customerId === customer.id);
+                    const totalAmount = customerOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount || "0"), 0);
+                    const totalDownPayment = customerOrders.reduce((sum, order) => sum + parseFloat(order.downPayment || "0"), 0);
+                    
+                    return (
+                      <TableRow key={customer.id} data-testid={`row-customer-${customer.id}`}>
+                        <TableCell className="font-medium" data-testid={`text-name-${customer.id}`}>
+                          {customer.firstName} {customer.lastName}
+                        </TableCell>
+                        <TableCell data-testid={`text-customer-code-${customer.id}`}>
+                          <span className="font-semibold text-primary">{customer.shippingCode || "-"}</span>
+                        </TableCell>
+                        <TableCell data-testid={`text-total-amount-${customer.id}`}>
+                          <span className="font-semibold">${totalAmount.toFixed(2)}</span>
+                        </TableCell>
+                        <TableCell data-testid={`text-down-payment-${customer.id}`}>
+                          <span className="font-semibold text-green-600">${totalDownPayment.toFixed(2)}</span>
+                        </TableCell>
+                        <TableCell data-testid={`text-phone-${customer.id}`}>
+                          {customer.phone || t("emptyPhone")}
+                        </TableCell>
+                        <TableCell data-testid={`text-country-${customer.id}`}>
+                          {customer.country}
+                        </TableCell>
+                        <TableCell data-testid={`text-created-${customer.id}`}>
+                          {new Date(customer.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => openEditModal(customer)} data-testid={`button-edit-customer-${customer.id}`}>
+                              {t("edit")}
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => openViewModal(customer)}
+                              data-testid={`button-view-customer-${customer.id}`}
+                            >
+                              {t("view")}
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm" 
+                              onClick={() => openDeleteDialog(customer)}
+                              data-testid={`button-delete-customer-${customer.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}
