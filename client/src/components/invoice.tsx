@@ -20,6 +20,7 @@ interface OrderWithItems {
     city?: string;
     country: string;
     postalCode?: string;
+    shippingCode?: string;
   };
   items?: {
     id: string;
@@ -119,6 +120,7 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
           <h3 className="text-sm font-bold text-red-700 mb-3 uppercase tracking-wide">{t('billTo')}:</h3>
           <div className="bg-gray-50 p-4 rounded-lg space-y-1">
             <p className="font-bold">{order.customer.firstName} {order.customer.lastName}</p>
+            {order.customer.shippingCode && <p className="text-sm font-semibold text-red-700">Code: {order.customer.shippingCode}</p>}
             {order.customer.email && <p className="text-sm">{order.customer.email}</p>}
             {order.customer.phone && <p className="text-sm">{order.customer.phone}</p>}
             {order.customer.address && (
