@@ -1,8 +1,8 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Settings as SettingsIcon, Database, Shield, Bell, Palette, Check, Truck, DollarSign, Plus, Edit, Trash2, Languages } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Settings as SettingsIcon, Database, Shield, Bell, Palette, Check, Truck, DollarSign, Plus, Edit, Trash2, Languages, User, Lock, Save } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
 import { Header } from "@/components/header";
+import { useAuth } from "@/components/auth-provider";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
@@ -607,10 +609,47 @@ const DEFAULT_SETTINGS = {
   darkMode: false,
 };
 
+const profileSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+});
+
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(6, "New password must be at least 6 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+type ProfileForm = z.infer<typeof profileSchema>;
+type PasswordForm = z.infer<typeof passwordSchema>;
+
 export default function Settings() {
   const [settingsState, setSettingsState] = useState(DEFAULT_SETTINGS);
   const { toast } = useToast();
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
+
+  const profileForm = useForm<ProfileForm>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      username: user?.username || "",
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+    },
+  });
+
+  const passwordForm = useForm<PasswordForm>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
 
   // Load settings from API
   const { data: settings = [], isLoading } = useQuery({
@@ -718,6 +757,69 @@ export default function Settings() {
       description: language === 'en' ? t('languageChangedToEnglish') : t('languageChangedToArabic'),
     });
   };
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: ProfileForm) => {
+      const response = await apiRequest("PATCH", "/api/profile", data);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update profile");
+      }
+      return response.json();
+    },
+    onSuccess: async () => {
+      // Refresh user data
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      toast({
+        title: t('success'),
+        description: t('profileUpdatedSuccess') || "Profile updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: t('error'),
+        description: error.message,
+      });
+    },
+  });
+
+  const updatePasswordMutation = useMutation({
+    mutationFn: async (data: PasswordForm) => {
+      const response = await apiRequest("PATCH", "/api/profile/password", {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update password");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      passwordForm.reset();
+      toast({
+        title: t('success'),
+        description: t('passwordUpdatedSuccess') || "Password updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: t('error'),
+        description: error.message,
+      });
+    },
+  });
+
+  const handleProfileSubmit = (data: ProfileForm) => {
+    updateProfileMutation.mutate(data);
+  };
+
+  const handlePasswordSubmit = (data: PasswordForm) => {
+    updatePasswordMutation.mutate(data);
+  };
+
   return (
     <div className="flex-1 flex flex-col">
       <Header 
@@ -726,6 +828,175 @@ export default function Settings() {
       />
       
       <div className="flex-1 p-6 space-y-6">
+        {/* Profile Settings Card */}
+        <Card data-testid="card-profile-settings">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              <CardTitle>{t('profileSettings') || "Profile Settings"}</CardTitle>
+            </div>
+            <CardDescription>{t('updateYourProfile') || "Update your profile information"}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...profileForm}>
+              <form onSubmit={profileForm.handleSubmit(handleProfileSubmit)} className="space-y-4">
+                <FormField
+                  control={profileForm.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('username')}</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          data-testid="input-username" 
+                          placeholder={t('enterUsername') || "Enter username"}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={profileForm.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('firstName')}</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            data-testid="input-first-name" 
+                            placeholder={t('enterFirstName') || "Enter first name"}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={profileForm.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('lastName')}</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            data-testid="input-last-name" 
+                            placeholder={t('enterLastName') || "Enter last name"}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <Button 
+                    type="submit" 
+                    disabled={updateProfileMutation.isPending}
+                    data-testid="button-save-profile"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {updateProfileMutation.isPending ? t('saving') || "Saving..." : t('saveChanges') || "Save Changes"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+
+        {/* Password Settings Card */}
+        <Card data-testid="card-password-settings">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              <CardTitle>{t('changePassword') || "Change Password"}</CardTitle>
+            </div>
+            <CardDescription>{t('updateYourPassword') || "Update your password"}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...passwordForm}>
+              <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
+                <FormField
+                  control={passwordForm.control}
+                  name="currentPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('currentPassword') || "Current Password"}</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          type="password"
+                          data-testid="input-current-password" 
+                          placeholder={t('enterCurrentPassword') || "Enter current password"}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Separator />
+
+                <FormField
+                  control={passwordForm.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('newPassword') || "New Password"}</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          type="password"
+                          data-testid="input-new-password" 
+                          placeholder={t('enterNewPassword') || "Enter new password"}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={passwordForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('confirmPassword') || "Confirm Password"}</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          type="password"
+                          data-testid="input-confirm-password" 
+                          placeholder={t('confirmNewPassword') || "Confirm new password"}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-end">
+                  <Button 
+                    type="submit" 
+                    disabled={updatePasswordMutation.isPending}
+                    data-testid="button-change-password"
+                  >
+                    <Lock className="h-4 w-4 mr-2" />
+                    {updatePasswordMutation.isPending ? t('updating') || "Updating..." : t('changePassword') || "Change Password"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+
         {/* System Settings */}
         <Card data-testid="card-system-settings">
           <CardHeader>

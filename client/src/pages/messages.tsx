@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, MessageSquare, Search, Trash2, Mail, MailOpen } from "lucide-react";
+import { Plus, MessageSquare, Search, Trash2, Mail, MailOpen, Send, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,11 +46,13 @@ export default function Messages() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [isComposeModalOpen, setIsComposeModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isConversationOpen, setIsConversationOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [deletingMessage, setDeletingMessage] = useState<Message | null>(null);
+  const [replyContent, setReplyContent] = useState("");
   const { toast } = useToast();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
     queryKey: ["/api/messages"],
@@ -89,12 +91,15 @@ export default function Messages() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
       queryClient.invalidateQueries({ queryKey: ["/api/messages/unread-count"] });
-      setIsComposeModalOpen(false);
-      form.reset({
-        senderId: user?.id || "",
-        recipientId: "",
-        content: "",
-      });
+      // Only close compose modal if it's open (not replying in conversation)
+      if (isComposeModalOpen) {
+        setIsComposeModalOpen(false);
+        form.reset({
+          senderId: user?.id || "",
+          recipientId: "",
+          content: "",
+        });
+      }
       toast({
         title: t('messageSentSuccess'),
         description: t('messageSentDescription'),
@@ -149,12 +154,43 @@ export default function Messages() {
   });
 
   const handleViewMessage = (message: Message) => {
-    setSelectedMessage(message);
-    setIsViewModalOpen(true);
+    // Determine the contact ID (the other person in the conversation)
+    const contactId = message.senderId === user?.id ? message.recipientId : message.senderId;
+    setSelectedContactId(contactId);
+    setIsConversationOpen(true);
     
-    if (!message.isRead && message.recipientId === user?.id) {
-      markAsReadMutation.mutate(message.id);
+    // Mark all unread messages from this contact as read
+    const unreadFromContact = messages.filter(
+      msg => msg.senderId === contactId && msg.recipientId === user?.id && !msg.isRead
+    );
+    unreadFromContact.forEach(msg => markAsReadMutation.mutate(msg.id));
+  };
+
+  // Get conversation messages between current user and selected contact
+  const conversationMessages = selectedContactId
+    ? messages.filter(
+        (msg) =>
+          (msg.senderId === user?.id && msg.recipientId === selectedContactId) ||
+          (msg.senderId === selectedContactId && msg.recipientId === user?.id)
+      ).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    : [];
+
+  // Scroll to bottom when conversation opens or new message arrives
+  useEffect(() => {
+    if (isConversationOpen && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
+  }, [isConversationOpen, conversationMessages.length]);
+
+  const handleSendReply = () => {
+    if (!selectedContactId || !replyContent.trim()) return;
+    
+    createMessageMutation.mutate({
+      senderId: user?.id || "",
+      recipientId: selectedContactId,
+      content: replyContent.trim(),
+    });
+    setReplyContent("");
   };
 
   const handleDelete = (message: Message) => {
@@ -383,41 +419,85 @@ export default function Messages() {
         </DialogContent>
       </Dialog>
 
-      {/* View Message Modal */}
-      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="max-w-md" data-testid="dialog-view-message">
+      {/* Conversation View Modal */}
+      <Dialog open={isConversationOpen} onOpenChange={setIsConversationOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col" data-testid="dialog-view-conversation">
           <DialogHeader>
-            <DialogTitle>{t('messageDetails')}</DialogTitle>
-          </DialogHeader>
-          {selectedMessage && (
-            <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsConversationOpen(false)}
+                data-testid="button-back-conversation"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
               <div>
-                <p className="text-sm text-gray-500">{t('from')}:</p>
-                <p className="font-semibold">{getUserFullName(selectedMessage.senderId)}</p>
-                <Badge variant="outline" className="mt-1">{getUserRole(selectedMessage.senderId)}</Badge>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">{t('to')}:</p>
-                <p className="font-semibold">{getUserFullName(selectedMessage.recipientId)}</p>
-                <Badge variant="outline" className="mt-1">{getUserRole(selectedMessage.recipientId)}</Badge>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">{t('date')}:</p>
-                <p>{format(new Date(selectedMessage.createdAt), "PPp")}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">{t('message')}:</p>
-                <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <p className="whitespace-pre-wrap">{selectedMessage.content}</p>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={() => setIsViewModalOpen(false)} data-testid="button-close-view">
-                  {t('close')}
-                </Button>
+                <DialogTitle>{t('conversationWith')} {selectedContactId && getUserFullName(selectedContactId)}</DialogTitle>
+                {selectedContactId && (
+                  <Badge variant="outline" className="mt-1">{getUserRole(selectedContactId)}</Badge>
+                )}
               </div>
             </div>
-          )}
+          </DialogHeader>
+          
+          {/* Messages Container */}
+          <div className="flex-1 overflow-y-auto space-y-4 py-4" data-testid="conversation-messages">
+            {conversationMessages.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                {t('noMessagesYet')}
+              </div>
+            ) : (
+              conversationMessages.map((message) => {
+                const isFromMe = message.senderId === user?.id;
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${isFromMe ? 'justify-end' : 'justify-start'}`}
+                    data-testid={`conversation-message-${message.id}`}
+                  >
+                    <div className={`max-w-[70%] ${isFromMe ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'} rounded-lg p-3`}>
+                      <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                      <p className={`text-xs mt-1 ${isFromMe ? 'text-blue-100' : 'text-gray-500'}`}>
+                        {format(new Date(message.createdAt), "PPp")}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Reply Input */}
+          <div className="border-t pt-4">
+            <div className="flex gap-2">
+              <Textarea
+                placeholder={t('typeYourReply')}
+                value={replyContent}
+                onChange={(e) => setReplyContent(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendReply();
+                  }
+                }}
+                rows={2}
+                className="flex-1"
+                data-testid="textarea-reply-content"
+              />
+              <Button 
+                onClick={handleSendReply} 
+                disabled={!replyContent.trim() || createMessageMutation.isPending}
+                data-testid="button-send-reply"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {t('pressEnterToSend')}
+            </p>
+          </div>
         </DialogContent>
       </Dialog>
 
