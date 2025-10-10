@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth-provider";
+import { apiRequest } from "@/lib/queryClient";
 import { loginSchema, type LoginCredentials } from "@shared/schema";
 import { Truck } from "lucide-react";
 
@@ -29,10 +30,36 @@ export default function Login() {
   const onSubmit = async (data: LoginCredentials) => {
     try {
       await login(data.username, data.password);
-      toast({
-        title: t('loginSuccessful'),
-        description: t('welcomeToLynx'),
-      });
+      
+      // Check for unread messages
+      try {
+        const response = await apiRequest("GET", "/api/messages/unread-count");
+        const unreadData = await response.json() as { count: number };
+        
+        if (unreadData.count > 0) {
+          toast({
+            title: t('loginSuccessful'),
+            description: `${t('welcomeToLynx')} ${t('youHaveUnreadMessages', { count: unreadData.count })}`,
+            action: (
+              <Button variant="outline" size="sm" onClick={() => setLocation("/messages")}>
+                {t('viewMessages')}
+              </Button>
+            ),
+          });
+        } else {
+          toast({
+            title: t('loginSuccessful'),
+            description: t('welcomeToLynx'),
+          });
+        }
+      } catch {
+        // If checking unread messages fails, just show regular login message
+        toast({
+          title: t('loginSuccessful'),
+          description: t('welcomeToLynx'),
+        });
+      }
+      
       setLocation("/dashboard");
     } catch (error) {
       toast({
