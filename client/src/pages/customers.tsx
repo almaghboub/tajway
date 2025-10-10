@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
 import { Header } from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -29,6 +30,8 @@ export default function Customers() {
   const [viewingCustomer, setViewingCustomer] = useState<Customer | null>(null);
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
   const [countryFilters, setCountryFilters] = useState<string[]>([]);
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [formData, setFormData] = useState<InsertCustomer>({
     firstName: "",
     lastName: "",
@@ -261,7 +264,29 @@ export default function Customers() {
     const matchesSearch = `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (customer.email?.toLowerCase() || "").includes(searchTerm.toLowerCase());
     const matchesCountry = countryFilters.length === 0 || countryFilters.includes(customer.country || "");
-    return matchesSearch && matchesCountry;
+    
+    // Date filtering
+    let matchesDate = true;
+    if (dateFrom || dateTo) {
+      const customerDate = new Date(customer.createdAt);
+      if (dateFrom && dateTo) {
+        const fromDate = new Date(dateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        matchesDate = customerDate >= fromDate && customerDate <= toDate;
+      } else if (dateFrom) {
+        const fromDate = new Date(dateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        matchesDate = customerDate >= fromDate;
+      } else if (dateTo) {
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        matchesDate = customerDate <= toDate;
+      }
+    }
+    
+    return matchesSearch && matchesCountry && matchesDate;
   });
 
   return (
@@ -290,9 +315,9 @@ export default function Customers() {
                 <Button variant="outline" data-testid="button-filter-customers">
                   <Filter className="w-4 h-4 mr-2" />
                   {t("filter")}
-                  {countryFilters.length > 0 && (
+                  {(countryFilters.length > 0 || dateFrom || dateTo) && (
                     <Badge variant="secondary" className="ml-2">
-                      {countryFilters.length}
+                      {countryFilters.length + (dateFrom ? 1 : 0) + (dateTo ? 1 : 0)}
                     </Badge>
                   )}
                 </Button>
@@ -324,11 +349,48 @@ export default function Customers() {
                       )}
                     </div>
                   </div>
+                  
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold mb-3">{t("filterByDate")}</h4>
+                    {(dateFrom || dateTo) && (
+                      <div className="mb-3 p-2 bg-blue-50 rounded text-sm">
+                        {dateFrom && <div>From: {dateFrom.toLocaleDateString()}</div>}
+                        {dateTo && <div>To: {dateTo.toLocaleDateString()}</div>}
+                      </div>
+                    )}
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs mb-1 block">{t("fromDate")}</Label>
+                        <Calendar
+                          mode="single"
+                          selected={dateFrom}
+                          onSelect={setDateFrom}
+                          className="rounded-md border"
+                          data-testid="calendar-from-date-customers"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs mb-1 block">{t("toDate")}</Label>
+                        <Calendar
+                          mode="single"
+                          selected={dateTo}
+                          onSelect={setDateTo}
+                          className="rounded-md border"
+                          data-testid="calendar-to-date-customers"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div className="flex justify-between pt-2 border-t">
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setCountryFilters([])}
+                      onClick={() => {
+                        setCountryFilters([]);
+                        setDateFrom(undefined);
+                        setDateTo(undefined);
+                      }}
                       data-testid="button-reset-filters"
                     >
                       {t("reset")}

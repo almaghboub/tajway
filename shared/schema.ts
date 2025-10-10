@@ -48,6 +48,7 @@ export const orders = pgTable("orders", {
   shippingProfit: decimal("shipping_profit", { precision: 10, scale: 2 }).notNull().default("0"),
   itemsProfit: decimal("items_profit", { precision: 10, scale: 2 }).notNull().default("0"),
   totalProfit: decimal("total_profit", { precision: 10, scale: 2 }).notNull().default("0"),
+  lydExchangeRate: decimal("lyd_exchange_rate", { precision: 10, scale: 4 }),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

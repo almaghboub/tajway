@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
 import { Header } from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -63,6 +64,8 @@ export default function Orders() {
   const [orderImages, setOrderImages] = useState<OrderImage[]>([]);
   const [statusFilters, setStatusFilters] = useState<string[]>(["pending", "processing", "shipped", "delivered", "cancelled"]);
   const [countryFilters, setCountryFilters] = useState<string[]>([]);
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [editOrderStatus, setEditOrderStatus] = useState("");
   const [editableItems, setEditableItems] = useState<any[]>([]);
@@ -72,6 +75,7 @@ export default function Orders() {
   const [shippingWeight, setShippingWeight] = useState(1);
   const [clothingSize, setClothingSize] = useState("");
   const [downPayment, setDownPayment] = useState(0);
+  const [lydExchangeRate, setLydExchangeRate] = useState<number>(0);
   const [shippingCalculation, setShippingCalculation] = useState<{
     base_shipping: number;
     commission: number;
@@ -467,6 +471,7 @@ export default function Orders() {
     setShippingWeight(1);
     setClothingSize("");
     setDownPayment(0);
+    setLydExchangeRate(0);
     setShippingCalculation(null);
     setNotes("");
     setCustomOrderCode("");
@@ -475,6 +480,13 @@ export default function Orders() {
       city: "",
       phone: ""
     });
+  };
+
+  const handleCloseModal = (open: boolean) => {
+    if (!open) {
+      resetForm();
+    }
+    setIsModalOpen(open);
   };
 
   // Generate hash of order items to detect changes
@@ -673,6 +685,7 @@ export default function Orders() {
       shippingProfit: shippingProfit.toFixed(2),
       itemsProfit: itemsProfit.toFixed(2),
       totalProfit: totalProfit.toFixed(2),
+      lydExchangeRate: lydExchangeRate > 0 ? lydExchangeRate.toFixed(4) : undefined,
       notes: finalNotes || undefined,
       orderNumber: customOrderCode || undefined,
     };
@@ -716,7 +729,29 @@ export default function Orders() {
       `${order.customer.firstName} ${order.customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilters.includes(order.status);
     const matchesCountry = countryFilters.length === 0 || (order.shippingCountry && countryFilters.includes(order.shippingCountry));
-    return matchesSearch && matchesStatus && matchesCountry;
+    
+    // Date filtering
+    let matchesDate = true;
+    if (dateFrom || dateTo) {
+      const orderDate = new Date(order.createdAt);
+      if (dateFrom && dateTo) {
+        const fromDate = new Date(dateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        matchesDate = orderDate >= fromDate && orderDate <= toDate;
+      } else if (dateFrom) {
+        const fromDate = new Date(dateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        matchesDate = orderDate >= fromDate;
+      } else if (dateTo) {
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        matchesDate = orderDate <= toDate;
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesCountry && matchesDate;
   });
   
   const toggleCountryFilter = (country: string) => {
@@ -823,6 +858,41 @@ export default function Orders() {
                       </div>
                     </div>
                   )}
+                  <div className="border-t pt-3">
+                    <h4 className="font-semibold mb-3">Filter by Date</h4>
+                    {(dateFrom || dateTo) && (
+                      <div className="mb-3 p-2 bg-blue-50 rounded text-sm">
+                        {dateFrom && <div>From: {dateFrom.toLocaleDateString()}</div>}
+                        {dateTo && <div>To: {dateTo.toLocaleDateString()}</div>}
+                      </div>
+                    )}
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-sm">From Date</Label>
+                        <div className="mt-1">
+                          <Calendar
+                            mode="single"
+                            selected={dateFrom}
+                            onSelect={setDateFrom}
+                            className="border rounded-md"
+                            data-testid="calendar-from-date"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-sm">To Date</Label>
+                        <div className="mt-1">
+                          <Calendar
+                            mode="single"
+                            selected={dateTo}
+                            onSelect={setDateTo}
+                            className="border rounded-md"
+                            data-testid="calendar-to-date"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                   <div className="flex justify-between pt-2 border-t">
                     <Button
                       variant="ghost"
@@ -830,6 +900,8 @@ export default function Orders() {
                       onClick={() => {
                         setStatusFilters(["pending", "processing", "shipped", "delivered", "cancelled"]);
                         setCountryFilters([]);
+                        setDateFrom(undefined);
+                        setDateTo(undefined);
                       }}
                       data-testid="button-reset-filters"
                     >
@@ -975,7 +1047,7 @@ export default function Orders() {
         </Card>
 
         {/* Order Creation Modal */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="modal-create-order">
             <DialogHeader>
               <DialogTitle>{t('createNewOrder')}</DialogTitle>
@@ -1367,6 +1439,21 @@ export default function Orders() {
                 </div>
 
                 <div>
+                  <Label htmlFor="lyd-exchange-rate">LYD Exchange Rate*</Label>
+                  <Input
+                    id="lyd-exchange-rate"
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    value={lydExchangeRate || ""}
+                    onChange={(e) => setLydExchangeRate(parseFloat(e.target.value) || 0)}
+                    placeholder="Enter LYD exchange rate"
+                    required
+                    data-testid="input-lyd-exchange-rate"
+                  />
+                </div>
+
+                <div>
                   <Label htmlFor="notes">{t('notesOptional')}</Label>
                   <Input
                     id="notes"
@@ -1454,7 +1541,7 @@ export default function Orders() {
                   <Button 
                     type="button" 
                     variant="outline" 
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={() => handleCloseModal(false)}
                     data-testid="button-cancel"
                   >
                     {t('cancel')}
