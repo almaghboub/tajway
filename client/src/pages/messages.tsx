@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, MessageSquare, Search, Trash2, Mail, MailOpen, Send, ArrowLeft } from "lucide-react";
+import { Plus, MessageSquare, Search, Trash2, Mail, MailOpen } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,13 +46,11 @@ export default function Messages() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [isComposeModalOpen, setIsComposeModalOpen] = useState(false);
-  const [isConversationOpen, setIsConversationOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [deletingMessage, setDeletingMessage] = useState<Message | null>(null);
-  const [replyContent, setReplyContent] = useState("");
   const { toast } = useToast();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
     queryKey: ["/api/messages"],
@@ -91,15 +89,12 @@ export default function Messages() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
       queryClient.invalidateQueries({ queryKey: ["/api/messages/unread-count"] });
-      // Only close compose modal if it's open (not replying in conversation)
-      if (isComposeModalOpen) {
-        setIsComposeModalOpen(false);
-        form.reset({
-          senderId: user?.id || "",
-          recipientId: "",
-          content: "",
-        });
-      }
+      setIsComposeModalOpen(false);
+      form.reset({
+        senderId: user?.id || "",
+        recipientId: "",
+        content: "",
+      });
       toast({
         title: t('messageSentSuccess'),
         description: t('messageSentDescription'),
@@ -154,43 +149,12 @@ export default function Messages() {
   });
 
   const handleViewMessage = (message: Message) => {
-    // Determine the contact ID (the other person in the conversation)
-    const contactId = message.senderId === user?.id ? message.recipientId : message.senderId;
-    setSelectedContactId(contactId);
-    setIsConversationOpen(true);
+    setSelectedMessage(message);
+    setIsViewModalOpen(true);
     
-    // Mark all unread messages from this contact as read
-    const unreadFromContact = messages.filter(
-      msg => msg.senderId === contactId && msg.recipientId === user?.id && !msg.isRead
-    );
-    unreadFromContact.forEach(msg => markAsReadMutation.mutate(msg.id));
-  };
-
-  // Get conversation messages between current user and selected contact
-  const conversationMessages = selectedContactId
-    ? messages.filter(
-        (msg) =>
-          (msg.senderId === user?.id && msg.recipientId === selectedContactId) ||
-          (msg.senderId === selectedContactId && msg.recipientId === user?.id)
-      ).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-    : [];
-
-  // Scroll to bottom when conversation opens or new message arrives
-  useEffect(() => {
-    if (isConversationOpen && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (!message.isRead && message.recipientId === user?.id) {
+      markAsReadMutation.mutate(message.id);
     }
-  }, [isConversationOpen, conversationMessages.length]);
-
-  const handleSendReply = () => {
-    if (!selectedContactId || !replyContent.trim()) return;
-    
-    createMessageMutation.mutate({
-      senderId: user?.id || "",
-      recipientId: selectedContactId,
-      content: replyContent.trim(),
-    });
-    setReplyContent("");
   };
 
   const handleDelete = (message: Message) => {
