@@ -4,7 +4,18 @@ This is a comprehensive logistics and order management system built with React, 
 
 # Recent Changes (October 2025)
 
-## Down Payment Integration in Create Order Form (Latest)
+## LYD Exchange Rate and Calendar Date Filters (Latest - October 10, 2025)
+- **LYD Exchange Rate Field**: Added decimal field to orders schema for tracking Libyan Dinar exchange rates when creating new orders
+- **Order Form Enhancement**: LYD exchange rate input field integrated in create new order modal with 4-decimal precision
+- **Modal Reset Fix**: Fixed modal close behavior to properly reset all form fields including LYD exchange rate, preventing stale values
+- **Orders Dashboard Calendar Filter**: Added date range filtering with "From Date" and "To Date" calendars in filter popover
+- **Customers Dashboard Calendar Filter**: Added matching calendar date range filter to customers dashboard for consistency
+- **Visual Date Indicators**: Blue info box displays selected date range above calendars for user reference when reopening filters
+- **Date Filtering Logic**: Filters orders/customers by createdAt timestamp with proper start-of-day and end-of-day normalization
+- **Filter Badge Enhancement**: Filter badges now show total count including country and date filters
+- **Reset Functionality**: Reset button clears all filters including country selections and date ranges
+
+## Down Payment Integration in Create Order Form
 - **Integrated Down Payment Field**: Down payment input field now embedded directly in Order Summary section of Create New Order modal
 - **Position**: Appears after Total line and before Estimated Profit, providing seamless data entry workflow
 - **Remaining Balance Display**: Automatically calculates and displays remaining balance (Total - Down Payment) in orange text when down payment > 0
