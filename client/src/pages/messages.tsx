@@ -61,9 +61,9 @@ export default function Messages() {
   });
 
   const { data: users = [] } = useQuery({
-    queryKey: ["/api/users"],
+    queryKey: ["/api/messages/recipients"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/users");
+      const response = await apiRequest("GET", "/api/messages/recipients");
       return response.json() as Promise<SafeUser[]>;
     },
   });
@@ -115,9 +115,11 @@ export default function Messages() {
       if (!response.ok) throw new Error("Failed to mark message as read");
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/messages/unread-count"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/messages/unread-count"] });
+      // Force refetch to ensure UI updates
+      await queryClient.refetchQueries({ queryKey: ["/api/messages"] });
     },
   });
 

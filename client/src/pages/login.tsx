@@ -39,12 +39,7 @@ export default function Login() {
         if (unreadData.count > 0) {
           toast({
             title: t('loginSuccessful'),
-            description: `${t('welcomeToLynx')} ${t('youHaveUnreadMessages', { count: unreadData.count })}`,
-            action: (
-              <Button variant="outline" size="sm" onClick={() => setLocation("/messages")}>
-                {t('viewMessages')}
-              </Button>
-            ),
+            description: `${t('welcomeToLynx')} You have ${unreadData.count} unread message${unreadData.count > 1 ? 's' : ''}. Check the Messages page.`,
           });
         } else {
           toast({

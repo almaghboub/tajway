@@ -833,6 +833,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Messages routes
+  app.get("/api/messages/recipients", requireAuth, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      // Return minimal user data for recipient selection (exclude passwords and sensitive info)
+      const recipients = users
+        .filter(u => u.id !== req.user?.id) // Exclude current user
+        .map(({ id, firstName, lastName, role }) => ({
+          id,
+          firstName,
+          lastName,
+          role,
+        }));
+      res.json(recipients);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch recipients" });
+    }
+  });
+
   app.post("/api/messages", requireAuth, async (req, res) => {
     try {
       const result = insertMessageSchema.safeParse(req.body);
