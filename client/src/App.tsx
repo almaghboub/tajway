@@ -12,6 +12,7 @@ import Orders from "@/pages/orders";
 import Customers from "@/pages/customers";
 import Profits from "@/pages/profits";
 import Users from "@/pages/users";
+import Messages from "@/pages/messages";
 import Settings from "@/pages/settings";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -100,6 +101,12 @@ function Router() {
       <Route path="/users">
         <ProtectedRoute>
           <Users />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/messages">
+        <ProtectedRoute>
+          <Messages />
         </ProtectedRoute>
       </Route>
 

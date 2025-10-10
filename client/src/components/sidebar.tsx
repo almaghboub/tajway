@@ -1,8 +1,11 @@
 import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { Truck, LayoutDashboard, Package, Users, Box, TrendingUp, Users2, Settings, LogOut } from "lucide-react";
+import { Truck, LayoutDashboard, Package, Users, Box, TrendingUp, Users2, Settings, LogOut, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/components/auth-provider";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import logoPath from "@assets/lynx-logo.png";
 
 const navigationItems = [
@@ -11,6 +14,7 @@ const navigationItems = [
   { key: "customers", href: "/customers", icon: Users, roles: ["owner", "customer_service", "receptionist"] },
   { key: "profitReports", href: "/profits", icon: TrendingUp, roles: ["owner"] },
   { key: "userManagement", href: "/users", icon: Users2, roles: ["owner"] },
+  { key: "messages", href: "/messages", icon: MessageSquare, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"], showBadge: true },
   { key: "settings", href: "/settings", icon: Settings, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"] },
 ];
 
@@ -18,6 +22,18 @@ export function Sidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const { t } = useTranslation();
+
+  const { data: unreadCountData } = useQuery({
+    queryKey: ["/api/messages/unread-count"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/messages/unread-count");
+      return response.json() as Promise<{ count: number }>;
+    },
+    enabled: !!user,
+    refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
+  });
+
+  const unreadCount = unreadCountData?.count || 0;
 
   const handleLogout = async () => {
     try {
@@ -59,7 +75,16 @@ export function Sidebar() {
                     data-testid={`nav-${item.key.toLowerCase().replace(/([A-Z])/g, '-$1').toLowerCase()}`}
                   >
                     <Icon className="w-4 h-4" />
-                    <span className={isActive ? "font-medium" : ""}>{t(item.key)}</span>
+                    <span className={`flex-1 ${isActive ? "font-medium" : ""}`}>{t(item.key)}</span>
+                    {item.showBadge && unreadCount > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="ml-auto"
+                        data-testid="badge-unread-messages"
+                      >
+                        {unreadCount}
+                      </Badge>
+                    )}
                   </span>
                 </Link>
               </li>
