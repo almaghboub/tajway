@@ -1,93 +1,6 @@
 # Overview
 
-This is a comprehensive logistics and order management system built with React, Express, and PostgreSQL. The application provides role-based access control for different user types (owner, customer service, receptionist, sorter, stock manager) with distinct capabilities for managing orders, customers, inventory, profits, and system administration. The system features modern authentication, real-time data management, bilingual support (English/Arabic), and a responsive UI designed for logistics operations with streamlined data entry workflows.
-
-# Recent Changes (October 2025)
-
-## New Order Statuses and Enhanced Profit Page (Latest - October 10, 2025)
-- **New Order Statuses**: Added three new order statuses to support additional workflow stages:
-  - "Partially Arrived" - Purple badge for orders where some items have arrived
-  - "Ready to Collect" - Cyan badge for orders ready for customer pickup
-  - "With Shipping Company" - Indigo badge for orders currently with shipping provider
-- **Status UI Updates**: All order status locations updated including status dropdown, filter checkboxes, status badges, and reset filters functionality
-- **Enhanced Profit Page**: Complete redesign with detailed metrics and country filtering:
-  - **Number of Orders**: Total count of orders with optional country filtering
-  - **Average Order Value**: Calculated as total revenue divided by order count
-  - **Total Revenue**: Sum of all order amounts
-  - **Profit from Orders**: Sum of itemsProfit (order value minus purchase cost)
-  - **Profit from Shipping**: Sum of shippingProfit (shipping fee minus actual shipping cost)
-  - **Total Profit**: Combined profit from orders and shipping with profit margin percentage
-- **Country Filter on Profits**: Filter all profit metrics by shipping destination country using dynamic country list from shipping rates
-- **Report Generation Fix**: Updated report generation to use correct profit fields (totalProfit, itemsProfit, shippingProfit) instead of deprecated profit field
-
-## LYD Exchange Rate and Calendar Date Filters (October 10, 2025)
-- **LYD Exchange Rate Field**: Added decimal field to orders schema for tracking Libyan Dinar exchange rates when creating new orders
-- **Order Form Enhancement**: LYD exchange rate input field integrated in create new order modal with 4-decimal precision
-- **Modal Reset Fix**: Fixed modal close behavior to properly reset all form fields including LYD exchange rate, preventing stale values
-- **Orders Dashboard Calendar Filter**: Added date range filtering with "From Date" and "To Date" calendars in filter popover
-- **Customers Dashboard Calendar Filter**: Added matching calendar date range filter to customers dashboard for consistency
-- **Visual Date Indicators**: Blue info box displays selected date range above calendars for user reference when reopening filters
-- **Date Filtering Logic**: Filters orders/customers by createdAt timestamp with proper start-of-day and end-of-day normalization
-- **Filter Badge Enhancement**: Filter badges now show total count including country and date filters
-- **Reset Functionality**: Reset button clears all filters including country selections and date ranges
-
-## Down Payment Integration in Create Order Form
-- **Integrated Down Payment Field**: Down payment input field now embedded directly in Order Summary section of Create New Order modal
-- **Position**: Appears after Total line and before Estimated Profit, providing seamless data entry workflow
-- **Remaining Balance Display**: Automatically calculates and displays remaining balance (Total - Down Payment) in orange text when down payment > 0
-- **Always Available**: Down payment field now available whenever order items exist (removed dependency on shipping calculation completion)
-- **Form Reset**: Down payment properly resets to 0 when creating new orders, preventing stale values from previous orders
-- **Removed Duplicate**: Eliminated separate down payment section that previously appeared below order summary
-
-## Enhanced Customer Search and Dynamic Country Filter
-- **Multi-Field Customer Search**: Customer search now supports searching by phone number, first name, last name, or customer code (shippingCode) with single input field
-- **Search Behavior**: Case-insensitive partial matching using PostgreSQL ilike operator; auto-selects if single match found, displays clickable list for multiple matches
-- **Backend Enhancement**: New `searchCustomers(query)` method in storage interface and `/api/customers/search` endpoint with multi-field OR query
-- **Dynamic Country Filter**: Country filter now shows ALL available countries from shipping_rates table (not limited to existing orders)
-- **Country Source**: New `/api/shipping-countries` endpoint fetches all unique countries from shipping_rates table
-- **Bilingual Support**: Country filter automatically handles both Arabic and English country names as stored in database
-- **Auto-Updating**: New countries automatically appear in filter when added to shipping rates
-
-## Orders Dashboard Enhancements
-- **Country Filtering**: Added country filter to orders dashboard with checkboxes in filter popover for filtering orders by shipping destination country
-- **Shipping Code Column**: Replaced "Product Code(s)" column with "Shipping Code" column displaying customer shipping codes (shippingCode) in orders table for easier tracking
-- **Enhanced Down Payment Visibility**: Down payment amounts now displayed in green color (text-green-600) in orders table for better visual distinction
-- **Conditional Clothing Size Field**: Added optional size input field that appears when shipping category is "clothing", with size automatically appended to order notes
-- **Truly Optional Shipping Calculation**: Removed validation requiring shipping calculation before order creation - orders can now be created without pre-calculating shipping, with blue informational message indicating shipping is optional and can be added later
-- **Flexible Order Creation**: Create Order button now enabled as soon as customer and items are selected, regardless of shipping calculation status
-
-## Customer-Level Down Payment Management
-- **Down Payment Moved to Customer Level**: Down payment editing moved from individual orders to customer edit modal for centralized management
-- **Customer Edit Modal Enhanced**: Now shows Total Amount (sum of all customer orders), Down Payment (editable), and Remaining Balance (auto-calculated)
-- **Proportional Distribution**: When editing customer down payment, the amount is automatically distributed proportionally across all customer orders based on each order's total amount
-- **Robust Validation**: Backend validates down payment is non-negative, caps at total order amount, and prevents division by zero
-- **Rounding Fix**: Last order absorbs any rounding differences to ensure exact distribution with no negative balances
-- **API Endpoint**: New `/api/customers/:id/update-with-payment` endpoint handles atomic customer and payment updates
-
-## Customer Dashboard Payment Display (Latest Update)
-- **Email Column Removed**: Removed email column from customer dashboard table
-- **Total Amount Column Added**: Displays sum of all customer orders with proper aggregation
-- **Down Payment Column Added**: Shows total down payments across all customer orders (green text)
-- **Payment Details in Order Modals**: Both View Order Details and Print Invoice modals now display:
-  - Down Payment (green text)
-  - Remaining Balance (orange text, prominently displayed)
-  - Proper calculation verification (Down Payment + Remaining Balance = Total)
-
-## Customer Code Display Enhancement
-- **Customer Code in Invoices**: Customer code (shippingCode) now displayed in invoice Bill To section with red color highlight
-- **Customer Code in Orders Table**: Added Customer Code column to orders list (displayed after customer name)
-- **Customer Code in Customers Table**: Added Customer Code column to customers list (displayed after name)
-- **Customer View Modal**: Customer code moved to Personal Information section for better visibility
-
-## Data Entry Simplification
-- **Simplified Customer Editing**: Customer edit modal streamlined to show only essential fields: First Name, Last Name, Phone, and Customer Code (removed email, address, city, postal code, country from edit view)
-- **Product Code Workflow**: Product Code field removed from create new order form for faster data entry; users can add product codes later when editing orders
-
-## Shipping Calculation Improvements  
-- Orders can now be updated with shipping country and category selections for proper shipping recalculation
-- Warning banner displays for orders missing shipping data with inline selection fields
-- Shipping weight and category persist correctly through async recalculation flow
-- Fixed state management race conditions in shipping recalculation
+This project is a comprehensive logistics and order management system built with React, Express, and PostgreSQL. It provides role-based access control for owners, customer service, receptionists, sorters, and stock managers, enabling them to manage orders, customers, inventory, profits, and system administration. Key capabilities include modern authentication, real-time data management, bilingual support (English/Arabic), a responsive UI, and streamlined data entry. The system aims to optimize logistics operations and enhance profit tracking.
 
 # User Preferences
 
@@ -97,64 +10,44 @@ Preferred communication style: Simple, everyday language.
 
 ## Frontend Architecture
 
-The frontend is built using React with TypeScript and implements a modern single-page application architecture:
-
-- **Framework**: React 18 with TypeScript for type safety and better developer experience
-- **Routing**: Wouter for lightweight client-side routing with protected routes based on authentication status
-- **State Management**: TanStack Query (React Query) for server state management with optimistic updates and caching
-- **Styling**: Tailwind CSS with shadcn/ui component library for consistent, accessible UI components
-- **Forms**: React Hook Form with Zod schema validation for type-safe form handling
-- **Build Tool**: Vite for fast development and optimized production builds
-
-The application follows a component-based architecture with separate pages for different features (dashboard, orders, customers, inventory, profits, settings) and reusable UI components. Authentication state is managed globally through React Context, providing seamless user experience across the application.
+The frontend is a React 18 single-page application using TypeScript. It employs Wouter for routing, TanStack Query for server state management, and Tailwind CSS with shadcn/ui for styling. Form handling is managed with React Hook Form and Zod for validation, and Vite is used for building. The architecture is component-based with global state managed via React Context.
 
 ## Backend Architecture
 
-The backend follows a traditional Express.js architecture with PostgreSQL for data persistence:
-
-- **Framework**: Express.js with TypeScript for the REST API server
-- **Authentication**: Passport.js with local strategy for user authentication and session management
-- **Authorization**: Role-based access control middleware to restrict access based on user roles
-- **Database**: PostgreSQL with Drizzle ORM for type-safe database operations and migrations
-- **Session Storage**: PostgreSQL-based session store for persistent user sessions
-- **Business Logic**: Commission calculation engine with country-specific rules for China, Turkey, UK, UAE, and default rates
-
-The API endpoints are organized by feature area with proper error handling and request validation using Zod schemas.
+The backend is an Express.js application with TypeScript, serving as a REST API. It uses Passport.js for authentication and role-based access control. PostgreSQL, accessed via Drizzle ORM, handles data persistence. Session management is also PostgreSQL-based. Business logic includes a commission calculation engine with country-specific rules. API endpoints are organized by feature with Zod for request validation.
 
 ## Data Storage Solutions
 
-The system uses PostgreSQL as the primary database with the following key design decisions:
-
-- **ORM Choice**: Drizzle ORM chosen for its TypeScript-first approach and better performance compared to traditional ORMs
-- **Database Connection**: Neon serverless PostgreSQL for cloud deployment with connection pooling
-- **Schema Design**: Relational design with proper foreign key constraints between users, customers, orders, order items, inventory, and shipping rates
-- **Data Types**: Uses appropriate PostgreSQL data types including numeric for precise currency calculations
-
-The schema includes enums for user roles and order statuses, ensuring data consistency and type safety throughout the application.
+PostgreSQL is the primary database, utilizing Drizzle ORM for type-safe operations. Neon serverless PostgreSQL provides cloud deployment with connection pooling. The schema is relational with foreign key constraints across users, customers, orders, inventory, and shipping rates, employing enums for roles and statuses and numeric types for currency.
 
 ## Authentication and Authorization Mechanisms
 
-The system implements a multi-layered security approach:
+Security is multi-layered, featuring session-based authentication with Passport.js and bcrypt-hashed passwords. Role-based middleware enforces authorization. Sessions are persistent and stored in PostgreSQL. Both frontend and backend implement route guards to verify authentication and authorization, granting different access levels to various user roles.
 
-- **Authentication**: Session-based authentication using Passport.js with bcrypt-style password hashing
-- **Authorization**: Role-based middleware that restricts access to specific endpoints based on user roles
-- **Session Management**: Persistent sessions stored in PostgreSQL with configurable expiration
-- **Route Protection**: Frontend and backend route guards that verify authentication and authorization
+## UI/UX Decisions
 
-Different user roles have access to different features: owners have full access, customer service can manage orders and customers, receptionists handle customer interactions, sorters manage order processing, and stock managers control inventory.
+The UI/UX design emphasizes a responsive interface, bilingual support (English/Arabic), and streamlined data entry. Recent enhancements include:
+- A complete internal messaging system with real-time notifications.
+- Enhanced profit page with detailed metrics, average order value, and country-specific filtering.
+- New order statuses: "Partially Arrived," "Ready to Collect," "With Shipping Company."
+- Dynamic country filtering across dashboards and profit reports.
+- Integrated LYD exchange rate and calendar date range filters for orders and customers.
+- Down payment management moved to customer-level with proportional distribution across orders.
+- Improved customer search supporting multiple fields (phone, name, code).
+- Enhanced visibility of customer codes in invoices and order/customer tables.
+- Simplified customer editing and product code workflows for faster data entry.
+- Flexible order creation allowing orders without prior shipping calculation.
 
 # External Dependencies
 
 ## Third-Party Services
 
-- **Neon Database**: Serverless PostgreSQL hosting for production database with automatic scaling
-- **Replit Integration**: Development environment plugins for enhanced development experience
+- **Neon Database**: Serverless PostgreSQL hosting.
+- **Replit Integration**: Development environment plugins.
 
 ## Key Libraries and Frameworks
 
-- **Frontend**: React, TypeScript, Vite, Wouter, TanStack Query, Tailwind CSS, shadcn/ui, React Hook Form, Zod
-- **Backend**: Express.js, Passport.js, Drizzle ORM, connect-pg-simple for session storage
-- **UI Components**: Radix UI primitives for accessible component foundation
-- **Utilities**: date-fns for date manipulation, class-variance-authority for component variants, clsx for conditional classes
-
-The application is designed to be self-contained with minimal external API dependencies, focusing on core logistics management functionality with room for future integrations.
+- **Frontend**: React, TypeScript, Vite, Wouter, TanStack Query, Tailwind CSS, shadcn/ui, React Hook Form, Zod.
+- **Backend**: Express.js, Passport.js, Drizzle ORM, connect-pg-simple.
+- **UI Components**: Radix UI primitives.
+- **Utilities**: date-fns, class-variance-authority, clsx.
