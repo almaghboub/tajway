@@ -27,7 +27,8 @@ Security is multi-layered, featuring session-based authentication with Passport.
 ## UI/UX Decisions
 
 The UI/UX design emphasizes a responsive interface, bilingual support (English/Arabic), and streamlined data entry. Recent enhancements include:
-- A complete internal messaging system with real-time notifications.
+- A complete internal messaging system with conversation threading, real-time notifications, and chat-style UI for viewing full message history between users.
+- User profile management allowing all users (including admin) to edit their own username, name, and password with secure validation.
 - Enhanced profit page with detailed metrics, average order value, and country-specific filtering.
 - New order statuses: "Partially Arrived," "Ready to Collect," "With Shipping Company."
 - Dynamic country filtering across dashboards and profit reports.
