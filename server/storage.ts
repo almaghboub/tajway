@@ -15,6 +15,8 @@ import {
   type InsertCommissionRule,
   type Setting,
   type InsertSetting,
+  type Message,
+  type InsertMessage,
   type OrderWithCustomer,
   type CustomerWithOrders,
   users,
@@ -25,6 +27,7 @@ import {
   shippingRates,
   commissionRules,
   settings,
+  messages,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { hashPassword } from "./auth";
@@ -110,6 +113,13 @@ export interface IStorage {
   getTotalProfit(): Promise<number>;
   getTotalRevenue(): Promise<number>;
   getActiveOrdersCount(): Promise<number>;
+
+  // Messages
+  createMessage(message: InsertMessage): Promise<Message>;
+  getMessagesByUserId(userId: string): Promise<Message[]>;
+  getUnreadMessageCount(userId: string): Promise<number>;
+  markMessageAsRead(messageId: string): Promise<Message | undefined>;
+  deleteMessage(messageId: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -121,6 +131,7 @@ export class MemStorage implements IStorage {
   private shippingRates: Map<string, ShippingRate>;
   private commissionRules: Map<string, CommissionRule>;
   private settings: Map<string, Setting>;
+  private messages: Map<string, Message>;
   private orderCounter: number = 1;
 
   constructor() {
@@ -132,6 +143,7 @@ export class MemStorage implements IStorage {
     this.shippingRates = new Map();
     this.commissionRules = new Map();
     this.settings = new Map();
+    this.messages = new Map();
     
     // Initialize with default data
     this.initializeDefaultData();
@@ -672,6 +684,43 @@ export class MemStorage implements IStorage {
   async getAllSettings(): Promise<Setting[]> {
     return Array.from(this.settings.values());
   }
+
+  // Messages methods
+  async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    const id = randomUUID();
+    const message: Message = {
+      ...insertMessage,
+      id,
+      isRead: false,
+      createdAt: new Date(),
+    };
+    this.messages.set(id, message);
+    return message;
+  }
+
+  async getMessagesByUserId(userId: string): Promise<Message[]> {
+    return Array.from(this.messages.values())
+      .filter(msg => msg.senderId === userId || msg.recipientId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getUnreadMessageCount(userId: string): Promise<number> {
+    return Array.from(this.messages.values())
+      .filter(msg => msg.recipientId === userId && !msg.isRead)
+      .length;
+  }
+
+  async markMessageAsRead(messageId: string): Promise<Message | undefined> {
+    const message = this.messages.get(messageId);
+    if (!message) return undefined;
+    const updated = { ...message, isRead: true };
+    this.messages.set(messageId, updated);
+    return updated;
+  }
+
+  async deleteMessage(messageId: string): Promise<boolean> {
+    return this.messages.delete(messageId);
+  }
 }
 
 export class PostgreSQLStorage implements IStorage {
@@ -1144,6 +1193,41 @@ export class PostgreSQLStorage implements IStorage {
 
   async getAllSettings(): Promise<Setting[]> {
     return await db.select().from(settings);
+  }
+
+  // Messages methods
+  async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    const result = await db.insert(messages).values(insertMessage).returning();
+    return result[0];
+  }
+
+  async getMessagesByUserId(userId: string): Promise<Message[]> {
+    return await db.select()
+      .from(messages)
+      .where(or(eq(messages.senderId, userId), eq(messages.recipientId, userId)))
+      .orderBy(desc(messages.createdAt));
+  }
+
+  async getUnreadMessageCount(userId: string): Promise<number> {
+    const result = await db.select({
+      count: sql<number>`COUNT(*)`,
+    })
+      .from(messages)
+      .where(sql`${messages.recipientId} = ${userId} AND ${messages.isRead} = false`);
+    return Number(result[0]?.count || 0);
+  }
+
+  async markMessageAsRead(messageId: string): Promise<Message | undefined> {
+    const result = await db.update(messages)
+      .set({ isRead: true })
+      .where(eq(messages.id, messageId))
+      .returning();
+    return result[0];
+  }
+
+  async deleteMessage(messageId: string): Promise<boolean> {
+    const result = await db.delete(messages).where(eq(messages.id, messageId)).returning();
+    return result.length > 0;
   }
 }
 
