@@ -14,6 +14,7 @@ import {
   insertShippingRateSchema,
   insertCommissionRuleSchema,
   insertSettingSchema,
+  insertMessageSchema,
   loginSchema,
 } from "@shared/schema";
 
@@ -828,6 +829,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         message: error instanceof Error ? error.message : "Failed to calculate shipping" 
       });
+    }
+  });
+
+  // Messages routes
+  app.post("/api/messages", requireAuth, async (req, res) => {
+    try {
+      const result = insertMessageSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid message data", errors: result.error.errors });
+      }
+
+      const message = await storage.createMessage(result.data);
+      res.status(201).json(message);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  app.get("/api/messages", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const messages = await storage.getMessagesByUserId(req.user.id);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.get("/api/messages/unread-count", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const count = await storage.getUnreadMessageCount(req.user.id);
+      res.json({ count });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch unread count" });
+    }
+  });
+
+  app.patch("/api/messages/:id/read", requireAuth, async (req, res) => {
+    try {
+      const message = await storage.markMessageAsRead(req.params.id);
+      if (!message) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      res.json(message);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to mark message as read" });
+    }
+  });
+
+  app.delete("/api/messages/:id", requireAuth, async (req, res) => {
+    try {
+      const success = await storage.deleteMessage(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      res.json({ message: "Message deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete message" });
     }
   });
 
