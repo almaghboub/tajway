@@ -4,7 +4,23 @@ This is a comprehensive logistics and order management system built with React, 
 
 # Recent Changes (October 2025)
 
-## LYD Exchange Rate and Calendar Date Filters (Latest - October 10, 2025)
+## New Order Statuses and Enhanced Profit Page (Latest - October 10, 2025)
+- **New Order Statuses**: Added three new order statuses to support additional workflow stages:
+  - "Partially Arrived" - Purple badge for orders where some items have arrived
+  - "Ready to Collect" - Cyan badge for orders ready for customer pickup
+  - "With Shipping Company" - Indigo badge for orders currently with shipping provider
+- **Status UI Updates**: All order status locations updated including status dropdown, filter checkboxes, status badges, and reset filters functionality
+- **Enhanced Profit Page**: Complete redesign with detailed metrics and country filtering:
+  - **Number of Orders**: Total count of orders with optional country filtering
+  - **Average Order Value**: Calculated as total revenue divided by order count
+  - **Total Revenue**: Sum of all order amounts
+  - **Profit from Orders**: Sum of itemsProfit (order value minus purchase cost)
+  - **Profit from Shipping**: Sum of shippingProfit (shipping fee minus actual shipping cost)
+  - **Total Profit**: Combined profit from orders and shipping with profit margin percentage
+- **Country Filter on Profits**: Filter all profit metrics by shipping destination country using dynamic country list from shipping rates
+- **Report Generation Fix**: Updated report generation to use correct profit fields (totalProfit, itemsProfit, shippingProfit) instead of deprecated profit field
+
+## LYD Exchange Rate and Calendar Date Filters (October 10, 2025)
 - **LYD Exchange Rate Field**: Added decimal field to orders schema for tracking Libyan Dinar exchange rates when creating new orders
 - **Order Form Enhancement**: LYD exchange rate input field integrated in create new order modal with 4-decimal precision
 - **Modal Reset Fix**: Fixed modal close behavior to properly reset all form fields including LYD exchange rate, preventing stale values
