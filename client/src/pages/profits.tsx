@@ -1,16 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { TrendingUp, DollarSign, Calculator, FileText, Printer } from "lucide-react";
+import { useState, useMemo } from "react";
+import { TrendingUp, DollarSign, Calculator, FileText, Printer, Filter, Package, ShoppingCart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Header } from "@/components/header";
 import { analyticsApi } from "@/lib/api";
 import { SalesReport } from "@/components/sales-report";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import type { OrderWithCustomer } from "@shared/schema";
 
 export default function Profits() {
   const { t } = useTranslation();
@@ -18,12 +23,62 @@ export default function Profits() {
   const [selectedReportType, setSelectedReportType] = useState<"profit" | "commission" | "financial">("profit");
   const [reportData, setReportData] = useState<any>(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [countryFilters, setCountryFilters] = useState<string[]>([]);
   const { toast } = useToast();
 
-  const { data: metrics, isLoading } = useQuery({
-    queryKey: ["/api/analytics/dashboard"],
-    queryFn: analyticsApi.getDashboardMetrics,
+  const { data: orders = [], isLoading: isLoadingOrders } = useQuery({
+    queryKey: ["/api/orders"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/orders");
+      return response.json() as Promise<OrderWithCustomer[]>;
+    },
   });
+
+  const { data: shippingCountries = [] } = useQuery({
+    queryKey: ["/api/shipping-countries"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/shipping-countries");
+      return response.json() as Promise<string[]>;
+    },
+  });
+
+  const toggleCountryFilter = (country: string) => {
+    setCountryFilters(prev =>
+      prev.includes(country)
+        ? prev.filter(c => c !== country)
+        : [...prev, country]
+    );
+  };
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter(order => {
+      const matchesCountry = countryFilters.length === 0 || countryFilters.includes(order.shippingCountry || "");
+      return matchesCountry;
+    });
+  }, [orders, countryFilters]);
+
+  const metrics = useMemo(() => {
+    const orderCount = filteredOrders.length;
+    const totalRevenue = filteredOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount), 0);
+    const totalItemsProfit = filteredOrders.reduce((sum, order) => sum + parseFloat(order.itemsProfit || "0"), 0);
+    const totalShippingProfit = filteredOrders.reduce((sum, order) => sum + parseFloat(order.shippingProfit || "0"), 0);
+    const totalProfit = filteredOrders.reduce((sum, order) => sum + parseFloat(order.totalProfit || "0"), 0);
+    const averageOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
+    const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
+    return {
+      orderCount,
+      totalRevenue,
+      totalItemsProfit,
+      totalShippingProfit,
+      totalProfit,
+      averageOrderValue,
+      profitMargin,
+    };
+  }, [filteredOrders]);
+
+  const isLoading = isLoadingOrders;
 
   const generateReport = async (reportType: "profit" | "commission" | "financial") => {
     setIsGeneratingReport(true);
@@ -53,7 +108,9 @@ export default function Profits() {
           orderNumber: order.orderNumber,
           customerName: customer ? `${customer.firstName} ${customer.lastName}` : t('unknown'),
           totalAmount: order.totalAmount,
-          profit: order.profit,
+          profit: order.totalProfit || order.profit || "0",
+          itemsProfit: order.itemsProfit || "0",
+          shippingProfit: order.shippingProfit || "0",
           commission: order.commission,
           country: customer?.country || t('unknown'),
           createdAt: order.createdAt
@@ -62,7 +119,7 @@ export default function Profits() {
       
       // Calculate totals
       const totalRevenue = orders.reduce((sum: number, order: any) => sum + parseFloat(order.totalAmount), 0);
-      const totalProfit = orders.reduce((sum: number, order: any) => sum + parseFloat(order.profit), 0);
+      const totalProfit = orders.reduce((sum: number, order: any) => sum + parseFloat(order.totalProfit || order.profit || "0"), 0);
       const totalCommission = orders.reduce((sum: number, order: any) => sum + parseFloat(order.commission), 0);
       const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
       
@@ -126,27 +183,108 @@ export default function Profits() {
       />
       
       <div className="flex-1 p-6 space-y-6">
-        {/* Financial Metrics */}
+        {/* Filter Section */}
+        <div className="flex items-center justify-end">
+          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" data-testid="button-filter-profits">
+                <Filter className="w-4 h-4 mr-2" />
+                {t("filter")}
+                {countryFilters.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {countryFilters.length}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64" data-testid="popover-filter-profits">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-3">{t("filterByCountry")}</h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {shippingCountries.length > 0 ? (
+                      shippingCountries.map((country) => (
+                        <div key={country} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`filter-${country}`}
+                            checked={countryFilters.includes(country)}
+                            onCheckedChange={() => toggleCountryFilter(country)}
+                            data-testid={`checkbox-filter-${country}`}
+                          />
+                          <Label
+                            htmlFor={`filter-${country}`}
+                            className="text-sm font-normal cursor-pointer"
+                          >
+                            {country}
+                          </Label>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">{t("noCountriesAvailable")}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex justify-between pt-2 border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCountryFilters([])}
+                    data-testid="button-reset-filters"
+                  >
+                    {t("reset")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setIsFilterOpen(false)}
+                    data-testid="button-apply-filters"
+                  >
+                    {t("apply")}
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Key Metrics - First Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card data-testid="card-total-profit">
+          <Card data-testid="card-order-count">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">{t('totalProfit')}</p>
+                  <p className="text-sm text-muted-foreground">{t('numberOfOrders')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
-                    <p className="text-3xl font-bold text-green-600" data-testid="text-total-profit">
-                      ${metrics?.totalProfit?.toFixed(2) || "0.00"}
+                    <p className="text-3xl font-bold text-primary" data-testid="text-order-count">
+                      {metrics.orderCount}
                     </p>
                   )}
-                  <p className="text-xs text-green-600 flex items-center mt-1">
-                    <TrendingUp className="w-3 h-3 mr-1" />
-                    {t('percentageVsLastPeriod')}
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('totalOrders')}</p>
                 </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <ShoppingCart className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card data-testid="card-average-order-value">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('averageOrderValue')}</p>
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-24 mt-1" />
+                  ) : (
+                    <p className="text-3xl font-bold text-purple-600" data-testid="text-average-order-value">
+                      ${metrics.averageOrderValue.toFixed(2)}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">{t('perOrder')}</p>
+                </div>
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Calculator className="w-6 h-6 text-purple-600" />
                 </div>
               </div>
             </CardContent>
@@ -161,7 +299,7 @@ export default function Profits() {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-3xl font-bold text-primary" data-testid="text-total-revenue">
-                      ${metrics?.totalRevenue?.toFixed(2) || "0.00"}
+                      ${metrics.totalRevenue.toFixed(2)}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">{t('fromAllOrders')}</p>
@@ -172,23 +310,71 @@ export default function Profits() {
               </div>
             </CardContent>
           </Card>
+        </div>
 
-          <Card data-testid="card-profit-margin">
+        {/* Profit Breakdown - Second Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card data-testid="card-items-profit">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">{t('profitMargin')}</p>
+                  <p className="text-sm text-muted-foreground">{t('profitFromOrders')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
-                    <p className="text-3xl font-bold text-purple-600" data-testid="text-profit-margin">
-                      {metrics?.profitMargin?.toFixed(1) || "0.0"}%
+                    <p className="text-3xl font-bold text-blue-600" data-testid="text-items-profit">
+                      ${metrics.totalItemsProfit.toFixed(2)}
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1">{t('averageMargin')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('orderValueMinusCost')}</p>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Calculator className="w-6 h-6 text-purple-600" />
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Package className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card data-testid="card-shipping-profit">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('profitFromShipping')}</p>
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-24 mt-1" />
+                  ) : (
+                    <p className="text-3xl font-bold text-orange-600" data-testid="text-shipping-profit">
+                      ${metrics.totalShippingProfit.toFixed(2)}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">{t('shippingFeeMinusCost')}</p>
+                </div>
+                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-orange-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card data-testid="card-total-profit">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('totalProfit')}</p>
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-24 mt-1" />
+                  ) : (
+                    <p className="text-3xl font-bold text-green-600" data-testid="text-total-profit">
+                      ${metrics.totalProfit.toFixed(2)}
+                    </p>
+                  )}
+                  <p className="text-xs text-green-600 flex items-center mt-1">
+                    <TrendingUp className="w-3 h-3 mr-1" />
+                    {metrics.profitMargin.toFixed(1)}% {t('margin')}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-green-600" />
                 </div>
               </div>
             </CardContent>

@@ -62,7 +62,7 @@ export default function Orders() {
   });
   const [customOrderCode, setCustomOrderCode] = useState("");
   const [orderImages, setOrderImages] = useState<OrderImage[]>([]);
-  const [statusFilters, setStatusFilters] = useState<string[]>(["pending", "processing", "shipped", "delivered", "cancelled"]);
+  const [statusFilters, setStatusFilters] = useState<string[]>(["pending", "processing", "shipped", "delivered", "cancelled", "partially_arrived", "ready_to_collect", "with_shipping_company"]);
   const [countryFilters, setCountryFilters] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
@@ -774,6 +774,12 @@ export default function Orders() {
         return "bg-gray-100 text-gray-800";
       case "cancelled":
         return "bg-red-100 text-red-800";
+      case "partially_arrived":
+        return "bg-purple-100 text-purple-800";
+      case "ready_to_collect":
+        return "bg-cyan-100 text-cyan-800";
+      case "with_shipping_company":
+        return "bg-indigo-100 text-indigo-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -805,7 +811,7 @@ export default function Orders() {
                 <Button variant="outline" data-testid="button-filter-orders">
                   <Filter className="w-4 h-4 mr-2" />
                   {t('filter')}
-                  {statusFilters.length < 5 && (
+                  {statusFilters.length < 8 && (
                     <Badge variant="secondary" className="ml-2">
                       {statusFilters.length}
                     </Badge>
@@ -817,7 +823,7 @@ export default function Orders() {
                   <div>
                     <h4 className="font-semibold mb-3">{t('filterByStatus')}</h4>
                     <div className="space-y-2">
-                      {["pending", "processing", "shipped", "delivered", "cancelled"].map((status) => (
+                      {["pending", "processing", "shipped", "delivered", "cancelled", "partially_arrived", "ready_to_collect", "with_shipping_company"].map((status) => (
                         <div key={status} className="flex items-center space-x-2">
                           <Checkbox
                             id={`filter-${status}`}
@@ -898,7 +904,7 @@ export default function Orders() {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        setStatusFilters(["pending", "processing", "shipped", "delivered", "cancelled"]);
+                        setStatusFilters(["pending", "processing", "shipped", "delivered", "cancelled", "partially_arrived", "ready_to_collect", "with_shipping_company"]);
                         setCountryFilters([]);
                         setDateFrom(undefined);
                         setDateTo(undefined);
@@ -1694,6 +1700,9 @@ export default function Orders() {
                           <SelectItem value="shipped">{t('shipped')}</SelectItem>
                           <SelectItem value="delivered">{t('delivered')}</SelectItem>
                           <SelectItem value="cancelled">{t('cancelled')}</SelectItem>
+                          <SelectItem value="partially_arrived">{t('partially_arrived')}</SelectItem>
+                          <SelectItem value="ready_to_collect">{t('ready_to_collect')}</SelectItem>
+                          <SelectItem value="with_shipping_company">{t('with_shipping_company')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
