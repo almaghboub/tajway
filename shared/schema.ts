@@ -108,6 +108,15 @@ export const orderImages = pgTable("order_images", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const messages = pgTable("messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  senderId: varchar("sender_id").notNull().references(() => users.id),
+  recipientId: varchar("recipient_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -154,6 +163,12 @@ export const insertOrderImageSchema = createInsertSchema(orderImages).omit({
   createdAt: true,
 });
 
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+  isRead: true,
+});
+
 // Login schema
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -184,6 +199,9 @@ export type Setting = typeof settings.$inferSelect;
 
 export type InsertOrderImage = z.infer<typeof insertOrderImageSchema>;
 export type OrderImage = typeof orderImages.$inferSelect;
+
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
 
 export type LoginCredentials = z.infer<typeof loginSchema>;
 
