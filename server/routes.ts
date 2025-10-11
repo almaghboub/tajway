@@ -15,6 +15,7 @@ import {
   insertCommissionRuleSchema,
   insertSettingSchema,
   insertMessageSchema,
+  insertDeliveryTaskSchema,
   loginSchema,
 } from "@shared/schema";
 
@@ -23,7 +24,7 @@ declare global {
     interface User {
       id: string;
       username: string;
-      role: "owner" | "customer_service" | "receptionist" | "sorter" | "stock_manager";
+      role: "owner" | "customer_service" | "receptionist" | "sorter" | "stock_manager" | "shipping_staff";
       firstName: string;
       lastName: string;
       email: string;
@@ -994,6 +995,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Password updated successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to update password" });
+    }
+  });
+
+  // Delivery Tasks routes
+  // Create a new delivery task (assign task to shipping staff)
+  app.post("/api/delivery-tasks", requireAuth, async (req, res) => {
+    try {
+      const result = insertDeliveryTaskSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid task data", errors: result.error.errors });
+      }
+
+      const task = await storage.createDeliveryTask(result.data);
+      res.status(201).json(task);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create delivery task" });
+    }
+  });
+
+  // Get all delivery tasks (for managers/admins) or user's tasks (for shipping staff)
+  app.get("/api/delivery-tasks", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      // If user is shipping staff, only show their tasks
+      if (req.user.role === "shipping_staff") {
+        const tasks = await storage.getDeliveryTasksByUserId(req.user.id);
+        return res.json(tasks);
+      }
+
+      // For other roles, show all tasks
+      const tasks = await storage.getAllDeliveryTasks();
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch delivery tasks" });
+    }
+  });
+
+  // Get a specific delivery task
+  app.get("/api/delivery-tasks/:id", requireAuth, async (req, res) => {
+    try {
+      const task = await storage.getDeliveryTask(req.params.id);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      res.json(task);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch delivery task" });
+    }
+  });
+
+  // Update delivery task (change status, add notes, etc.)
+  app.patch("/api/delivery-tasks/:id", requireAuth, async (req, res) => {
+    try {
+      const { status, customerCode, paymentAmount, notes, completedAt } = req.body;
+      
+      const updateData: any = {};
+      if (status) updateData.status = status;
+      if (customerCode !== undefined) updateData.customerCode = customerCode;
+      if (paymentAmount !== undefined) updateData.paymentAmount = paymentAmount;
+      if (notes !== undefined) updateData.notes = notes;
+      if (completedAt !== undefined) updateData.completedAt = completedAt;
+      
+      const task = await storage.updateDeliveryTask(req.params.id, updateData);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      res.json(task);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update delivery task" });
+    }
+  });
+
+  // Delete delivery task
+  app.delete("/api/delivery-tasks/:id", requireAuth, async (req, res) => {
+    try {
+      const success = await storage.deleteDeliveryTask(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      res.json({ message: "Task deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete delivery task" });
+    }
+  });
+
+  // Get all shipping staff users (for task assignment)
+  app.get("/api/shipping-staff", requireAuth, async (req, res) => {
+    try {
+      const shippingStaff = await storage.getShippingStaffUsers();
+      const staffList = shippingStaff.map(({ id, firstName, lastName, username }) => ({
+        id,
+        firstName,
+        lastName,
+        username,
+      }));
+      res.json(staffList);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch shipping staff" });
+    }
+  });
+
+  // Get task history for a specific shipping staff member
+  app.get("/api/delivery-tasks/history/:userId", requireAuth, async (req, res) => {
+    try {
+      const tasks = await storage.getDeliveryTasksByUserId(req.params.userId);
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch task history" });
     }
   });
 
