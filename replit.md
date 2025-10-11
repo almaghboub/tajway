@@ -1,6 +1,6 @@
 # Overview
 
-This project is a comprehensive logistics and order management system built with React, Express, and PostgreSQL. It provides role-based access control for owners, customer service, receptionists, sorters, and stock managers, enabling them to manage orders, customers, inventory, profits, and system administration. Key capabilities include modern authentication, real-time data management, bilingual support (English/Arabic), a responsive UI, and streamlined data entry. The system aims to optimize logistics operations and enhance profit tracking.
+This project is a comprehensive logistics and order management system built with React, Express, and PostgreSQL. It provides role-based access control for owners, customer service, receptionists, sorters, stock managers, and shipping staff, enabling them to manage orders, customers, inventory, profits, delivery tasks, and system administration. Key capabilities include modern authentication, real-time data management, bilingual support (English/Arabic), a responsive UI, streamlined data entry, and a complete shipping/delivery staff task management system. The system aims to optimize logistics operations, enhance profit tracking, and improve delivery coordination.
 
 # User Preferences
 
@@ -27,6 +27,14 @@ Security is multi-layered, featuring session-based authentication with Passport.
 ## UI/UX Decisions
 
 The UI/UX design emphasizes a responsive interface, bilingual support (English/Arabic), and streamlined data entry. Recent enhancements include:
+- A complete shipping/delivery staff task management system:
+  - New "shipping_staff" user role with dedicated dashboard
+  - Task assignment interface for managers to assign delivery tasks to staff
+  - Shipping staff can view assigned tasks, pickup/delivery locations, and payment information
+  - Staff can mark tasks as completed or "to collect" with customer code tracking
+  - Payment collection workflow with amount and customer code entry
+  - Task history and performance tracking for managers
+  - Staff-specific dashboard showing pending, completed, and payment collection tasks
 - A complete internal messaging system with conversation threading, real-time notifications, and chat-style UI for viewing full message history between users.
 - User profile management allowing all users (including admin) to edit their own username, name, and password with secure validation.
 - Enhanced profit page with detailed metrics, average order value, and country-specific filtering.

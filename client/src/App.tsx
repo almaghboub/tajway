@@ -14,6 +14,9 @@ import Profits from "@/pages/profits";
 import Users from "@/pages/users";
 import Messages from "@/pages/messages";
 import Settings from "@/pages/settings";
+import DeliveryTasks from "@/pages/delivery-tasks";
+import TaskAssignment from "@/pages/task-assignment";
+import TaskHistory from "@/pages/task-history";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -113,6 +116,24 @@ function Router() {
       <Route path="/settings">
         <ProtectedRoute>
           <Settings />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/delivery-tasks">
+        <ProtectedRoute>
+          <DeliveryTasks />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/task-assignment">
+        <ProtectedRoute>
+          <TaskAssignment />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/task-history">
+        <ProtectedRoute>
+          <TaskHistory />
         </ProtectedRoute>
       </Route>
 
