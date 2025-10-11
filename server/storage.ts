@@ -17,6 +17,9 @@ import {
   type InsertSetting,
   type Message,
   type InsertMessage,
+  type DeliveryTask,
+  type InsertDeliveryTask,
+  type DeliveryTaskWithDetails,
   type OrderWithCustomer,
   type CustomerWithOrders,
   users,
@@ -28,6 +31,7 @@ import {
   commissionRules,
   settings,
   messages,
+  deliveryTasks,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { hashPassword } from "./auth";
@@ -120,6 +124,15 @@ export interface IStorage {
   getUnreadMessageCount(userId: string): Promise<number>;
   markMessageAsRead(messageId: string): Promise<Message | undefined>;
   deleteMessage(messageId: string): Promise<boolean>;
+
+  // Delivery Tasks
+  createDeliveryTask(task: InsertDeliveryTask): Promise<DeliveryTask>;
+  getDeliveryTask(id: string): Promise<DeliveryTaskWithDetails | undefined>;
+  getDeliveryTasksByUserId(userId: string): Promise<DeliveryTaskWithDetails[]>;
+  getAllDeliveryTasks(): Promise<DeliveryTaskWithDetails[]>;
+  updateDeliveryTask(id: string, task: Partial<InsertDeliveryTask>): Promise<DeliveryTask | undefined>;
+  deleteDeliveryTask(id: string): Promise<boolean>;
+  getShippingStaffUsers(): Promise<User[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -132,6 +145,7 @@ export class MemStorage implements IStorage {
   private commissionRules: Map<string, CommissionRule>;
   private settings: Map<string, Setting>;
   private messages: Map<string, Message>;
+  private deliveryTasks: Map<string, DeliveryTask>;
   private orderCounter: number = 1;
 
   constructor() {
@@ -144,6 +158,7 @@ export class MemStorage implements IStorage {
     this.commissionRules = new Map();
     this.settings = new Map();
     this.messages = new Map();
+    this.deliveryTasks = new Map();
     
     // Initialize with default data
     this.initializeDefaultData();
@@ -1228,6 +1243,166 @@ export class PostgreSQLStorage implements IStorage {
   async deleteMessage(messageId: string): Promise<boolean> {
     const result = await db.delete(messages).where(eq(messages.id, messageId)).returning();
     return result.length > 0;
+  }
+
+  // Delivery Tasks methods
+  async createDeliveryTask(insertTask: InsertDeliveryTask): Promise<DeliveryTask> {
+    const result = await db.insert(deliveryTasks).values(insertTask).returning();
+    return result[0];
+  }
+
+  async getDeliveryTask(id: string): Promise<DeliveryTaskWithDetails | undefined> {
+    const result = await db.select({
+      task: deliveryTasks,
+      order: orders,
+      customer: customers,
+      assignedTo: users,
+      assignedBy: {
+        id: sql<string>`assigned_by.id`,
+        username: sql<string>`assigned_by.username`,
+        firstName: sql<string>`assigned_by.first_name`,
+        lastName: sql<string>`assigned_by.last_name`,
+        email: sql<string>`assigned_by.email`,
+        role: sql<string>`assigned_by.role`,
+        isActive: sql<boolean>`assigned_by.is_active`,
+        createdAt: sql<Date>`assigned_by.created_at`,
+        password: sql<string>`assigned_by.password`,
+      },
+    })
+      .from(deliveryTasks)
+      .innerJoin(orders, eq(deliveryTasks.orderId, orders.id))
+      .innerJoin(customers, eq(orders.customerId, customers.id))
+      .innerJoin(users, eq(deliveryTasks.assignedToUserId, users.id))
+      .innerJoin(sql`users AS assigned_by`, sql`${deliveryTasks.assignedByUserId} = assigned_by.id`)
+      .where(eq(deliveryTasks.id, id))
+      .limit(1);
+
+    if (!result[0]) return undefined;
+
+    const orderItems = await this.getOrderItems(result[0].order.id);
+    const orderImages = await this.getOrderImages(result[0].order.id);
+
+    return {
+      ...result[0].task,
+      order: {
+        ...result[0].order,
+        customer: result[0].customer,
+        items: orderItems,
+        images: orderImages,
+      },
+      assignedTo: result[0].assignedTo,
+      assignedBy: result[0].assignedBy,
+    };
+  }
+
+  async getDeliveryTasksByUserId(userId: string): Promise<DeliveryTaskWithDetails[]> {
+    const results = await db.select({
+      task: deliveryTasks,
+      order: orders,
+      customer: customers,
+      assignedTo: users,
+      assignedBy: {
+        id: sql<string>`assigned_by.id`,
+        username: sql<string>`assigned_by.username`,
+        firstName: sql<string>`assigned_by.first_name`,
+        lastName: sql<string>`assigned_by.last_name`,
+        email: sql<string>`assigned_by.email`,
+        role: sql<string>`assigned_by.role`,
+        isActive: sql<boolean>`assigned_by.is_active`,
+        createdAt: sql<Date>`assigned_by.created_at`,
+        password: sql<string>`assigned_by.password`,
+      },
+    })
+      .from(deliveryTasks)
+      .innerJoin(orders, eq(deliveryTasks.orderId, orders.id))
+      .innerJoin(customers, eq(orders.customerId, customers.id))
+      .innerJoin(users, eq(deliveryTasks.assignedToUserId, users.id))
+      .innerJoin(sql`users AS assigned_by`, sql`${deliveryTasks.assignedByUserId} = assigned_by.id`)
+      .where(eq(deliveryTasks.assignedToUserId, userId))
+      .orderBy(desc(deliveryTasks.createdAt));
+
+    const tasksWithDetails = await Promise.all(results.map(async (result) => {
+      const orderItems = await this.getOrderItems(result.order.id);
+      const orderImages = await this.getOrderImages(result.order.id);
+
+      return {
+        ...result.task,
+        order: {
+          ...result.order,
+          customer: result.customer,
+          items: orderItems,
+          images: orderImages,
+        },
+        assignedTo: result.assignedTo,
+        assignedBy: result.assignedBy,
+      };
+    }));
+
+    return tasksWithDetails;
+  }
+
+  async getAllDeliveryTasks(): Promise<DeliveryTaskWithDetails[]> {
+    const results = await db.select({
+      task: deliveryTasks,
+      order: orders,
+      customer: customers,
+      assignedTo: users,
+      assignedBy: {
+        id: sql<string>`assigned_by.id`,
+        username: sql<string>`assigned_by.username`,
+        firstName: sql<string>`assigned_by.first_name`,
+        lastName: sql<string>`assigned_by.last_name`,
+        email: sql<string>`assigned_by.email`,
+        role: sql<string>`assigned_by.role`,
+        isActive: sql<boolean>`assigned_by.is_active`,
+        createdAt: sql<Date>`assigned_by.created_at`,
+        password: sql<string>`assigned_by.password`,
+      },
+    })
+      .from(deliveryTasks)
+      .innerJoin(orders, eq(deliveryTasks.orderId, orders.id))
+      .innerJoin(customers, eq(orders.customerId, customers.id))
+      .innerJoin(users, eq(deliveryTasks.assignedToUserId, users.id))
+      .innerJoin(sql`users AS assigned_by`, sql`${deliveryTasks.assignedByUserId} = assigned_by.id`)
+      .orderBy(desc(deliveryTasks.createdAt));
+
+    const tasksWithDetails = await Promise.all(results.map(async (result) => {
+      const orderItems = await this.getOrderItems(result.order.id);
+      const orderImages = await this.getOrderImages(result.order.id);
+
+      return {
+        ...result.task,
+        order: {
+          ...result.order,
+          customer: result.customer,
+          items: orderItems,
+          images: orderImages,
+        },
+        assignedTo: result.assignedTo,
+        assignedBy: result.assignedBy,
+      };
+    }));
+
+    return tasksWithDetails;
+  }
+
+  async updateDeliveryTask(id: string, updateTask: Partial<InsertDeliveryTask>): Promise<DeliveryTask | undefined> {
+    const result = await db.update(deliveryTasks)
+      .set({ ...updateTask, updatedAt: new Date() })
+      .where(eq(deliveryTasks.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteDeliveryTask(id: string): Promise<boolean> {
+    const result = await db.delete(deliveryTasks).where(eq(deliveryTasks.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getShippingStaffUsers(): Promise<User[]> {
+    return await db.select()
+      .from(users)
+      .where(eq(users.role, "shipping_staff"));
   }
 }
 

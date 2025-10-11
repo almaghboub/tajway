@@ -3,8 +3,9 @@ import { pgTable, text, varchar, decimal, integer, timestamp, boolean, pgEnum } 
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const userRoleEnum = pgEnum("user_role", ["owner", "customer_service", "receptionist", "sorter", "stock_manager"]);
+export const userRoleEnum = pgEnum("user_role", ["owner", "customer_service", "receptionist", "sorter", "stock_manager", "shipping_staff"]);
 export const orderStatusEnum = pgEnum("order_status", ["pending", "processing", "shipped", "delivered", "cancelled", "partially_arrived", "ready_to_collect", "with_shipping_company"]);
+export const taskStatusEnum = pgEnum("task_status", ["pending", "completed", "to_collect"]);
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -117,6 +118,23 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const deliveryTasks = pgTable("delivery_tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => orders.id),
+  assignedToUserId: varchar("assigned_to_user_id").notNull().references(() => users.id),
+  assignedByUserId: varchar("assigned_by_user_id").notNull().references(() => users.id),
+  pickupLocation: text("pickup_location").notNull(),
+  deliveryLocation: text("delivery_location").notNull(),
+  customerCode: text("customer_code"),
+  paymentType: text("payment_type"), // "collect" or "delivered"
+  paymentAmount: decimal("payment_amount", { precision: 10, scale: 2 }),
+  status: taskStatusEnum("status").notNull().default("pending"),
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -169,6 +187,13 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
   isRead: true,
 });
 
+export const insertDeliveryTaskSchema = createInsertSchema(deliveryTasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  completedAt: true,
+});
+
 // Login schema
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -203,6 +228,9 @@ export type OrderImage = typeof orderImages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 
+export type InsertDeliveryTask = z.infer<typeof insertDeliveryTaskSchema>;
+export type DeliveryTask = typeof deliveryTasks.$inferSelect;
+
 export type LoginCredentials = z.infer<typeof loginSchema>;
 
 // Extended types for API responses
@@ -214,4 +242,10 @@ export type OrderWithCustomer = Order & {
 
 export type CustomerWithOrders = Customer & {
   orders: Order[];
+};
+
+export type DeliveryTaskWithDetails = DeliveryTask & {
+  order: OrderWithCustomer;
+  assignedTo: User;
+  assignedBy: User;
 };
