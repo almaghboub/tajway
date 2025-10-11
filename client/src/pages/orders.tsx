@@ -1571,7 +1571,7 @@ export default function Orders() {
 
         {/* Edit Order Modal */}
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-          <DialogContent className="max-w-2xl" data-testid="modal-edit-order">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" data-testid="modal-edit-order">
             <DialogHeader>
               <DialogTitle>{t('editOrderTitle')}</DialogTitle>
             </DialogHeader>
