@@ -3,9 +3,12 @@ import { Card, CardContent } from "@/components/ui/card";
 interface OrderSummary {
   id: string;
   orderNumber: string;
+  shippingCode?: string;
   customerName: string;
   totalAmount: string;
   profit: string;
+  itemsProfit?: string;
+  shippingProfit?: string;
   commission: string;
   country: string;
   createdAt: string;
@@ -118,10 +121,12 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
           <table className="w-full border-collapse border border-gray-300">
             <thead>
               <tr className="bg-blue-50">
-                <th className="border border-gray-300 px-4 py-2 text-left">Order #</th>
+                <th className="border border-gray-300 px-4 py-2 text-left">Customer Code</th>
                 <th className="border border-gray-300 px-4 py-2 text-left">Customer</th>
                 <th className="border border-gray-300 px-4 py-2 text-right">Revenue</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">Profit</th>
+                <th className="border border-gray-300 px-4 py-2 text-right">Items Profit</th>
+                <th className="border border-gray-300 px-4 py-2 text-right">Shipping Profit</th>
+                <th className="border border-gray-300 px-4 py-2 text-right">Total Profit</th>
                 <th className="border border-gray-300 px-4 py-2 text-right">Margin</th>
                 <th className="border border-gray-300 px-4 py-2 text-center">Date</th>
               </tr>
@@ -129,11 +134,14 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
             <tbody>
               {data.orders.map((order) => {
                 const margin = (parseFloat(order.profit) / parseFloat(order.totalAmount)) * 100;
+                
                 return (
                   <tr key={order.id}>
-                    <td className="border border-gray-300 px-4 py-2">{order.orderNumber}</td>
+                    <td className="border border-gray-300 px-4 py-2">{order.shippingCode || order.orderNumber}</td>
                     <td className="border border-gray-300 px-4 py-2">{order.customerName}</td>
                     <td className="border border-gray-300 px-4 py-2 text-right">${parseFloat(order.totalAmount).toFixed(2)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">${parseFloat(order.itemsProfit || "0").toFixed(2)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">${parseFloat(order.shippingProfit || "0").toFixed(2)}</td>
                     <td className="border border-gray-300 px-4 py-2 text-right">${parseFloat(order.profit).toFixed(2)}</td>
                     <td className="border border-gray-300 px-4 py-2 text-right">{margin.toFixed(1)}%</td>
                     <td className="border border-gray-300 px-4 py-2 text-center">{new Date(order.createdAt).toLocaleDateString()}</td>

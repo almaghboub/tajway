@@ -41,6 +41,7 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
 - A complete internal messaging system with conversation threading, real-time notifications, and chat-style UI for viewing full message history between users.
 - User profile management allowing all users (including admin) to edit their own username, name, and password with secure validation.
 - Enhanced profit page with detailed metrics, average order value, and country-specific filtering.
+- Comprehensive profit report showing customer shipping codes and detailed profit breakdown (items profit, shipping profit, total profit).
 - New order statuses: "Partially Arrived," "Ready to Collect," "With Shipping Company."
 - Dynamic country filtering across dashboards and profit reports.
 - Integrated LYD exchange rate and calendar date range filters for orders and customers.

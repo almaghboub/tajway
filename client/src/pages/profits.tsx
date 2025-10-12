@@ -106,6 +106,7 @@ export default function Profits() {
         return {
           id: order.id,
           orderNumber: order.orderNumber,
+          shippingCode: customer?.shippingCode || order.orderNumber,
           customerName: customer ? `${customer.firstName} ${customer.lastName}` : t('unknown'),
           totalAmount: order.totalAmount,
           profit: order.totalProfit || order.profit || "0",
