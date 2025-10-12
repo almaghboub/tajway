@@ -1,12 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { TrendingUp, DollarSign, Percent, Package, Clock, Plus, UserPlus, PackagePlus, FileText, Database, ShieldCheck, Settings as SettingsIcon, Check, BarChart3, PieChart } from "lucide-react";
+import { TrendingUp, DollarSign, Percent, Package, Clock, Plus, UserPlus, PackagePlus, FileText, Database, ShieldCheck, Settings as SettingsIcon, Check, BarChart3, PieChart, Users, ShoppingCart, CheckCircle, Truck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/header";
 import { analyticsApi } from "@/lib/api";
+import { apiRequest } from "@/lib/queryClient";
+import type { OrderWithCustomer } from "@shared/schema";
+import { format } from "date-fns";
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -16,6 +20,44 @@ export default function Dashboard() {
     queryFn: analyticsApi.getDashboardMetrics,
   });
 
+  const { data: orders = [] } = useQuery({
+    queryKey: ["/api/orders"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/orders");
+      return response.json() as Promise<OrderWithCustomer[]>;
+    },
+  });
+
+  const { data: customers = [] } = useQuery({
+    queryKey: ["/api/customers"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/customers");
+      return response.json();
+    },
+  });
+
+  // Calculate current month sales
+  const currentMonthSales = orders
+    .filter(order => {
+      const orderDate = new Date(order.createdAt);
+      const now = new Date();
+      return orderDate.getMonth() === now.getMonth() && 
+             orderDate.getFullYear() === now.getFullYear();
+    })
+    .reduce((sum, order) => sum + parseFloat(order.totalAmount), 0);
+
+  // Get completed and active orders count
+  const completedOrders = orders.filter(order => 
+    order.status === "Delivered" || order.status === "Completed"
+  ).length;
+
+  const activeOrdersCount = orders.filter(order => 
+    order.status !== "Delivered" && order.status !== "Completed" && order.status !== "Cancelled"
+  ).length;
+
+  // Get recent orders (last 5)
+  const recentOrders = orders.slice(0, 5);
+
   return (
     <div className="flex-1 flex flex-col min-h-screen">
       <Header 
@@ -24,8 +66,104 @@ export default function Dashboard() {
       />
       
       <div className="flex-1 p-6 space-y-6 bg-muted/20">
-        {/* Metrics Grid */}
+        {/* Metrics Grid - First Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="animate-fade-in" data-testid="card-total-orders">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('totalOrders')}</p>
+                  <p className="text-2xl font-bold text-blue-600" data-testid="text-total-orders">
+                    {orders.length}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('allTime')}</p>
+                </div>
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <ShoppingCart className="w-5 h-5 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="animate-fade-in" data-testid="card-customers">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('totalCustomers')}</p>
+                  <p className="text-2xl font-bold text-purple-600" data-testid="text-customers">
+                    {customers.length}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('registered')}</p>
+                </div>
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Users className="w-5 h-5 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="animate-fade-in" data-testid="card-completed-orders">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('completedOrders')}</p>
+                  <p className="text-2xl font-bold text-green-600" data-testid="text-completed-orders">
+                    {completedOrders}
+                  </p>
+                  <p className="text-xs text-green-600 flex items-center mt-1">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    {t('delivered')}
+                  </p>
+                </div>
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="animate-fade-in" data-testid="card-active-orders">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('activeOrders')}</p>
+                  <p className="text-2xl font-bold text-orange-600" data-testid="text-active-orders">
+                    {activeOrdersCount}
+                  </p>
+                  <p className="text-xs text-orange-600 flex items-center mt-1">
+                    <Clock className="w-3 h-3 mr-1" />
+                    {t('inProgress')}
+                  </p>
+                </div>
+                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <Package className="w-5 h-5 text-orange-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Metrics Grid - Second Row (Revenue and Profit) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="animate-fade-in" data-testid="card-month-sales">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{t('currentMonthSales')}</p>
+                  <p className="text-2xl font-bold text-primary" data-testid="text-month-sales">
+                    ${currentMonthSales.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {format(new Date(), 'MMMM yyyy')}
+                  </p>
+                </div>
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="animate-fade-in" data-testid="card-total-profit">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -38,79 +176,12 @@ export default function Dashboard() {
                       ${metrics?.totalProfit?.toFixed(2) || "0.00"}
                     </p>
                   )}
-                  <p className="text-xs text-green-600 flex items-center mt-1">
-                    <TrendingUp className="w-3 h-3 mr-1" />
-                    +18.7% {t('vsLastPeriod')}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t('allTime')} • {metrics?.profitMargin?.toFixed(1) || "0.0"}% {t('margin')}
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                   <TrendingUp className="w-5 h-5 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="animate-fade-in" data-testid="card-revenue">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t('totalRevenue')}</p>
-                  {isLoading ? (
-                    <Skeleton className="h-8 w-24 mt-1" />
-                  ) : (
-                    <p className="text-2xl font-bold text-primary" data-testid="text-revenue">
-                      ${metrics?.totalRevenue?.toFixed(2) || "0.00"}
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1">{t('allOrdersTotal')}</p>
-                </div>
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="animate-fade-in" data-testid="card-profit-margin">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t('profitMargin')}</p>
-                  {isLoading ? (
-                    <Skeleton className="h-8 w-24 mt-1" />
-                  ) : (
-                    <p className="text-2xl font-bold text-purple-600" data-testid="text-profit-margin">
-                      {metrics?.profitMargin?.toFixed(1) || "0.0"}%
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1">{t('profitVsRevenue')}</p>
-                </div>
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Percent className="w-5 h-5 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="animate-fade-in" data-testid="card-active-orders">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t('activeOrders')}</p>
-                  {isLoading ? (
-                    <Skeleton className="h-8 w-16 mt-1" />
-                  ) : (
-                    <p className="text-2xl font-bold text-orange-600" data-testid="text-active-orders">
-                      {metrics?.activeOrders || 0}
-                    </p>
-                  )}
-                  <p className="text-xs text-orange-600 flex items-center mt-1">
-                    <Clock className="w-3 h-3 mr-1" />
-                    3 {t('urgent')}
-                  </p>
-                </div>
-                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <Package className="w-5 h-5 text-orange-600" />
                 </div>
               </div>
             </CardContent>
@@ -156,18 +227,53 @@ export default function Dashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>{t('recentOrders')}</CardTitle>
-                <Button variant="link" className="text-primary hover:text-primary/80 text-sm font-medium">
+                <Button 
+                  variant="link" 
+                  className="text-primary hover:text-primary/80 text-sm font-medium"
+                  onClick={() => setLocation("/orders")}
+                >
                   {t('viewAll')}
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="text-center py-8">
-                  <Package className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">{t('noRecentOrders')}</p>
-                  <p className="text-xs text-muted-foreground">{t('ordersWillAppear')}</p>
-                </div>
+                {recentOrders.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground">{t('noRecentOrders')}</p>
+                    <p className="text-xs text-muted-foreground">{t('ordersWillAppear')}</p>
+                  </div>
+                ) : (
+                  recentOrders.map((order) => (
+                    <div 
+                      key={order.id} 
+                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => setLocation(`/orders`)}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <ShoppingCart className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{order.customer.shippingCode || order.orderNumber}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {order.customer.firstName} {order.customer.lastName}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">${parseFloat(order.totalAmount).toFixed(2)}</p>
+                        <Badge variant={
+                          order.status === "Delivered" || order.status === "Completed" ? "default" : 
+                          order.status === "Cancelled" ? "destructive" : "secondary"
+                        }>
+                          {order.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -235,7 +341,7 @@ export default function Dashboard() {
             <CardTitle>{t('quickActions')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Button 
                 className="p-4 h-auto flex-col" 
                 data-testid="button-new-order"
@@ -258,21 +364,11 @@ export default function Dashboard() {
               <Button 
                 variant="outline" 
                 className="p-4 h-auto flex-col" 
-                data-testid="button-update-stock"
-                onClick={() => setLocation("/inventory")}
+                data-testid="button-task-assignment"
+                onClick={() => setLocation("/task-assignment")}
               >
-                <PackagePlus className="w-6 h-6 mb-2" />
-                <span className="font-medium">{t('updateStock')}</span>
-              </Button>
-
-              <Button 
-                variant="ghost" 
-                className="p-4 h-auto flex-col" 
-                data-testid="button-generate-report"
-                onClick={() => setLocation("/profit-reports")}
-              >
-                <FileText className="w-6 h-6 mb-2" />
-                <span className="font-medium">{t('generateReport')}</span>
+                <Truck className="w-6 h-6 mb-2" />
+                <span className="font-medium">{t('taskAssignment')}</span>
               </Button>
             </div>
           </CardContent>
