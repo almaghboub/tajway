@@ -192,6 +192,8 @@ export const insertDeliveryTaskSchema = createInsertSchema(deliveryTasks).omit({
   createdAt: true,
   updatedAt: true,
   completedAt: true,
+}).extend({
+  paymentAmount: z.union([z.string(), z.number()]).optional().transform(val => val?.toString()),
 });
 
 // Login schema

@@ -43,6 +43,35 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   );
 }
 
+function RoleProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: string[] }) {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect to="/login" />;
+  }
+
+  if (user && !allowedRoles.includes(user.role)) {
+    return <Redirect to="/dashboard" />;
+  }
+
+  return (
+    <div className="min-h-screen flex">
+      <Sidebar />
+      <main className="flex-1">
+        {children}
+      </main>
+    </div>
+  );
+}
+
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -120,21 +149,21 @@ function Router() {
       </Route>
 
       <Route path="/delivery-tasks">
-        <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={["shipping_staff"]}>
           <DeliveryTasks />
-        </ProtectedRoute>
+        </RoleProtectedRoute>
       </Route>
 
       <Route path="/task-assignment">
-        <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={["owner", "customer_service", "receptionist"]}>
           <TaskAssignment />
-        </ProtectedRoute>
+        </RoleProtectedRoute>
       </Route>
 
       <Route path="/task-history">
-        <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={["owner", "customer_service", "receptionist"]}>
           <TaskHistory />
-        </ProtectedRoute>
+        </RoleProtectedRoute>
       </Route>
 
       {/* Fallback to 404 */}

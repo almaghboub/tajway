@@ -5,7 +5,7 @@ import { Strategy as LocalStrategy } from "passport-local";
 import session from "express-session";
 import { storage } from "./storage";
 import { hashPassword, verifyPassword } from "./auth";
-import { requireAuth, requireOwner, requireOperational } from "./middleware";
+import { requireAuth, requireOwner, requireOperational, requireDeliveryManager, requireShippingStaff, requireDeliveryAccess } from "./middleware";
 import {
   insertUserSchema,
   insertCustomerSchema,
@@ -999,8 +999,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delivery Tasks routes
-  // Create a new delivery task (assign task to shipping staff)
-  app.post("/api/delivery-tasks", requireAuth, async (req, res) => {
+  // Create a new delivery task (assign task to shipping staff) - managers only
+  app.post("/api/delivery-tasks", requireDeliveryManager, async (req, res) => {
     try {
       const result = insertDeliveryTaskSchema.safeParse(req.body);
       if (!result.success) {
@@ -1015,7 +1015,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all delivery tasks (for managers/admins) or user's tasks (for shipping staff)
-  app.get("/api/delivery-tasks", requireAuth, async (req, res) => {
+  app.get("/api/delivery-tasks", requireDeliveryAccess, async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Not authenticated" });
@@ -1036,12 +1036,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get a specific delivery task
-  app.get("/api/delivery-tasks/:id", requireAuth, async (req, res) => {
+  app.get("/api/delivery-tasks/:id", requireDeliveryAccess, async (req, res) => {
     try {
       const task = await storage.getDeliveryTask(req.params.id);
       if (!task) {
         return res.status(404).json({ message: "Task not found" });
       }
+      
+      // Shipping staff can only view their own tasks
+      if (req.user!.role === "shipping_staff" && task.assignedToUserId !== req.user!.id) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
       res.json(task);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch delivery task" });
@@ -1049,8 +1055,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update delivery task (change status, add notes, etc.)
-  app.patch("/api/delivery-tasks/:id", requireAuth, async (req, res) => {
+  app.patch("/api/delivery-tasks/:id", requireDeliveryAccess, async (req, res) => {
     try {
+      // First, get the task to check ownership
+      const existingTask = await storage.getDeliveryTask(req.params.id);
+      if (!existingTask) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      // Shipping staff can only update their own tasks
+      if (req.user!.role === "shipping_staff" && existingTask.assignedToUserId !== req.user!.id) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
       const { status, customerCode, paymentAmount, notes, completedAt } = req.body;
       
       const updateData: any = {};
@@ -1058,7 +1075,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (customerCode !== undefined) updateData.customerCode = customerCode;
       if (paymentAmount !== undefined) updateData.paymentAmount = paymentAmount;
       if (notes !== undefined) updateData.notes = notes;
-      if (completedAt !== undefined) updateData.completedAt = completedAt;
+      if (completedAt !== undefined) {
+        // Convert ISO string to Date object for Drizzle timestamp column
+        updateData.completedAt = typeof completedAt === 'string' ? new Date(completedAt) : completedAt;
+      }
       
       const task = await storage.updateDeliveryTask(req.params.id, updateData);
       if (!task) {
@@ -1066,12 +1086,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(task);
     } catch (error) {
-      res.status(500).json({ message: "Failed to update delivery task" });
+      console.error("Error updating delivery task:", error);
+      res.status(500).json({ message: "Failed to update delivery task", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
-  // Delete delivery task
-  app.delete("/api/delivery-tasks/:id", requireAuth, async (req, res) => {
+  // Delete delivery task - managers only
+  app.delete("/api/delivery-tasks/:id", requireDeliveryManager, async (req, res) => {
     try {
       const success = await storage.deleteDeliveryTask(req.params.id);
       if (!success) {
@@ -1083,8 +1104,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all shipping staff users (for task assignment)
-  app.get("/api/shipping-staff", requireAuth, async (req, res) => {
+  // Get all shipping staff users (for task assignment) - managers only
+  app.get("/api/shipping-staff", requireDeliveryManager, async (req, res) => {
     try {
       const shippingStaff = await storage.getShippingStaffUsers();
       const staffList = shippingStaff.map(({ id, firstName, lastName, username }) => ({
@@ -1099,8 +1120,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get task history for a specific shipping staff member
-  app.get("/api/delivery-tasks/history/:userId", requireAuth, async (req, res) => {
+  // Get task history for a specific shipping staff member - managers only
+  app.get("/api/delivery-tasks/history/:userId", requireDeliveryManager, async (req, res) => {
     try {
       const tasks = await storage.getDeliveryTasksByUserId(req.params.userId);
       res.json(tasks);

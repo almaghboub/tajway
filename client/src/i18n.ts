@@ -12,6 +12,9 @@ const resources = {
       inventory: "Inventory",
       profitReports: "Profit Reports",
       userManagement: "User Management",
+      deliveryTasks: "Delivery Tasks",
+      taskAssignment: "Task Assignment",
+      taskHistory: "Task History",
       settings: "Settings",
       logout: "Logout",
       
@@ -416,6 +419,7 @@ const resources = {
       receptionist: "Receptionist",
       sorter: "Sorter",
       stockManager: "Stock Manager",
+      shippingStaff: "Shipping Staff",
       
       // User Form Fields
       confirmPassword: "Confirm Password",
@@ -616,6 +620,9 @@ const resources = {
       inventory: "المخزون",
       profitReports: "تقارير الأرباح",
       userManagement: "إدارة المستخدمين",
+      deliveryTasks: "مهام التوصيل",
+      taskAssignment: "تعيين المهام",
+      taskHistory: "سجل المهام",
       settings: "الإعدادات",
       logout: "تسجيل الخروج",
       
@@ -1020,6 +1027,7 @@ const resources = {
       receptionist: "موظف الاستقبال",
       sorter: "فارز",
       stockManager: "مدير المخزون",
+      shippingStaff: "موظف التوصيل",
       
       // User Form Fields
       confirmPassword: "تأكيد كلمة المرور",

@@ -6,7 +6,7 @@ declare global {
     interface User {
       id: string;
       username: string;
-      role: "owner" | "customer_service" | "receptionist" | "sorter" | "stock_manager";
+      role: "owner" | "customer_service" | "receptionist" | "sorter" | "stock_manager" | "shipping_staff";
       firstName: string;
       lastName: string;
       email: string;
@@ -46,4 +46,16 @@ export function requireOperational(req: Request, res: Response, next: NextFuncti
 
 export function requireInventoryAccess(req: Request, res: Response, next: NextFunction) {
   return requireRole(["owner", "stock_manager", "sorter"])(req, res, next);
+}
+
+export function requireDeliveryManager(req: Request, res: Response, next: NextFunction) {
+  return requireRole(["owner", "customer_service", "receptionist"])(req, res, next);
+}
+
+export function requireShippingStaff(req: Request, res: Response, next: NextFunction) {
+  return requireRole(["shipping_staff"])(req, res, next);
+}
+
+export function requireDeliveryAccess(req: Request, res: Response, next: NextFunction) {
+  return requireRole(["owner", "customer_service", "receptionist", "shipping_staff"])(req, res, next);
 }

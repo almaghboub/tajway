@@ -25,7 +25,7 @@ import { z } from "zod";
 interface SafeUser {
   id: string;
   username: string;
-  role: "owner" | "customer_service" | "receptionist" | "sorter" | "stock_manager";
+  role: "owner" | "customer_service" | "receptionist" | "sorter" | "stock_manager" | "shipping_staff";
   firstName: string;
   lastName: string;
   email: string;
@@ -52,7 +52,7 @@ export default function Users() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<SafeUser | null>(null);
   const [deletingUser, setDeletingUser] = useState<SafeUser | null>(null);
-  const [roleFilters, setRoleFilters] = useState<string[]>(["owner", "customer_service", "receptionist"]);
+  const [roleFilters, setRoleFilters] = useState<string[]>(["owner", "customer_service", "receptionist", "sorter", "stock_manager", "shipping_staff"]);
   const { toast } = useToast();
   
   const createUserSchema = getCreateUserSchema(t);
@@ -258,6 +258,8 @@ export default function Users() {
         return "bg-yellow-100 text-yellow-800";
       case "stock_manager":
         return "bg-orange-100 text-orange-800";
+      case "shipping_staff":
+        return "bg-teal-100 text-teal-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -308,7 +310,10 @@ export default function Users() {
                       {[
                         { value: "owner", label: t('owner') },
                         { value: "customer_service", label: t('customerService') },
-                        { value: "receptionist", label: t('receptionist') }
+                        { value: "receptionist", label: t('receptionist') },
+                        { value: "sorter", label: t('sorter') },
+                        { value: "stock_manager", label: t('stockManager') },
+                        { value: "shipping_staff", label: t('shippingStaff') }
                       ].map((role) => (
                         <div key={role.value} className="flex items-center space-x-2">
                           <Checkbox
@@ -531,6 +536,7 @@ export default function Users() {
                           <SelectItem value="receptionist">{t('receptionist')}</SelectItem>
                           <SelectItem value="sorter">{t('sorter')}</SelectItem>
                           <SelectItem value="stock_manager">{t('stockManager')}</SelectItem>
+                          <SelectItem value="shipping_staff">{t('shippingStaff')}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -667,6 +673,7 @@ export default function Users() {
                           <SelectItem value="receptionist">{t('receptionist')}</SelectItem>
                           <SelectItem value="sorter">{t('sorter')}</SelectItem>
                           <SelectItem value="stock_manager">{t('stockManager')}</SelectItem>
+                          <SelectItem value="shipping_staff">{t('shippingStaff')}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
