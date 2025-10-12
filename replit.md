@@ -27,7 +27,7 @@ Security is multi-layered, featuring session-based authentication with Passport.
 ## UI/UX Decisions
 
 The UI/UX design emphasizes a responsive interface, bilingual support (English/Arabic), and streamlined data entry. Recent enhancements include:
-- A complete shipping/delivery staff task management system:
+- A complete shipping/delivery staff task management system with full bilingual support:
   - New "shipping_staff" user role with dedicated dashboard
   - Task assignment interface for managers to assign delivery tasks to staff
   - Shipping staff can view assigned tasks, pickup/delivery locations, and payment information
@@ -35,6 +35,7 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
   - Payment collection workflow with amount and customer code entry
   - Task history and performance tracking for managers
   - Staff-specific dashboard showing pending, completed, and payment collection tasks
+  - All delivery pages (delivery-tasks, task-assignment, task-history) fully translated in English/Arabic with proper RTL layout
 - A complete internal messaging system with conversation threading, real-time notifications, and chat-style UI for viewing full message history between users.
 - User profile management allowing all users (including admin) to edit their own username, name, and password with secure validation.
 - Enhanced profit page with detailed metrics, average order value, and country-specific filtering.

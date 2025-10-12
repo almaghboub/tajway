@@ -45,11 +45,11 @@ export default function TaskHistory() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "pending":
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>;
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700"><Clock className="w-3 h-3 mr-1" /> {t('statusPending')}</Badge>;
       case "completed":
-        return <Badge variant="outline" className="bg-green-50 text-green-700"><CheckCircle className="w-3 h-3 mr-1" /> Completed</Badge>;
+        return <Badge variant="outline" className="bg-green-50 text-green-700"><CheckCircle className="w-3 h-3 mr-1" /> {t('statusCompleted')}</Badge>;
       case "to_collect":
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700"><DollarSign className="w-3 h-3 mr-1" /> To Collect</Badge>;
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700"><DollarSign className="w-3 h-3 mr-1" /> {t('statusToCollect')}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -74,22 +74,22 @@ export default function TaskHistory() {
       <Header />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Task History & Tracking</h1>
-          <p className="mt-2 text-gray-600">View delivery task history and staff performance</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('taskHistoryTracking')}</h1>
+          <p className="mt-2 text-gray-600">{t('viewTaskHistoryPerformance')}</p>
         </div>
 
         {/* Staff Filter */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Filter by Staff Member</CardTitle>
+            <CardTitle>{t('filterByStaffMember')}</CardTitle>
           </CardHeader>
           <CardContent>
             <Select value={selectedStaffId} onValueChange={setSelectedStaffId}>
               <SelectTrigger className="w-full md:w-64" data-testid="select-staff-filter">
-                <SelectValue placeholder="Select staff member" />
+                <SelectValue placeholder={t('selectStaffMember')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Staff Members</SelectItem>
+                <SelectItem value="all">{t('allStaffMembers')}</SelectItem>
                 {shippingStaff.map((staff) => (
                   <SelectItem key={staff.id} value={staff.id}>
                     {staff.firstName} {staff.lastName}
@@ -104,47 +104,47 @@ export default function TaskHistory() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('totalTasks')}</CardTitle>
               <Package className="h-4 w-4 text-gray-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{filteredTasks.length}</div>
               <p className="text-xs text-muted-foreground">
-                {selectedStaffId === "all" ? "All tasks" : `Tasks for ${selectedStaff?.firstName}`}
+                {selectedStaffId === "all" ? t('allTasks') : `${t('tasksFor')} ${selectedStaff?.firstName}`}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('statusCompleted')}</CardTitle>
               <CheckCircle className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.completed}</div>
-              <p className="text-xs text-muted-foreground">Successfully delivered</p>
+              <p className="text-xs text-muted-foreground">{t('successfullyDelivered')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('pending')}</CardTitle>
               <Clock className="h-4 w-4 text-yellow-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.pending}</div>
-              <p className="text-xs text-muted-foreground">Awaiting delivery</p>
+              <p className="text-xs text-muted-foreground">{t('awaitingDelivery')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Collections</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('totalCollections')}</CardTitle>
               <DollarSign className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">${stats.totalPayments.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">Payment collections</p>
+              <p className="text-xs text-muted-foreground">{t('paymentCollections')}</p>
             </CardContent>
           </Card>
         </div>
@@ -154,32 +154,32 @@ export default function TaskHistory() {
           <CardHeader>
             <CardTitle>
               <History className="w-5 h-5 inline-block mr-2" />
-              Task History
+              {t('taskHistory')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoadingTasks ? (
-              <div className="text-center py-8">Loading task history...</div>
+              <div className="text-center py-8">{t('loadingTaskHistory')}</div>
             ) : filteredTasks.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No tasks found</p>
+                <p>{t('noTasksFound')}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Order #</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Assigned To</TableHead>
-                      <TableHead>Assigned By</TableHead>
-                      <TableHead>Pickup</TableHead>
-                      <TableHead>Delivery</TableHead>
-                      <TableHead>Payment</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Completed</TableHead>
+                      <TableHead>{t('date')}</TableHead>
+                      <TableHead>{t('orderNumber')}</TableHead>
+                      <TableHead>{t('customer')}</TableHead>
+                      <TableHead>{t('assignedTo')}</TableHead>
+                      <TableHead>{t('assignedBy')}</TableHead>
+                      <TableHead>{t('pickupLocation')}</TableHead>
+                      <TableHead>{t('deliveryLocation')}</TableHead>
+                      <TableHead>{t('payment')}</TableHead>
+                      <TableHead>{t('status')}</TableHead>
+                      <TableHead>{t('completedAt')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -211,7 +211,7 @@ export default function TaskHistory() {
                               ${parseFloat(task.paymentAmount || "0").toFixed(2)}
                             </span>
                           ) : (
-                            <span className="text-sm text-gray-400">N/A</span>
+                            <span className="text-sm text-gray-400">{t('naLabel')}</span>
                           )}
                         </TableCell>
                         <TableCell>{getStatusBadge(task.status)}</TableCell>
@@ -234,21 +234,21 @@ export default function TaskHistory() {
         {selectedStaffId !== "all" && selectedStaff && (
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Performance Summary: {selectedStaff.firstName} {selectedStaff.lastName}</CardTitle>
+              <CardTitle>{t('performanceSummary')} {selectedStaff.firstName} {selectedStaff.lastName}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
-                  <div className="text-sm text-gray-600">Completed Tasks</div>
+                  <div className="text-sm text-gray-600">{t('completedTasks')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
-                  <div className="text-sm text-gray-600">Pending Tasks</div>
+                  <div className="text-sm text-gray-600">{t('pendingTasks')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">{stats.toCollect}</div>
-                  <div className="text-sm text-gray-600">Payment Collections</div>
+                  <div className="text-sm text-gray-600">{t('paymentCollections')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900">
@@ -257,7 +257,7 @@ export default function TaskHistory() {
                       : "0%"
                     }
                   </div>
-                  <div className="text-sm text-gray-600">Completion Rate</div>
+                  <div className="text-sm text-gray-600">{t('completionRate')}</div>
                 </div>
               </div>
             </CardContent>

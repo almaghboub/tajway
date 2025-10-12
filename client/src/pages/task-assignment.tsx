@@ -76,14 +76,14 @@ export default function TaskAssignment() {
       resetForm();
       toast({
         title: t('success'),
-        description: "Task assigned successfully",
+        description: t('taskAssignedSuccess'),
       });
     },
     onError: () => {
       toast({
         variant: "destructive",
         title: t('error'),
-        description: "Failed to assign task",
+        description: t('failedAssignTask'),
       });
     },
   });
@@ -150,31 +150,31 @@ export default function TaskAssignment() {
       <Header />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Task Assignment</h1>
-          <p className="mt-2 text-gray-600">Assign delivery tasks to shipping staff</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('taskAssignment')}</h1>
+          <p className="mt-2 text-gray-600">{t('assignDeliveryTasksStaff')}</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('totalTasks')}</CardTitle>
               <Package className="h-4 w-4 text-gray-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{tasks.length}</div>
-              <p className="text-xs text-muted-foreground">Active delivery tasks</p>
+              <p className="text-xs text-muted-foreground">{t('activeDeliveryTasks')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Shipping Staff</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('shippingStaff')}</CardTitle>
               <UserCheck className="h-4 w-4 text-gray-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{shippingStaff.length}</div>
-              <p className="text-xs text-muted-foreground">Available staff members</p>
+              <p className="text-xs text-muted-foreground">{t('availableStaffMembers')}</p>
             </CardContent>
           </Card>
         </div>
@@ -183,11 +183,11 @@ export default function TaskAssignment() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Orders Available for Assignment</CardTitle>
+              <CardTitle>{t('ordersAvailableAssignment')}</CardTitle>
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search orders..."
+                  placeholder={t('searchOrders')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-8 w-64"
@@ -198,24 +198,24 @@ export default function TaskAssignment() {
           </CardHeader>
           <CardContent>
             {isLoadingOrders ? (
-              <div className="text-center py-8">Loading orders...</div>
+              <div className="text-center py-8">{t('loadingOrders')}</div>
             ) : filteredOrders.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No orders found</p>
+                <p>{t('noOrdersFound')}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Order #</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>City</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>{t('orderNumber')}</TableHead>
+                      <TableHead>{t('customer')}</TableHead>
+                      <TableHead>{t('phone')}</TableHead>
+                      <TableHead>{t('city')}</TableHead>
+                      <TableHead>{t('status')}</TableHead>
+                      <TableHead>{t('total')}</TableHead>
+                      <TableHead>{t('actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -238,7 +238,7 @@ export default function TaskAssignment() {
                             data-testid={`button-assign-${order.id}`}
                           >
                             <Plus className="w-4 h-4 mr-1" />
-                            Assign Task
+                            {t('assignTask')}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -254,22 +254,22 @@ export default function TaskAssignment() {
         <Dialog open={isAssignModalOpen} onOpenChange={setIsAssignModalOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="modal-assign-task">
             <DialogHeader>
-              <DialogTitle>Assign Delivery Task</DialogTitle>
+              <DialogTitle>{t('assignDeliveryTask')}</DialogTitle>
             </DialogHeader>
             {selectedOrder && (
               <div className="space-y-4">
                 {/* Order Info */}
                 <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Order Details</h4>
+                  <h4 className="font-medium mb-2">{t('orderDetails')}</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <span className="font-medium">Order #:</span> {selectedOrder.orderNumber}
+                      <span className="font-medium">{t('orderNumber')}:</span> {selectedOrder.orderNumber}
                     </div>
                     <div>
-                      <span className="font-medium">Total:</span> ${parseFloat(selectedOrder.totalAmount).toFixed(2)}
+                      <span className="font-medium">{t('total')}:</span> ${parseFloat(selectedOrder.totalAmount).toFixed(2)}
                     </div>
                     <div className="col-span-2">
-                      <span className="font-medium">Customer:</span> {selectedOrder.customer.firstName} {selectedOrder.customer.lastName}
+                      <span className="font-medium">{t('customer')}:</span> {selectedOrder.customer.firstName} {selectedOrder.customer.lastName}
                     </div>
                   </div>
                 </div>
@@ -277,10 +277,10 @@ export default function TaskAssignment() {
                 {/* Assignment Form */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
-                    <Label htmlFor="assign-to">Assign To (Shipping Staff) *</Label>
+                    <Label htmlFor="assign-to">{t('assignToShippingStaff')}</Label>
                     <Select value={assignedToUserId} onValueChange={setAssignedToUserId}>
                       <SelectTrigger id="assign-to" data-testid="select-shipping-staff">
-                        <SelectValue placeholder="Select shipping staff" />
+                        <SelectValue placeholder={t('selectShippingStaff')} />
                       </SelectTrigger>
                       <SelectContent>
                         {shippingStaff.map((staff) => (
@@ -293,36 +293,36 @@ export default function TaskAssignment() {
                   </div>
 
                   <div>
-                    <Label htmlFor="pickup-location">Pickup Location *</Label>
+                    <Label htmlFor="pickup-location">{t('pickupLocationRequired')}</Label>
                     <Input
                       id="pickup-location"
                       value={pickupLocation}
                       onChange={(e) => setPickupLocation(e.target.value)}
-                      placeholder="Enter pickup location"
+                      placeholder={t('enterPickupLocation')}
                       data-testid="input-pickup-location"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="delivery-location">Delivery Location *</Label>
+                    <Label htmlFor="delivery-location">{t('deliveryLocationRequired')}</Label>
                     <Input
                       id="delivery-location"
                       value={deliveryLocation}
                       onChange={(e) => setDeliveryLocation(e.target.value)}
-                      placeholder="Enter delivery location"
+                      placeholder={t('enterDeliveryLocation')}
                       data-testid="input-delivery-location"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="payment-type">Payment Type</Label>
+                    <Label htmlFor="payment-type">{t('paymentType')}</Label>
                     <Select value={paymentType} onValueChange={(value: any) => setPaymentType(value)}>
                       <SelectTrigger id="payment-type" data-testid="select-payment-type">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="delivered">Delivered (No Collection)</SelectItem>
-                        <SelectItem value="collect">Collect Payment</SelectItem>
+                        <SelectItem value="delivered">{t('deliveredNoCollection')}</SelectItem>
+                        <SelectItem value="collect">{t('collectPayment')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -330,25 +330,25 @@ export default function TaskAssignment() {
                   {paymentType === "collect" && (
                     <>
                       <div>
-                        <Label htmlFor="customer-code">Customer Code</Label>
+                        <Label htmlFor="customer-code">{t('customerCode')}</Label>
                         <Input
                           id="customer-code"
                           value={customerCode}
                           onChange={(e) => setCustomerCode(e.target.value)}
-                          placeholder="Enter customer code"
+                          placeholder={t('enterCustomerCode')}
                           data-testid="input-customer-code"
                         />
                       </div>
 
                       <div className="col-span-2">
-                        <Label htmlFor="payment-amount">Payment Amount ($)</Label>
+                        <Label htmlFor="payment-amount">{t('paymentAmountDollar')}</Label>
                         <Input
                           id="payment-amount"
                           type="number"
                           step="0.01"
                           value={paymentAmount}
                           onChange={(e) => setPaymentAmount(e.target.value)}
-                          placeholder="Enter payment amount"
+                          placeholder={t('enterPaymentAmount')}
                           data-testid="input-payment-amount"
                         />
                       </div>
@@ -356,13 +356,13 @@ export default function TaskAssignment() {
                   )}
 
                   <div className="col-span-2">
-                    <Label htmlFor="task-notes">Notes</Label>
+                    <Label htmlFor="task-notes">{t('notes')}</Label>
                     <textarea
                       id="task-notes"
                       value={taskNotes}
                       onChange={(e) => setTaskNotes(e.target.value)}
                       className="w-full min-h-[100px] p-3 border rounded-md resize-none"
-                      placeholder="Add any additional notes..."
+                      placeholder={t('addAdditionalNotes')}
                       data-testid="textarea-task-notes"
                     />
                   </div>
@@ -375,14 +375,14 @@ export default function TaskAssignment() {
                     onClick={() => setIsAssignModalOpen(false)}
                     data-testid="button-cancel"
                   >
-                    Cancel
+                    {t('cancel')}
                   </Button>
                   <Button
                     onClick={handleAssignTask}
                     disabled={assignTaskMutation.isPending}
                     data-testid="button-assign"
                   >
-                    {assignTaskMutation.isPending ? "Assigning..." : "Assign Task"}
+                    {assignTaskMutation.isPending ? t('creating') : t('assignTask')}
                   </Button>
                 </div>
               </div>

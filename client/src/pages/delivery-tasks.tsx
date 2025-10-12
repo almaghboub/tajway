@@ -51,14 +51,14 @@ export default function DeliveryTasks() {
       setTaskNotes("");
       toast({
         title: t('success'),
-        description: "Task updated successfully",
+        description: t('taskUpdatedSuccess'),
       });
     },
     onError: () => {
       toast({
         variant: "destructive",
         title: t('error'),
-        description: "Failed to update task",
+        description: t('failedUpdateTask'),
       });
     },
   });
@@ -98,11 +98,11 @@ export default function DeliveryTasks() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "pending":
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>;
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700"><Clock className="w-3 h-3 mr-1" /> {t('statusPending')}</Badge>;
       case "completed":
-        return <Badge variant="outline" className="bg-green-50 text-green-700"><CheckCircle className="w-3 h-3 mr-1" /> Completed</Badge>;
+        return <Badge variant="outline" className="bg-green-50 text-green-700"><CheckCircle className="w-3 h-3 mr-1" /> {t('statusCompleted')}</Badge>;
       case "to_collect":
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700"><DollarSign className="w-3 h-3 mr-1" /> To Collect</Badge>;
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700"><DollarSign className="w-3 h-3 mr-1" /> {t('statusToCollect')}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -118,41 +118,41 @@ export default function DeliveryTasks() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">{t('deliveryTasks')}</h1>
-          <p className="mt-2 text-gray-600">Manage your delivery tasks and track your progress</p>
+          <p className="mt-2 text-gray-600">{t('deliveryTasksDescription')}</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('pendingTasks')}</CardTitle>
               <Clock className="h-4 w-4 text-yellow-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{pendingTasks.length}</div>
-              <p className="text-xs text-muted-foreground">Tasks awaiting delivery</p>
+              <p className="text-xs text-muted-foreground">{t('tasksAwaitingDelivery')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">To Collect</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('toCollect')}</CardTitle>
               <DollarSign className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{toCollectTasks.length}</div>
-              <p className="text-xs text-muted-foreground">Payments to collect</p>
+              <p className="text-xs text-muted-foreground">{t('paymentsToCollect')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('completed')}</CardTitle>
               <CheckCircle className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{completedTasks.length}</div>
-              <p className="text-xs text-muted-foreground">Tasks finished</p>
+              <p className="text-xs text-muted-foreground">{t('tasksFinished')}</p>
             </CardContent>
           </Card>
         </div>
@@ -160,28 +160,28 @@ export default function DeliveryTasks() {
         {/* Tasks Table */}
         <Card>
           <CardHeader>
-            <CardTitle>My Delivery Tasks</CardTitle>
+            <CardTitle>{t('myDeliveryTasks')}</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="text-center py-8">Loading tasks...</div>
+              <div className="text-center py-8">{t('loadingTasks')}</div>
             ) : tasks.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No tasks assigned yet</p>
+                <p>{t('noTasksAssigned')}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Order #</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Pickup Location</TableHead>
-                      <TableHead>Delivery Location</TableHead>
-                      <TableHead>Payment</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>{t('orderNumber')}</TableHead>
+                      <TableHead>{t('customer')}</TableHead>
+                      <TableHead>{t('pickupLocation')}</TableHead>
+                      <TableHead>{t('deliveryLocation')}</TableHead>
+                      <TableHead>{t('payment')}</TableHead>
+                      <TableHead>{t('status')}</TableHead>
+                      <TableHead>{t('actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -211,7 +211,7 @@ export default function DeliveryTasks() {
                               ${parseFloat(task.paymentAmount || "0").toFixed(2)}
                             </span>
                           ) : (
-                            <span className="text-sm text-gray-400">None</span>
+                            <span className="text-sm text-gray-400">{t('none')}</span>
                           )}
                         </TableCell>
                         <TableCell>{getStatusBadge(task.status)}</TableCell>
@@ -226,7 +226,7 @@ export default function DeliveryTasks() {
                                   data-testid={`button-complete-${task.id}`}
                                 >
                                   <CheckCircle className="w-4 h-4 mr-1" />
-                                  Complete
+                                  {t('complete')}
                                 </Button>
                                 {task.paymentType === "collect" && (
                                   <Button
@@ -236,7 +236,7 @@ export default function DeliveryTasks() {
                                     data-testid={`button-to-collect-${task.id}`}
                                   >
                                     <DollarSign className="w-4 h-4 mr-1" />
-                                    To Collect
+                                    {t('toCollect')}
                                   </Button>
                                 )}
                               </>
@@ -249,7 +249,7 @@ export default function DeliveryTasks() {
                                 data-testid={`button-complete-${task.id}`}
                               >
                                 <CheckCircle className="w-4 h-4 mr-1" />
-                                Complete
+                                {t('complete')}
                               </Button>
                             )}
                           </div>
@@ -267,40 +267,40 @@ export default function DeliveryTasks() {
         <Dialog open={isUpdateModalOpen} onOpenChange={setIsUpdateModalOpen}>
           <DialogContent className="max-w-md" data-testid="modal-update-task">
             <DialogHeader>
-              <DialogTitle>Mark for Payment Collection</DialogTitle>
+              <DialogTitle>{t('markForPaymentCollection')}</DialogTitle>
             </DialogHeader>
             {selectedTask && (
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="customer-code">Customer Code</Label>
+                  <Label htmlFor="customer-code">{t('customerCode')}</Label>
                   <Input
                     id="customer-code"
                     value={customerCode}
                     onChange={(e) => setCustomerCode(e.target.value)}
-                    placeholder="Enter customer code"
+                    placeholder={t('enterCustomerCode')}
                     data-testid="input-customer-code"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="payment-amount">Payment Amount ($)</Label>
+                  <Label htmlFor="payment-amount">{t('paymentAmountDollar')}</Label>
                   <Input
                     id="payment-amount"
                     type="number"
                     step="0.01"
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value)}
-                    placeholder="Enter amount"
+                    placeholder={t('enterAmount')}
                     data-testid="input-payment-amount"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="task-notes">Notes</Label>
+                  <Label htmlFor="task-notes">{t('notes')}</Label>
                   <textarea
                     id="task-notes"
                     value={taskNotes}
                     onChange={(e) => setTaskNotes(e.target.value)}
                     className="w-full min-h-[100px] p-3 border rounded-md resize-none"
-                    placeholder="Add any notes..."
+                    placeholder={t('addAnyNotes')}
                     data-testid="textarea-task-notes"
                   />
                 </div>
@@ -311,14 +311,14 @@ export default function DeliveryTasks() {
                     onClick={() => setIsUpdateModalOpen(false)}
                     data-testid="button-cancel"
                   >
-                    Cancel
+                    {t('cancel')}
                   </Button>
                   <Button
                     onClick={handleSubmitToCollect}
                     disabled={updateTaskMutation.isPending}
                     data-testid="button-submit"
                   >
-                    {updateTaskMutation.isPending ? "Updating..." : "Mark To Collect"}
+                    {updateTaskMutation.isPending ? t('updating') : t('markToCollect')}
                   </Button>
                 </div>
               </div>
