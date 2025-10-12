@@ -36,6 +36,8 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
   - Task history and performance tracking for managers
   - Staff-specific dashboard showing pending, completed, and payment collection tasks
   - All delivery pages (delivery-tasks, task-assignment, task-history) fully translated in English/Arabic with proper RTL layout
+  - Customer code display in all delivery tables (with fallback to order number if no shipping code exists)
+  - Smart search supporting customer code, name, phone, and order number across all fields
 - A complete internal messaging system with conversation threading, real-time notifications, and chat-style UI for viewing full message history between users.
 - User profile management allowing all users (including admin) to edit their own username, name, and password with secure validation.
 - Enhanced profit page with detailed metrics, average order value, and country-specific filtering.

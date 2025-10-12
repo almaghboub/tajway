@@ -137,6 +137,7 @@ export default function TaskAssignment() {
     const searchLower = searchTerm.toLowerCase();
     return (
       order.orderNumber.toLowerCase().includes(searchLower) ||
+      (order.customer.shippingCode && order.customer.shippingCode.toLowerCase().includes(searchLower)) ||
       order.customer.firstName.toLowerCase().includes(searchLower) ||
       order.customer.lastName.toLowerCase().includes(searchLower) ||
       order.customer.phone.includes(searchTerm)
@@ -209,7 +210,7 @@ export default function TaskAssignment() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t('orderNumber')}</TableHead>
+                      <TableHead>{t('customerCode')}</TableHead>
                       <TableHead>{t('customer')}</TableHead>
                       <TableHead>{t('phone')}</TableHead>
                       <TableHead>{t('city')}</TableHead>
@@ -221,7 +222,7 @@ export default function TaskAssignment() {
                   <TableBody>
                     {filteredOrders.map((order) => (
                       <TableRow key={order.id} data-testid={`order-row-${order.id}`}>
-                        <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                        <TableCell className="font-medium">{order.customer.shippingCode || order.orderNumber}</TableCell>
                         <TableCell>
                           {order.customer.firstName} {order.customer.lastName}
                         </TableCell>

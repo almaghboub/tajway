@@ -171,7 +171,7 @@ export default function TaskHistory() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t('date')}</TableHead>
-                      <TableHead>{t('orderNumber')}</TableHead>
+                      <TableHead>{t('customerCode')}</TableHead>
                       <TableHead>{t('customer')}</TableHead>
                       <TableHead>{t('assignedTo')}</TableHead>
                       <TableHead>{t('assignedBy')}</TableHead>
@@ -189,7 +189,7 @@ export default function TaskHistory() {
                           {format(new Date(task.createdAt), "MMM dd, yyyy")}
                         </TableCell>
                         <TableCell className="font-medium">
-                          {task.order.orderNumber}
+                          {task.order.customer.shippingCode || task.order.orderNumber}
                         </TableCell>
                         <TableCell>
                           {task.order.customer.firstName} {task.order.customer.lastName}

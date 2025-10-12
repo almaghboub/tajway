@@ -175,7 +175,7 @@ export default function DeliveryTasks() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t('orderNumber')}</TableHead>
+                      <TableHead>{t('customerCode')}</TableHead>
                       <TableHead>{t('customer')}</TableHead>
                       <TableHead>{t('pickupLocation')}</TableHead>
                       <TableHead>{t('deliveryLocation')}</TableHead>
@@ -188,7 +188,7 @@ export default function DeliveryTasks() {
                     {tasks.map((task) => (
                       <TableRow key={task.id} data-testid={`task-row-${task.id}`}>
                         <TableCell className="font-medium">
-                          {task.order.orderNumber}
+                          {task.order.customer.shippingCode || task.order.orderNumber}
                         </TableCell>
                         <TableCell>
                           {task.order.customer.firstName} {task.order.customer.lastName}
