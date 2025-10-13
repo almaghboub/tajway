@@ -38,7 +38,7 @@ interface OrderImage {
 }
 
 export default function Orders() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -2033,7 +2033,7 @@ export default function Orders() {
                     </div>
                     <div>
                       <span className="font-medium text-muted-foreground">{t('createdDate')}</span>
-                      <p className="mt-1" data-testid="text-view-created">{new Date(viewingOrder.createdAt).toLocaleString()}</p>
+                      <p className="mt-1" data-testid="text-view-created">{new Date(viewingOrder.createdAt).toLocaleString(i18n.language === 'ar' ? 'ar-SA' : 'en-US')}</p>
                     </div>
                   </div>
                 </div>

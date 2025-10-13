@@ -38,52 +38,118 @@ interface InvoiceProps {
   onPrint?: () => void;
 }
 
-// Function to convert number to words
-function numberToWords(num: number): string {
-  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
-  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-  const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
-  
-  if (num === 0) return 'Zero Dollars';
-  
-  const convert = (n: number): string => {
-    if (n === 0) return '';
-    if (n < 10) return ones[n];
-    if (n < 20) return teens[n - 10];
-    if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
-    if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + convert(n % 100) : '');
-    if (n < 1000000) return convert(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convert(n % 1000) : '');
-    if (n < 1000000000) return convert(Math.floor(n / 1000000)) + ' Million' + (n % 1000000 !== 0 ? ' ' + convert(n % 1000000) : '');
-    return convert(Math.floor(n / 1000000000)) + ' Billion' + (n % 1000000000 !== 0 ? ' ' + convert(n % 1000000000) : '');
-  };
-  
-  const dollars = Math.floor(num);
-  const cents = Math.round((num - dollars) * 100);
-  
-  let result = '';
-  
-  if (dollars === 0) {
-    result = 'Zero Dollars';
+// Function to convert number to words (bilingual)
+function numberToWords(num: number, language: string = 'en'): string {
+  if (language === 'ar') {
+    // Arabic number to words (corrected for proper Arabic grammar)
+    const ones = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة'];
+    const teens = ['عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+    const tens = ['', '', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+    const hundreds = ['', 'مائة', 'مئتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة', 'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'];
+    
+    if (num === 0) return 'صفر دولار';
+    
+    const convert = (n: number): string => {
+      if (n === 0) return '';
+      if (n < 10) return ones[n];
+      if (n < 20) return teens[n - 10];
+      // In Arabic, ones come before tens: "خمسة وعشرون" (five and twenty) not "twenty and five"
+      if (n < 100) {
+        const onesPlace = n % 10;
+        const tensPlace = Math.floor(n / 10);
+        if (onesPlace === 0) return tens[tensPlace];
+        return ones[onesPlace] + ' و' + tens[tensPlace];
+      }
+      if (n < 1000) {
+        const hundredsPlace = Math.floor(n / 100);
+        const remainder = n % 100;
+        if (remainder === 0) return hundreds[hundredsPlace];
+        return hundreds[hundredsPlace] + ' و' + convert(remainder);
+      }
+      if (n < 1000000) {
+        const thousands = Math.floor(n / 1000);
+        const remainder = n % 1000;
+        let result = thousands === 1 ? 'ألف' : thousands === 2 ? 'ألفان' : convert(thousands) + ' آلاف';
+        if (remainder !== 0) result += ' و' + convert(remainder);
+        return result;
+      }
+      if (n < 1000000000) {
+        const millions = Math.floor(n / 1000000);
+        const remainder = n % 1000000;
+        let result = millions === 1 ? 'مليون' : millions === 2 ? 'مليونان' : convert(millions) + ' مليون';
+        if (remainder !== 0) result += ' و' + convert(remainder);
+        return result;
+      }
+      const billions = Math.floor(n / 1000000000);
+      const remainder = n % 1000000000;
+      let result = billions === 1 ? 'مليار' : billions === 2 ? 'ملياران' : convert(billions) + ' مليار';
+      if (remainder !== 0) result += ' و' + convert(remainder);
+      return result;
+    };
+    
+    const dollars = Math.floor(num);
+    const cents = Math.round((num - dollars) * 100);
+    
+    let result = '';
+    
+    if (dollars === 0) {
+      result = 'صفر دولار';
+    } else {
+      result = convert(dollars) + ' دولار';
+    }
+    
+    if (cents > 0) {
+      result += ' و' + convert(cents) + ' سنت';
+    }
+    
+    return result;
   } else {
-    result = convert(dollars) + ' Dollar' + (dollars !== 1 ? 's' : '');
+    // English number to words
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    
+    if (num === 0) return 'Zero Dollars';
+    
+    const convert = (n: number): string => {
+      if (n === 0) return '';
+      if (n < 10) return ones[n];
+      if (n < 20) return teens[n - 10];
+      if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+      if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + convert(n % 100) : '');
+      if (n < 1000000) return convert(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convert(n % 1000) : '');
+      if (n < 1000000000) return convert(Math.floor(n / 1000000)) + ' Million' + (n % 1000000 !== 0 ? ' ' + convert(n % 1000000) : '');
+      return convert(Math.floor(n / 1000000000)) + ' Billion' + (n % 1000000000 !== 0 ? ' ' + convert(n % 1000000000) : '');
+    };
+    
+    const dollars = Math.floor(num);
+    const cents = Math.round((num - dollars) * 100);
+    
+    let result = '';
+    
+    if (dollars === 0) {
+      result = 'Zero Dollars';
+    } else {
+      result = convert(dollars) + ' Dollar' + (dollars !== 1 ? 's' : '');
+    }
+    
+    if (cents > 0) {
+      result += ' and ' + convert(cents) + ' Cent' + (cents !== 1 ? 's' : '');
+    }
+    
+    return result;
   }
-  
-  if (cents > 0) {
-    result += ' and ' + convert(cents) + ' Cent' + (cents !== 1 ? 's' : '');
-  }
-  
-  return result;
 }
 
 export function Invoice({ order, onPrint }: InvoiceProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const subtotal = order.items?.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) || 0;
   const shipping = parseFloat(order.shippingCost || "0");
   const commission = parseFloat(order.commission || "0");
   const total = parseFloat(order.totalAmount || "0");
   const downPayment = parseFloat(order.downPayment || "0");
   const remainingBalance = parseFloat(order.remainingBalance || "0");
-  const totalInWords = numberToWords(total);
+  const totalInWords = numberToWords(total, i18n.language);
 
   return (
     <div className="invoice-container max-w-4xl mx-auto p-8 bg-white text-black">
@@ -97,7 +163,7 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
             <h2 className="text-3xl font-bold text-red-700 mb-2">{t('invoice')}</h2>
             <div className="text-sm space-y-1">
               <p className="font-semibold">{t('invoiceNumber')}: {order.orderNumber}</p>
-              <p>{t('date')}: {new Date(order.createdAt).toLocaleDateString('en-US', { 
+              <p>{t('date')}: {new Date(order.createdAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', { 
                 year: 'numeric', 
                 month: 'long', 
                 day: 'numeric' 
@@ -197,11 +263,11 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
             </div>
             <div className="border-t-2 border-gray-300 pt-3 mt-3">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Down Payment:</span>
+                <span className="text-gray-600">{t('downPaymentLabel')}:</span>
                 <span className="font-semibold text-green-600">${downPayment.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center mt-2">
-                <span className="text-lg font-bold text-orange-600">Remaining Balance:</span>
+                <span className="text-lg font-bold text-orange-600">{t('remainingBalance')}:</span>
                 <span className="text-xl font-bold text-orange-600">${remainingBalance.toFixed(2)}</span>
               </div>
             </div>
