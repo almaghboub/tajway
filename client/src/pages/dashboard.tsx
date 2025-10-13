@@ -169,52 +169,54 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Metrics Grid - Second Row (Revenue and Profit) */}
-        <div className={`grid grid-cols-1 ${user?.role === 'owner' ? 'md:grid-cols-2' : ''} gap-6`}>
-          <Card className="animate-fade-in" data-testid="card-month-sales">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t('currentMonthSales')}</p>
-                  <p className="text-2xl font-bold text-primary" data-testid="text-month-sales">
-                    ${currentMonthSales.toFixed(2)}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {format(new Date(), 'MMMM yyyy')}
-                  </p>
-                </div>
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {user?.role === 'owner' && (
-            <Card className="animate-fade-in" data-testid="card-total-profit">
+        {/* Metrics Grid - Second Row (Revenue and Profit) - Hidden for Shipping Staff */}
+        {user?.role !== 'shipping_staff' && (
+          <div className={`grid grid-cols-1 ${user?.role === 'owner' ? 'md:grid-cols-2' : ''} gap-6`}>
+            <Card className="animate-fade-in" data-testid="card-month-sales">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">{t('totalProfit')}</p>
-                    {isLoading ? (
-                      <Skeleton className="h-8 w-24 mt-1" />
-                    ) : (
-                      <p className="text-2xl font-bold text-green-600" data-testid="text-total-profit">
-                        ${metrics?.totalProfit?.toFixed(2) || "0.00"}
-                      </p>
-                    )}
+                    <p className="text-sm text-muted-foreground">{t('currentMonthSales')}</p>
+                    <p className="text-2xl font-bold text-primary" data-testid="text-month-sales">
+                      ${currentMonthSales.toFixed(2)}
+                    </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {t('allTime')} • {metrics?.profitMargin?.toFixed(1) || "0.0"}% {t('margin')}
+                      {format(new Date(), 'MMMM yyyy')}
                     </p>
                   </div>
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 text-green-600" />
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-primary" />
                   </div>
                 </div>
               </CardContent>
             </Card>
-          )}
-        </div>
+
+            {user?.role === 'owner' && (
+              <Card className="animate-fade-in" data-testid="card-total-profit">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">{t('totalProfit')}</p>
+                      {isLoading ? (
+                        <Skeleton className="h-8 w-24 mt-1" />
+                      ) : (
+                        <p className="text-2xl font-bold text-green-600" data-testid="text-total-profit">
+                          ${metrics?.totalProfit?.toFixed(2) || "0.00"}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t('allTime')} • {metrics?.profitMargin?.toFixed(1) || "0.0"}% {t('margin')}
+                      </p>
+                    </div>
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5 text-green-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -363,44 +365,46 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Quick Actions */}
-        <Card data-testid="card-quick-actions">
-          <CardHeader>
-            <CardTitle>{t('quickActions')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button 
-                className="p-4 h-auto flex-col" 
-                data-testid="button-new-order"
-                onClick={() => setLocation("/orders")}
-              >
-                <Plus className="w-6 h-6 mb-2" />
-                <span className="font-medium">{t('newOrder')}</span>
-              </Button>
+        {/* Quick Actions - Hidden for Shipping Staff */}
+        {user?.role !== 'shipping_staff' && (
+          <Card data-testid="card-quick-actions">
+            <CardHeader>
+              <CardTitle>{t('quickActions')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button 
+                  className="p-4 h-auto flex-col" 
+                  data-testid="button-new-order"
+                  onClick={() => setLocation("/orders")}
+                >
+                  <Plus className="w-6 h-6 mb-2" />
+                  <span className="font-medium">{t('newOrder')}</span>
+                </Button>
 
-              <Button 
-                variant="secondary" 
-                className="p-4 h-auto flex-col" 
-                data-testid="button-add-customer"
-                onClick={() => setLocation("/customers")}
-              >
-                <UserPlus className="w-6 h-6 mb-2" />
-                <span className="font-medium">{t('addCustomer')}</span>
-              </Button>
+                <Button 
+                  variant="secondary" 
+                  className="p-4 h-auto flex-col" 
+                  data-testid="button-add-customer"
+                  onClick={() => setLocation("/customers")}
+                >
+                  <UserPlus className="w-6 h-6 mb-2" />
+                  <span className="font-medium">{t('addCustomer')}</span>
+                </Button>
 
-              <Button 
-                variant="outline" 
-                className="p-4 h-auto flex-col" 
-                data-testid="button-task-assignment"
-                onClick={() => setLocation("/task-assignment")}
-              >
-                <Truck className="w-6 h-6 mb-2" />
-                <span className="font-medium">{t('taskAssignment')}</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                <Button 
+                  variant="outline" 
+                  className="p-4 h-auto flex-col" 
+                  data-testid="button-task-assignment"
+                  onClick={() => setLocation("/task-assignment")}
+                >
+                  <Truck className="w-6 h-6 mb-2" />
+                  <span className="font-medium">{t('taskAssignment')}</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Application Health Check */}
         <Card data-testid="card-health-check">
