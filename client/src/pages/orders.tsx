@@ -1627,7 +1627,7 @@ export default function Orders() {
                             <thead className="bg-muted/50">
                               <tr>
                                 <th className="px-3 py-2 text-left">{t('shippingCodeLabel')}</th>
-                                <th className="px-3 py-2 text-left">Product Code</th>
+                                <th className="px-3 py-2 text-left">{t('productCode')}</th>
                                 <th className="px-3 py-2 text-center">{t('quantity')}</th>
                                 <th className="px-3 py-2 text-right">{t('originalPrice')}</th>
                                 <th className="px-3 py-2 text-right">{t('discountedPrice')}</th>
@@ -1644,7 +1644,7 @@ export default function Orders() {
                                       value={item.productCode || ''}
                                       onChange={(e) => handleItemChange(index, 'productCode', e.target.value)}
                                       className="w-24"
-                                      placeholder="SKU"
+                                      placeholder={t('skuPlaceholder')}
                                       data-testid={`input-edit-product-code-${index}`}
                                     />
                                   </td>
@@ -1699,7 +1699,7 @@ export default function Orders() {
 
                   {!editingOrder.shippingCountry && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
-                      <strong>Note:</strong> To enable automatic shipping recalculation when changing weight, please select the shipping country and category below.
+                      {t('shippingRecalculationNote')}
                     </div>
                   )}
 
@@ -1747,7 +1747,7 @@ export default function Orders() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="edit-shipping-weight">Shipping Weight (kg)</Label>
+                      <Label htmlFor="edit-shipping-weight">{t('shippingWeightKg')}</Label>
                       <Input
                         id="edit-shipping-weight"
                         type="number"
