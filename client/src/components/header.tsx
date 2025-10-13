@@ -1,5 +1,6 @@
-import { Bell } from "lucide-react";
+import { Bell, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 interface HeaderProps {
   title: string;
@@ -7,6 +8,13 @@ interface HeaderProps {
 }
 
 export function Header({ title, description }: HeaderProps) {
+  const { i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'en' ? 'ar' : 'en';
+    i18n.changeLanguage(newLang);
+  };
+
   return (
     <header className="bg-card border-b border-border px-6 py-4">
       <div className="flex items-center justify-between">
@@ -17,6 +25,18 @@ export function Header({ title, description }: HeaderProps) {
           )}
         </div>
         <div className="flex items-center space-x-4">
+          {/* Language selector */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleLanguage}
+            className="text-muted-foreground hover:text-foreground"
+            data-testid="button-language-selector"
+          >
+            <Languages className="w-5 h-5 mr-1" />
+            <span className="text-sm font-medium">{i18n.language === 'en' ? 'AR' : 'EN'}</span>
+          </Button>
+
           {/* System status indicator */}
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
