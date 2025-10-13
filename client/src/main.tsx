@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { Suspense, useEffect } from "react";
+import { useEffect } from "react";
 import { I18nextProvider, useTranslation } from "react-i18next";
 import App from "./App";
 import "./index.css";
@@ -19,8 +19,6 @@ function DirectionHandler() {
 
 createRoot(document.getElementById("root")!).render(
   <I18nextProvider i18n={i18n}>
-    <Suspense fallback={<div>Loading...</div>}>
-      <DirectionHandler />
-    </Suspense>
+    <DirectionHandler />
   </I18nextProvider>
 );
