@@ -9,12 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/header";
 import { analyticsApi } from "@/lib/api";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/components/auth-provider";
 import type { OrderWithCustomer } from "@shared/schema";
 import { format } from "date-fns";
 
 export default function Dashboard() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const { data: metrics, isLoading } = useQuery({
     queryKey: ["/api/analytics/dashboard"],
     queryFn: analyticsApi.getDashboardMetrics,
@@ -168,7 +170,7 @@ export default function Dashboard() {
         </div>
 
         {/* Metrics Grid - Second Row (Revenue and Profit) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className={`grid grid-cols-1 ${user?.role === 'owner' ? 'md:grid-cols-2' : ''} gap-6`}>
           <Card className="animate-fade-in" data-testid="card-month-sales">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -188,28 +190,30 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="animate-fade-in" data-testid="card-total-profit">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t('totalProfit')}</p>
-                  {isLoading ? (
-                    <Skeleton className="h-8 w-24 mt-1" />
-                  ) : (
-                    <p className="text-2xl font-bold text-green-600" data-testid="text-total-profit">
-                      ${metrics?.totalProfit?.toFixed(2) || "0.00"}
+          {user?.role === 'owner' && (
+            <Card className="animate-fade-in" data-testid="card-total-profit">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{t('totalProfit')}</p>
+                    {isLoading ? (
+                      <Skeleton className="h-8 w-24 mt-1" />
+                    ) : (
+                      <p className="text-2xl font-bold text-green-600" data-testid="text-total-profit">
+                        ${metrics?.totalProfit?.toFixed(2) || "0.00"}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t('allTime')} • {metrics?.profitMargin?.toFixed(1) || "0.0"}% {t('margin')}
                     </p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t('allTime')} • {metrics?.profitMargin?.toFixed(1) || "0.0"}% {t('margin')}
-                  </p>
+                  </div>
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-green-600" />
+                  </div>
                 </div>
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Charts Grid */}
