@@ -12,9 +12,7 @@ export function Header({ title, description }: HeaderProps) {
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'ar' : 'en';
-    i18n.changeLanguage(newLang).then(() => {
-      window.location.reload();
-    });
+    i18n.changeLanguage(newLang);
   };
 
   return (
