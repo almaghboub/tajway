@@ -446,9 +446,9 @@ export default function Customers() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("name")}</TableHead>
-                    <TableHead>Customer Code</TableHead>
-                    <TableHead>Total Amount</TableHead>
-                    <TableHead>Down Payment</TableHead>
+                    <TableHead>{t('shippingCodeLabel')}</TableHead>
+                    <TableHead>{t('totalAmountLabel')}</TableHead>
+                    <TableHead>{t('downPaymentLabel')}</TableHead>
                     <TableHead>{t("phone")}</TableHead>
                     <TableHead>{t("country")}</TableHead>
                     <TableHead>{t("customerCreated")}</TableHead>
@@ -524,7 +524,7 @@ export default function Customers() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="fullName">Full Name*</Label>
+                <Label htmlFor="fullName">{t('fullNameRequired')}</Label>
                 <Input
                   id="fullName"
                   value={formData.firstName + (formData.lastName ? ' ' + formData.lastName : '')}
@@ -541,7 +541,7 @@ export default function Customers() {
               </div>
 
               <div>
-                <Label htmlFor="phone">Phone*</Label>
+                <Label htmlFor="phone">{t('phoneRequired')}</Label>
                 <Input
                   id="phone"
                   value={formData.phone || ""}
@@ -553,7 +553,7 @@ export default function Customers() {
               </div>
 
               <div>
-                <Label htmlFor="city">City*</Label>
+                <Label htmlFor="city">{t('cityRequired')}</Label>
                 <Input
                   id="city"
                   value={formData.city || ""}
@@ -638,10 +638,10 @@ export default function Customers() {
               </div>
 
               <div className="border-t pt-4 space-y-3">
-                <h4 className="font-semibold text-sm">Payment Information</h4>
+                <h4 className="font-semibold text-sm">{t('paymentInformation')}</h4>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="edit-total-amount">Total Amount</Label>
+                    <Label htmlFor="edit-total-amount">{t('totalAmountLabel')}</Label>
                     <Input
                       id="edit-total-amount"
                       type="number"
@@ -653,7 +653,7 @@ export default function Customers() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="edit-down-payment">Down Payment ($)*</Label>
+                    <Label htmlFor="edit-down-payment">{t('downPaymentRequired')}</Label>
                     <Input
                       id="edit-down-payment"
                       type="number"
@@ -666,7 +666,7 @@ export default function Customers() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="edit-remaining">Remaining Balance</Label>
+                    <Label htmlFor="edit-remaining">{t('remainingBalance')}</Label>
                     <Input
                       id="edit-remaining"
                       type="number"
@@ -730,7 +730,7 @@ export default function Customers() {
                       </p>
                     </div>
                     <div>
-                      <span className="font-medium text-muted-foreground">Customer Code</span>
+                      <span className="font-medium text-muted-foreground">{t('shippingCodeLabel')}</span>
                       <p className="mt-1 font-semibold text-primary" data-testid="text-view-customer-code">{viewingCustomer.shippingCode || t("naLabel")}</p>
                     </div>
                     <div>
@@ -789,19 +789,19 @@ export default function Customers() {
                       <h3 className="font-semibold text-lg mb-3">Payment Summary</h3>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="font-medium text-muted-foreground">Total Orders:</span>
+                          <span className="font-medium text-muted-foreground">{t('totalOrders')}:</span>
                           <p className="mt-1" data-testid="text-view-total-orders">{customerOrders.length}</p>
                         </div>
                         <div>
-                          <span className="font-medium text-muted-foreground">Total Order Amount:</span>
+                          <span className="font-medium text-muted-foreground">{t('totalOrderAmount')}:</span>
                           <p className="mt-1 font-semibold" data-testid="text-view-total-amount">${totalAmount.toFixed(2)}</p>
                         </div>
                         <div>
-                          <span className="font-medium text-muted-foreground">Total Down Payment:</span>
+                          <span className="font-medium text-muted-foreground">{t('totalDownPayment')}:</span>
                           <p className="mt-1 text-blue-600 font-semibold" data-testid="text-view-total-down-payment">${totalDownPayment.toFixed(2)}</p>
                         </div>
                         <div>
-                          <span className="font-medium text-muted-foreground">Total Remaining Balance:</span>
+                          <span className="font-medium text-muted-foreground">{t('totalRemainingBalance')}:</span>
                           <p className="mt-1 text-red-600 font-semibold" data-testid="text-view-total-remaining-balance">${totalRemainingBalance.toFixed(2)}</p>
                         </div>
                       </div>

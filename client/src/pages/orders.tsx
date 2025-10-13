@@ -963,13 +963,12 @@ export default function Orders() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Shipping Code</TableHead>
                     <TableHead>{t('customer')}</TableHead>
-                    <TableHead>Customer Code</TableHead>
+                    <TableHead>{t('shippingCodeLabel')}</TableHead>
                     <TableHead>{t('status')}</TableHead>
                     <TableHead>{t('total')}</TableHead>
-                    <TableHead>Down Payment</TableHead>
-                    <TableHead>Remaining</TableHead>
+                    <TableHead>{t('downPaymentLabel')}</TableHead>
+                    <TableHead>{t('remainingLabel')}</TableHead>
                     <TableHead>{t('profit')}</TableHead>
                     <TableHead>{t('createdAt')}</TableHead>
                     <TableHead>{t('actions')}</TableHead>
@@ -978,14 +977,11 @@ export default function Orders() {
                 <TableBody>
                   {filteredOrders.map((order) => (
                     <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
-                      <TableCell className="font-medium" data-testid={`text-shipping-code-${order.id}`}>
-                        <span className="font-semibold text-primary">{order.customer.shippingCode || "-"}</span>
-                      </TableCell>
                       <TableCell data-testid={`text-customer-${order.id}`}>
                         {order.customer.firstName} {order.customer.lastName}
                       </TableCell>
-                      <TableCell data-testid={`text-customer-code-${order.id}`}>
-                        <span className="font-semibold text-primary">{order.customer.shippingCode || "-"}</span>
+                      <TableCell className="font-medium" data-testid={`text-shipping-code-${order.id}`}>
+                        <span className="font-semibold text-primary">{order.customer.shippingCode || order.orderNumber}</span>
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(order.status)} data-testid={`badge-status-${order.id}`}>
@@ -1062,7 +1058,7 @@ export default function Orders() {
               {/* Customer Search */}
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="customerSearch">Search Customer (Phone, Name, or Code)</Label>
+                  <Label htmlFor="customerSearch">{t('searchCustomerPhoneNameCode')}</Label>
                   <div className="flex gap-2">
                     <Input
                       id="customerSearch"
@@ -1078,7 +1074,7 @@ export default function Orders() {
                       data-testid="button-search-customer"
                     >
                       <Search className="w-4 h-4 mr-2" />
-                      Search
+                      {t('search')}
                     </Button>
                   </div>
                 </div>
@@ -1220,7 +1216,7 @@ export default function Orders() {
                           {/* First row: Shipping Code, Product Code */}
                           <div className="grid grid-cols-12 gap-4">
                             <div className="col-span-11">
-                              <Label htmlFor={`product-name-${index}`}>Shipping Code*</Label>
+                              <Label htmlFor={`product-name-${index}`}>{t('shippingCodeRequired')}</Label>
                               <Input
                                 id={`product-name-${index}`}
                                 value={item.productName}
@@ -1445,7 +1441,7 @@ export default function Orders() {
                 </div>
 
                 <div>
-                  <Label htmlFor="lyd-exchange-rate">LYD Exchange Rate*</Label>
+                  <Label htmlFor="lyd-exchange-rate">{t('lydExchangeRate')}</Label>
                   <Input
                     id="lyd-exchange-rate"
                     type="number"
@@ -1500,7 +1496,7 @@ export default function Orders() {
                     </div>
                     <div className="border-t pt-3 space-y-3">
                       <div>
-                        <Label htmlFor="down-payment" className="text-sm">Down Payment (Optional)</Label>
+                        <Label htmlFor="down-payment" className="text-sm">{t('downPaymentOptional')}</Label>
                         <Input
                           id="down-payment"
                           type="number"
@@ -1516,7 +1512,7 @@ export default function Orders() {
                       </div>
                       {downPayment > 0 && (
                         <div className="flex justify-between text-orange-600 font-medium">
-                          <span>Remaining Balance:</span>
+                          <span>{t('remainingBalance')}:</span>
                           <span data-testid="text-payment-remaining">${(calculateTotals().total - downPayment).toFixed(2)}</span>
                         </div>
                       )}
@@ -1610,7 +1606,7 @@ export default function Orders() {
                           <table className="w-full text-sm">
                             <thead className="bg-muted/50">
                               <tr>
-                                <th className="px-3 py-2 text-left">Shipping Code</th>
+                                <th className="px-3 py-2 text-left">{t('shippingCodeLabel')}</th>
                                 <th className="px-3 py-2 text-left">Product Code</th>
                                 <th className="px-3 py-2 text-center">{t('quantity')}</th>
                                 <th className="px-3 py-2 text-right">{t('originalPrice')}</th>
@@ -1707,7 +1703,7 @@ export default function Orders() {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="edit-down-payment">Down Payment ($)</Label>
+                      <Label htmlFor="edit-down-payment">{t('downPaymentDollar')}</Label>
                       <Input
                         id="edit-down-payment"
                         type="number"
@@ -2108,11 +2104,11 @@ export default function Orders() {
                       <span data-testid="text-view-total">${parseFloat(viewingOrder.totalAmount).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-green-600">
-                      <span>Down Payment:</span>
+                      <span>{t('downPaymentLabel')}:</span>
                       <span data-testid="text-view-down-payment">${parseFloat(viewingOrder.downPayment || "0").toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between font-semibold text-orange-600">
-                      <span>Remaining Balance:</span>
+                      <span>{t('remainingBalance')}:</span>
                       <span data-testid="text-view-remaining-balance">${parseFloat(viewingOrder.remainingBalance || "0").toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-muted-foreground border-t pt-2">
