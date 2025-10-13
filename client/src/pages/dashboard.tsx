@@ -20,6 +20,26 @@ export default function Dashboard() {
     queryFn: analyticsApi.getDashboardMetrics,
   });
 
+  const translateStatus = (status: string) => {
+    const statusLower = status.toLowerCase().replace(/\s+/g, '');
+    switch (statusLower) {
+      case 'delivered':
+        return t('statusDelivered');
+      case 'completed':
+        return t('statusCompleted');
+      case 'cancelled':
+        return t('statusCancelled');
+      case 'partiallyarrived':
+        return t('statusPartiallyArrived');
+      case 'readytocollect':
+        return t('statusReadyToCollect');
+      case 'withshippingcompany':
+        return t('statusWithShippingCompany');
+      default:
+        return status;
+    }
+  };
+
   const { data: orders = [] } = useQuery({
     queryKey: ["/api/orders"],
     queryFn: async () => {
@@ -269,10 +289,10 @@ export default function Dashboard() {
                       <div className="text-right">
                         <p className="font-medium">${parseFloat(order.totalAmount).toFixed(2)}</p>
                         <Badge variant={
-                          order.status === "Delivered" || order.status === "Completed" ? "default" : 
-                          order.status === "Cancelled" ? "destructive" : "secondary"
+                          order.status.toLowerCase() === "delivered" || order.status.toLowerCase() === "completed" ? "default" : 
+                          order.status.toLowerCase() === "cancelled" ? "destructive" : "secondary"
                         }>
-                          {order.status}
+                          {translateStatus(order.status)}
                         </Badge>
                       </div>
                     </div>

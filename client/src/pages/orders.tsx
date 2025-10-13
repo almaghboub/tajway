@@ -41,6 +41,26 @@ export default function Orders() {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const translateStatus = (status: string) => {
+    const statusLower = status.toLowerCase().replace(/\s+/g, '');
+    switch (statusLower) {
+      case 'delivered':
+        return t('statusDelivered');
+      case 'completed':
+        return t('statusCompleted');
+      case 'cancelled':
+        return t('statusCancelled');
+      case 'partiallyarrived':
+        return t('statusPartiallyArrived');
+      case 'readytocollect':
+        return t('statusReadyToCollect');
+      case 'withshippingcompany':
+        return t('statusWithShippingCompany');
+      default:
+        return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+  };
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -985,7 +1005,7 @@ export default function Orders() {
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(order.status)} data-testid={`badge-status-${order.id}`}>
-                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          {translateStatus(order.status)}
                         </Badge>
                       </TableCell>
                       <TableCell data-testid={`text-total-${order.id}`}>
@@ -1928,8 +1948,8 @@ export default function Orders() {
                           <SelectValue placeholder={t('selectCategory')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="normal">Normal</SelectItem>
-                          <SelectItem value="express">Express</SelectItem>
+                          <SelectItem value="normal">{t('normalShipping')}</SelectItem>
+                          <SelectItem value="express">{t('expressShipping')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

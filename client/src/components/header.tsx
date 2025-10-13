@@ -8,7 +8,7 @@ interface HeaderProps {
 }
 
 export function Header({ title, description }: HeaderProps) {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'ar' : 'en';
@@ -40,7 +40,7 @@ export function Header({ title, description }: HeaderProps) {
           {/* System status indicator */}
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-sm text-muted-foreground">System Online</span>
+            <span className="text-sm text-muted-foreground">{t('systemOnline')}</span>
           </div>
           
           {/* Notification bell */}

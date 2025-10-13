@@ -164,6 +164,19 @@ const resources = {
       phoneRequired: "Phone*",
       cityRequired: "City*",
       totalAmountLabel: "Total Amount",
+      systemOnline: "System Online",
+      paymentSummary: "Payment Summary",
+      
+      // Status translations
+      statusDelivered: "Delivered",
+      statusCompleted: "Completed",
+      statusCancelled: "Cancelled",
+      statusPartiallyArrived: "Partially Arrived",
+      statusReadyToCollect: "Ready to Collect",
+      statusWithShippingCompany: "With Shipping Company",
+      normalShipping: "Normal",
+      expressShipping: "Express",
+      
       enterFullName: "Enter full name",
       enterCity: "Enter city",
       enterPhoneNumber: "Enter phone number",
@@ -885,6 +898,19 @@ const resources = {
       phoneRequired: "الهاتف*",
       cityRequired: "المدينة*",
       totalAmountLabel: "المبلغ الإجمالي",
+      systemOnline: "النظام متصل",
+      paymentSummary: "ملخص الدفع",
+      
+      // Status translations  
+      statusDelivered: "تم التوصيل",
+      statusCompleted: "مكتمل",
+      statusCancelled: "ملغى",
+      statusPartiallyArrived: "وصل جزئياً",
+      statusReadyToCollect: "جاهز للاستلام",
+      statusWithShippingCompany: "مع شركة الشحن",
+      normalShipping: "عادي",
+      expressShipping: "سريع",
+      
       enterFullName: "أدخل الاسم الكامل",
       enterCity: "أدخل المدينة",
       enterPhoneNumber: "أدخل رقم الهاتف",

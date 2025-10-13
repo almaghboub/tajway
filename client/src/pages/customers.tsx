@@ -786,7 +786,7 @@ export default function Customers() {
                   
                   return (
                     <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-                      <h3 className="font-semibold text-lg mb-3">Payment Summary</h3>
+                      <h3 className="font-semibold text-lg mb-3">{t('paymentSummary')}</h3>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="font-medium text-muted-foreground">{t('totalOrders')}:</span>
