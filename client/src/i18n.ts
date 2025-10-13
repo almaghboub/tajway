@@ -157,7 +157,6 @@ const resources = {
       totalDownPayment: "Total Down Payment",
       totalRemainingBalance: "Total Remaining Balance",
       totalOrderAmount: "Total Order Amount",
-      totalOrders: "Total Orders",
       paymentInformation: "Payment Information",
       lydExchangeRate: "LYD Exchange Rate*",
       fullNameRequired: "Full Name*",
@@ -226,7 +225,6 @@ const resources = {
       editOrderTitle: "Edit Order",
       orderId: "Order ID:",
       customerLabel: "Customer:",
-      totalAmountLabel: "Total Amount:",
       created: "Created:",
       selectStatus: "Select status",
       orderNotesLabel: "Order Notes",
@@ -685,7 +683,6 @@ const resources = {
       taskUpdatedSuccess: "Task updated successfully",
       failedUpdateTask: "Failed to update task",
       statusPending: "Pending",
-      statusCompleted: "Completed",
       statusToCollect: "To Collect",
       
       // Task Assignment
@@ -891,7 +888,6 @@ const resources = {
       totalDownPayment: "إجمالي الدفعة المقدمة",
       totalRemainingBalance: "إجمالي الرصيد المتبقي",
       totalOrderAmount: "إجمالي مبلغ الطلب",
-      totalOrders: "إجمالي الطلبات",
       paymentInformation: "معلومات الدفع",
       lydExchangeRate: "سعر صرف الدينار الليبي*",
       fullNameRequired: "الاسم الكامل*",
@@ -960,7 +956,6 @@ const resources = {
       editOrderTitle: "تعديل الطلب",
       orderId: "معرف الطلب:",
       customerLabel: "العميل:",
-      totalAmountLabel: "المبلغ الإجمالي:",
       created: "تم الإنشاء:",
       selectStatus: "اختر الحالة",
       orderNotesLabel: "ملاحظات الطلب",
@@ -1419,7 +1414,6 @@ const resources = {
       taskUpdatedSuccess: "تم تحديث المهمة بنجاح",
       failedUpdateTask: "فشل تحديث المهمة",
       statusPending: "معلقة",
-      statusCompleted: "مكتملة",
       statusToCollect: "للتحصيل",
       
       // Task Assignment

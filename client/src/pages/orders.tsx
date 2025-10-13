@@ -43,8 +43,8 @@ export default function Orders() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const translateStatus = (status: string) => {
-    const statusLower = status.toLowerCase().replace(/\s+/g, '');
-    switch (statusLower) {
+    const statusNormalized = status.toLowerCase().replace(/[\s_-]+/g, '');
+    switch (statusNormalized) {
       case 'delivered':
         return t('statusDelivered');
       case 'completed':
@@ -58,7 +58,7 @@ export default function Orders() {
       case 'withshippingcompany':
         return t('statusWithShippingCompany');
       default:
-        return status.charAt(0).toUpperCase() + status.slice(1);
+        return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
     }
   };
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);

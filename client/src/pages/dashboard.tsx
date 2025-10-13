@@ -21,8 +21,8 @@ export default function Dashboard() {
   });
 
   const translateStatus = (status: string) => {
-    const statusLower = status.toLowerCase().replace(/\s+/g, '');
-    switch (statusLower) {
+    const statusNormalized = status.toLowerCase().replace(/[\s_-]+/g, '');
+    switch (statusNormalized) {
       case 'delivered':
         return t('statusDelivered');
       case 'completed':
@@ -36,7 +36,7 @@ export default function Dashboard() {
       case 'withshippingcompany':
         return t('statusWithShippingCompany');
       default:
-        return status;
+        return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
     }
   };
 
@@ -136,7 +136,7 @@ export default function Dashboard() {
                   </p>
                   <p className="text-xs text-green-600 flex items-center mt-1">
                     <CheckCircle className="w-3 h-3 mr-1" />
-                    {t('delivered')}
+                    {t('statusDelivered')}
                   </p>
                 </div>
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
