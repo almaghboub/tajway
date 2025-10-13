@@ -11,7 +11,8 @@ import { analyticsApi } from "@/lib/api";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/components/auth-provider";
 import type { OrderWithCustomer } from "@shared/schema";
-import { format } from "date-fns";
+import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, Legend } from "recharts";
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -83,6 +84,51 @@ export default function Dashboard() {
   const recentOrders = [...orders]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
+
+  // Calculate revenue trend for last 6 months
+  const revenueData = [];
+  for (let i = 5; i >= 0; i--) {
+    const monthDate = subMonths(new Date(), i);
+    const monthStart = startOfMonth(monthDate);
+    const monthEnd = endOfMonth(monthDate);
+    
+    const monthRevenue = orders
+      .filter(order => {
+        const orderDate = new Date(order.createdAt);
+        return isWithinInterval(orderDate, { start: monthStart, end: monthEnd });
+      })
+      .reduce((sum, order) => sum + parseFloat(order.totalAmount), 0);
+    
+    revenueData.push({
+      month: format(monthDate, 'MMM yyyy'),
+      revenue: parseFloat(monthRevenue.toFixed(2))
+    });
+  }
+
+  // Calculate order status distribution
+  const statusCounts: { [key: string]: number } = {};
+  orders.forEach(order => {
+    const status = order.status.toLowerCase();
+    const normalizedStatus = 
+      status === "delivered" || status === "completed" ? "Completed" :
+      status === "cancelled" ? "Cancelled" :
+      status === "pending" ? "Pending" :
+      status === "processing" ? "Processing" :
+      status === "shipped" ? "Shipped" :
+      status === "partially_arrived" ? "Partially Arrived" :
+      status === "ready_to_collect" ? "Ready to Collect" :
+      status === "with_shipping_company" ? "With Shipping" :
+      "Other";
+    
+    statusCounts[normalizedStatus] = (statusCounts[normalizedStatus] || 0) + 1;
+  });
+
+  const orderStatusData = Object.entries(statusCounts).map(([name, value]) => ({
+    name,
+    value
+  }));
+
+  const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#6366f1'];
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
@@ -225,12 +271,29 @@ export default function Dashboard() {
               <CardTitle>{t('revenueTrend')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
-                <div className="text-center">
-                  <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">{t('revenueTrend')}</p>
-                  <p className="text-xs text-muted-foreground">{t('chartPlaceholder')}</p>
-                </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={revenueData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="month" 
+                      tick={{ fontSize: 12 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip 
+                      formatter={(value) => `$${value}`}
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '6px'
+                      }}
+                    />
+                    <Bar dataKey="revenue" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
@@ -240,12 +303,32 @@ export default function Dashboard() {
               <CardTitle>{t('orderStatus')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
-                <div className="text-center">
-                  <PieChart className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">{t('orderStatus')}</p>
-                  <p className="text-xs text-muted-foreground">{t('chartPlaceholder')}</p>
-                </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={orderStatusData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {orderStatusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '6px'
+                      }}
+                    />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
