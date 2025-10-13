@@ -55,6 +55,13 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
   - All three sales report types (Profit Analysis, Commission Breakdown, Financial Summary) completely translated with Arabic table headers, metrics, and date formatting
   - Invoice and order details modals with locale-aware date formatting
   - Persistent dark mode functionality via ThemeProvider
+- **Mobile RTL (Arabic) Fixes (October 2025)**:
+  - Fixed dialog/modal positioning in RTL mode - changed from `translate-x-[-50%]` to `-translate-x-1/2` for proper Tailwind RTL support
+  - Added RTL-aware close button positioning in dialogs (`rtl:right-auto rtl:left-4`)
+  - Fixed text alignment in dialog headers with RTL support (`rtl:sm:text-right`)
+  - Added touch-action: none to dialog overlays to prevent mobile scroll issues
+  - Fixed Select component padding and checkmark positioning for RTL (`rtl:pl-2 rtl:pr-8`, `rtl:left-auto rtl:right-2`)
+  - Resolved freezing issues when using Arabic language with mobile zoom on touch devices
 
 # External Dependencies
 
