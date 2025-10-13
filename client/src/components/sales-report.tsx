@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 
 interface OrderSummary {
   id: string;
@@ -39,31 +40,32 @@ interface SalesReportProps {
 }
 
 export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
-  const currentDate = new Date().toLocaleDateString();
+  const { t, i18n } = useTranslation();
+  const currentDate = new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US');
   
   const getReportTitle = () => {
     switch (reportType) {
       case "profit":
-        return "Profit Analysis Report";
+        return t('profitAnalysisReport');
       case "commission":
-        return "Commission Breakdown Report";
+        return t('commissionBreakdownReport');
       case "financial":
-        return "Financial Summary Report";
+        return t('financialSummaryReport');
       default:
-        return "Sales Report";
+        return t('salesReportPreview');
     }
   };
 
   const getReportDescription = () => {
     switch (reportType) {
       case "profit":
-        return "Detailed profit analysis including order-wise profit margins and trends";
+        return t('profitAnalysisDescription');
       case "commission":
-        return "Country-wise commission breakdown and commission rate analysis";
+        return t('commissionBreakdownDescription');
       case "financial":
-        return "Comprehensive financial overview including revenue, costs, and profitability";
+        return t('financialSummaryDescription');
       default:
-        return "Sales performance report";
+        return "";
     }
   };
 
@@ -74,14 +76,14 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold text-blue-600 mb-2">LYNX LY</h1>
-            <p className="text-gray-600">Logistics Management System</p>
+            <p className="text-gray-600">{t('logisticsManagementSystem')}</p>
           </div>
           <div className="text-right">
             <h2 className="text-2xl font-bold mb-2">{getReportTitle()}</h2>
-            <p className="text-gray-600">Generated: {currentDate}</p>
+            <p className="text-gray-600">{t('generated')}: {currentDate}</p>
             {data.periodStart && data.periodEnd && (
               <p className="text-gray-600">
-                Period: {new Date(data.periodStart).toLocaleDateString()} - {new Date(data.periodEnd).toLocaleDateString()}
+                {t('period')}: {new Date(data.periodStart).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US')} - {new Date(data.periodEnd).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US')}
               </p>
             )}
           </div>
@@ -93,22 +95,22 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
 
       {/* Executive Summary */}
       <div className="mb-8">
-        <h3 className="text-lg font-semibold mb-4 text-blue-600">Executive Summary</h3>
+        <h3 className="text-lg font-semibold mb-4 text-blue-600">{t('executiveSummary')}</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div className="bg-blue-50 p-4 rounded">
-            <p className="text-sm text-gray-600 mb-1">Total Revenue</p>
+            <p className="text-sm text-gray-600 mb-1">{t('totalRevenue')}</p>
             <p className="text-2xl font-bold text-blue-600">${data.totalRevenue.toFixed(2)}</p>
           </div>
           <div className="bg-green-50 p-4 rounded">
-            <p className="text-sm text-gray-600 mb-1">Total Profit</p>
+            <p className="text-sm text-gray-600 mb-1">{t('totalProfit')}</p>
             <p className="text-2xl font-bold text-green-600">${data.totalProfit.toFixed(2)}</p>
           </div>
           <div className="bg-purple-50 p-4 rounded">
-            <p className="text-sm text-gray-600 mb-1">Profit Margin</p>
+            <p className="text-sm text-gray-600 mb-1">{t('profitMargin')}</p>
             <p className="text-2xl font-bold text-purple-600">{data.profitMargin.toFixed(1)}%</p>
           </div>
           <div className="bg-orange-50 p-4 rounded">
-            <p className="text-sm text-gray-600 mb-1">Total Orders</p>
+            <p className="text-sm text-gray-600 mb-1">{t('totalOrders')}</p>
             <p className="text-2xl font-bold text-orange-600">{data.orderCount}</p>
           </div>
         </div>
@@ -117,18 +119,18 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
       {/* Report Content Based on Type */}
       {reportType === "profit" && data.orders && (
         <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-blue-600">Order-wise Profit Analysis</h3>
+          <h3 className="text-lg font-semibold mb-4 text-blue-600">{t('orderWiseProfitAnalysisTable')}</h3>
           <table className="w-full border-collapse border border-gray-300">
             <thead>
               <tr className="bg-blue-50">
-                <th className="border border-gray-300 px-4 py-2 text-left">Customer Code</th>
-                <th className="border border-gray-300 px-4 py-2 text-left">Customer</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">Revenue</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">Items Profit</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">Shipping Profit</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">Total Profit</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">Margin</th>
-                <th className="border border-gray-300 px-4 py-2 text-center">Date</th>
+                <th className="border border-gray-300 px-4 py-2 text-left">{t('customerCode')}</th>
+                <th className="border border-gray-300 px-4 py-2 text-left">{t('customer')}</th>
+                <th className="border border-gray-300 px-4 py-2 text-right">{t('revenue')}</th>
+                <th className="border border-gray-300 px-4 py-2 text-right">{t('itemsProfit')}</th>
+                <th className="border border-gray-300 px-4 py-2 text-right">{t('shippingProfit')}</th>
+                <th className="border border-gray-300 px-4 py-2 text-right">{t('totalProfit')}</th>
+                <th className="border border-gray-300 px-4 py-2 text-right">{t('margin')}</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">{t('date')}</th>
               </tr>
             </thead>
             <tbody>
@@ -144,7 +146,7 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
                     <td className="border border-gray-300 px-4 py-2 text-right">${parseFloat(order.shippingProfit || "0").toFixed(2)}</td>
                     <td className="border border-gray-300 px-4 py-2 text-right">${parseFloat(order.profit).toFixed(2)}</td>
                     <td className="border border-gray-300 px-4 py-2 text-right">{margin.toFixed(1)}%</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{new Date(order.createdAt).toLocaleDateString()}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">{new Date(order.createdAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US')}</td>
                   </tr>
                 );
               })}
@@ -155,15 +157,15 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
 
       {reportType === "commission" && data.countryBreakdown && (
         <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-blue-600">Country-wise Commission Analysis</h3>
+          <h3 className="text-lg font-semibold mb-4 text-blue-600">{t('countryWiseCommissionAnalysis')}</h3>
           <table className="w-full border-collapse border border-gray-300">
             <thead>
               <tr className="bg-blue-50">
-                <th className="border border-gray-300 px-4 py-2 text-left">Country</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">Revenue</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">Commission Rate</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">Commission Amount</th>
-                <th className="border border-gray-300 px-4 py-2 text-center">Orders</th>
+                <th className="border border-gray-300 px-4 py-2 text-left">{t('country')}</th>
+                <th className="border border-gray-300 px-4 py-2 text-right">{t('revenue')}</th>
+                <th className="border border-gray-300 px-4 py-2 text-right">{t('commissionRate')}</th>
+                <th className="border border-gray-300 px-4 py-2 text-right">{t('commissionAmount')}</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">{t('orders')}</th>
               </tr>
             </thead>
             <tbody>
@@ -183,38 +185,38 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
 
       {reportType === "financial" && (
         <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-blue-600">Financial Performance Metrics</h3>
+          <h3 className="text-lg font-semibold mb-4 text-blue-600">{t('financialPerformanceMetrics')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-gray-50 p-4 rounded">
-              <h4 className="font-medium mb-3">Revenue Analysis</h4>
+              <h4 className="font-medium mb-3">{t('revenueAnalysis')}</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span>Gross Revenue:</span>
+                  <span>{t('grossRevenue')}:</span>
                   <span className="font-medium">${data.totalRevenue.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Total Commission:</span>
+                  <span>{t('totalCommission')}:</span>
                   <span className="font-medium">${data.totalCommission.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between border-t pt-2">
-                  <span>Net Profit:</span>
+                  <span>{t('netProfit')}:</span>
                   <span className="font-bold text-green-600">${data.totalProfit.toFixed(2)}</span>
                 </div>
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded">
-              <h4 className="font-medium mb-3">Performance Indicators</h4>
+              <h4 className="font-medium mb-3">{t('performanceIndicators')}</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span>Profit Margin:</span>
+                  <span>{t('profitMargin')}:</span>
                   <span className="font-medium">{data.profitMargin.toFixed(1)}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Average Order Value:</span>
+                  <span>{t('averageOrderValue')}:</span>
                   <span className="font-medium">${(data.totalRevenue / data.orderCount).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Average Profit per Order:</span>
+                  <span>{t('averageProfitPerOrder')}:</span>
                   <span className="font-medium">${(data.totalProfit / data.orderCount).toFixed(2)}</span>
                 </div>
               </div>
@@ -225,9 +227,9 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
 
       {/* Report Footer */}
       <div className="border-t border-gray-300 pt-8 mt-8 text-center text-gray-600">
-        <p>Generated by LYNX LY Logistics Management System</p>
-        <p className="text-sm mt-2">This report contains confidential business information</p>
-        <p className="text-xs mt-1">Report Date: {currentDate}</p>
+        <p>{t('generatedByLynx')}</p>
+        <p className="text-sm mt-2">{t('reportConfidential')}</p>
+        <p className="text-xs mt-1">{t('reportDate')}: {currentDate}</p>
       </div>
 
       {/* Print Styles */}
