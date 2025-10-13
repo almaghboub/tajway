@@ -1816,7 +1816,7 @@ export default function Orders() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="edit-shipping-country">Shipping Country</Label>
+                      <Label htmlFor="edit-shipping-country">{t('shippingCountry')}</Label>
                       <Select 
                         value={editingOrder.shippingCountry || ""} 
                         onValueChange={async (value) => {
@@ -1886,7 +1886,7 @@ export default function Orders() {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="edit-shipping-category">Shipping Category</Label>
+                      <Label htmlFor="edit-shipping-category">{t('shippingCategory')}</Label>
                       <Select 
                         value={editingOrder.shippingCategory || ""} 
                         onValueChange={async (value) => {

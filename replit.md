@@ -50,6 +50,11 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
 - Enhanced visibility of customer codes in invoices and order/customer tables.
 - Simplified customer editing and product code workflows for faster data entry.
 - Flexible order creation allowing orders without prior shipping calculation.
+- **Complete Arabic Translation Coverage (October 2025)**:
+  - All edit order modal fields now fully translated (Original Price → السعر الأصلي, Discounted Price → السعر المخفض, Shipping Country → دولة الشحن, Shipping Category → فئة الشحن)
+  - All three sales report types (Profit Analysis, Commission Breakdown, Financial Summary) completely translated with Arabic table headers, metrics, and date formatting
+  - Invoice and order details modals with locale-aware date formatting
+  - Persistent dark mode functionality via ThemeProvider
 
 # External Dependencies
 
