@@ -80,7 +80,7 @@ export default function Customers() {
     mutationFn: async (customerData: InsertCustomer) => {
       const response = await apiRequest("POST", "/api/customers", customerData);
       if (!response.ok) {
-        throw new Error("Failed to create customer");
+        throw new Error(t("failedCreateCustomer"));
       }
       return response.json();
     },
@@ -117,7 +117,7 @@ export default function Customers() {
       const response = await apiRequest("PUT", `/api/customers/${id}`, customerData);
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to update customer");
+        throw new Error(error.message || t("failedUpdateCustomer"));
       }
       return response.json();
     },
@@ -154,7 +154,7 @@ export default function Customers() {
     mutationFn: async (id: string) => {
       const response = await apiRequest("DELETE", `/api/customers/${id}`);
       if (!response.ok) {
-        throw new Error("Failed to delete customer");
+        throw new Error(t("failedDeleteCustomer"));
       }
       return response.json();
     },
@@ -192,21 +192,21 @@ export default function Customers() {
       });
       
       if (!response.ok) {
-        throw new Error("Failed to update customer");
+        throw new Error(t("failedUpdateCustomer"));
       }
       
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       toast({
         title: t("success"),
-        description: "Customer and payment information updated successfully",
+        description: t("customerPaymentUpdatedSuccess"),
       });
       setIsEditModalOpen(false);
       setEditingCustomer(null);
     } catch (error) {
       toast({
         title: t("error"),
-        description: "Failed to update customer",
+        description: t("failedUpdateCustomer"),
         variant: "destructive",
       });
     }
@@ -534,7 +534,7 @@ export default function Customers() {
                     const lastName = nameParts.slice(1).join(" ") || "";
                     setFormData(prev => ({ ...prev, firstName, lastName }));
                   }}
-                  placeholder="Enter full name"
+                  placeholder={t('enterFullName')}
                   required
                   data-testid="input-full-name"
                 />
@@ -546,7 +546,7 @@ export default function Customers() {
                   id="phone"
                   value={formData.phone || ""}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="Enter phone number"
+                  placeholder={t('enterPhoneNumber')}
                   required
                   data-testid="input-phone"
                 />
@@ -558,7 +558,7 @@ export default function Customers() {
                   id="city"
                   value={formData.city || ""}
                   onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                  placeholder="Enter city"
+                  placeholder={t('enterCity')}
                   required
                   data-testid="input-city"
                 />

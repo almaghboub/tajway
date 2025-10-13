@@ -118,7 +118,7 @@ export default function Orders() {
     mutationFn: async (orderData: { order: InsertOrder; items: InsertOrderItem[]; images?: OrderImage[] }) => {
       const response = await apiRequest("POST", "/api/orders", orderData);
       if (!response.ok) {
-        throw new Error("Failed to create order");
+        throw new Error(t('failedCreateOrder'));
       }
       return response.json();
     },
@@ -158,7 +158,7 @@ export default function Orders() {
       const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to update order");
+        throw new Error(error.message || t('failedUpdateOrder'));
       }
       return response.json();
     },
@@ -187,7 +187,7 @@ export default function Orders() {
     mutationFn: async (id: string) => {
       const response = await apiRequest("DELETE", `/api/orders/${id}`);
       if (!response.ok) {
-        throw new Error("Failed to delete order");
+        throw new Error(t('failedDeleteOrder'));
       }
       return response.json();
     },
@@ -214,7 +214,7 @@ export default function Orders() {
     mutationFn: async ({ id, ...data }: { id: string; quantity?: number; originalPrice?: string; discountedPrice?: string; unitPrice?: string; productCode?: string }) => {
       const response = await apiRequest("PUT", `/api/order-items/${id}`, data);
       if (!response.ok) {
-        throw new Error("Failed to update order item");
+        throw new Error(t('failedUpdateOrderItem'));
       }
       return response.json();
     },
@@ -375,7 +375,7 @@ export default function Orders() {
     } catch (error) {
       toast({
         title: t('error'),
-        description: "Failed to update order items",
+        description: t('failedUpdateOrderItems'),
         variant: "destructive",
       });
     }
@@ -1068,7 +1068,7 @@ export default function Orders() {
                       id="customerSearch"
                       value={customerSearchQuery}
                       onChange={(e) => setCustomerSearchQuery(e.target.value)}
-                      placeholder="Enter phone, name, or customer code"
+                      placeholder={t('enterPhoneNameCode')}
                       data-testid="input-customer-search"
                       onKeyPress={(e) => e.key === 'Enter' && handleCustomerSearch()}
                     />
@@ -1139,7 +1139,7 @@ export default function Orders() {
                           value={newCustomer.fullName}
                           onChange={(e) => setNewCustomer({...newCustomer, fullName: e.target.value})}
                           required
-                          placeholder="Enter full name"
+                          placeholder={t('enterFullName')}
                           data-testid="input-full-name"
                         />
                       </div>
@@ -1150,7 +1150,7 @@ export default function Orders() {
                           value={newCustomer.city}
                           onChange={(e) => setNewCustomer({...newCustomer, city: e.target.value})}
                           required
-                          placeholder="Enter city"
+                          placeholder={t('enterCity')}
                           data-testid="input-city"
                         />
                       </div>
@@ -1161,7 +1161,7 @@ export default function Orders() {
                       disabled={createCustomerMutation.isPending || !newCustomer.fullName || !newCustomer.city}
                       data-testid="button-create-customer"
                     >
-                      {createCustomerMutation.isPending ? "Creating..." : "Create Customer"}
+                      {createCustomerMutation.isPending ? t('creating') : t('createCustomer')}
                     </Button>
                   </div>
                 )}
@@ -1225,7 +1225,7 @@ export default function Orders() {
                                 id={`product-name-${index}`}
                                 value={item.productName}
                                 onChange={(e) => updateOrderItem(index, "productName", e.target.value)}
-                                placeholder="Enter shipping code"
+                                placeholder={t('enterShippingCode')}
                                 required
                                 data-testid={`input-product-name-${index}`}
                               />
@@ -1453,7 +1453,7 @@ export default function Orders() {
                     min="0"
                     value={lydExchangeRate || ""}
                     onChange={(e) => setLydExchangeRate(parseFloat(e.target.value) || 0)}
-                    placeholder="Enter LYD exchange rate"
+                    placeholder={t('enterLydRate')}
                     required
                     data-testid="input-lyd-exchange-rate"
                   />
@@ -1784,7 +1784,7 @@ export default function Orders() {
                                 });
                                 
                                 toast({
-                                  title: "Shipping Recalculated",
+                                  title: t('shippingRecalculated'),
                                   description: `Weight: ${newWeight}kg, Shipping: $${newShippingCost.toFixed(2)}, Total: $${newTotal.toFixed(2)}`,
                                 });
                               }
@@ -1847,7 +1847,7 @@ export default function Orders() {
                                 });
                                 
                                 toast({
-                                  title: "Shipping Recalculated",
+                                  title: t('shippingRecalculated'),
                                   description: `Shipping: $${newShippingCost.toFixed(2)}, Total: $${newTotal.toFixed(2)}`,
                                 });
                               }
@@ -1858,7 +1858,7 @@ export default function Orders() {
                         }}
                       >
                         <SelectTrigger id="edit-shipping-country" data-testid="select-edit-shipping-country">
-                          <SelectValue placeholder="Select country" />
+                          <SelectValue placeholder={t('selectCountry')} />
                         </SelectTrigger>
                         <SelectContent>
                           {shippingCountries.map((country) => (
@@ -1918,7 +1918,7 @@ export default function Orders() {
                                 });
                                 
                                 toast({
-                                  title: "Shipping Recalculated",
+                                  title: t('shippingRecalculated'),
                                   description: `Shipping: $${newShippingCost.toFixed(2)}, Total: $${newTotal.toFixed(2)}`,
                                 });
                               }
@@ -1929,7 +1929,7 @@ export default function Orders() {
                         }}
                       >
                         <SelectTrigger id="edit-shipping-category" data-testid="select-edit-shipping-category">
-                          <SelectValue placeholder="Select category" />
+                          <SelectValue placeholder={t('selectCategory')} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="normal">Normal</SelectItem>

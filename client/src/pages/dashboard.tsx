@@ -46,17 +46,21 @@ export default function Dashboard() {
     })
     .reduce((sum, order) => sum + parseFloat(order.totalAmount), 0);
 
-  // Get completed and active orders count
-  const completedOrders = orders.filter(order => 
-    order.status === "Delivered" || order.status === "Completed"
-  ).length;
+  // Get completed and active orders count (case-insensitive)
+  const completedOrders = orders.filter(order => {
+    const status = order.status.toLowerCase();
+    return status === "delivered" || status === "completed";
+  }).length;
 
-  const activeOrdersCount = orders.filter(order => 
-    order.status !== "Delivered" && order.status !== "Completed" && order.status !== "Cancelled"
-  ).length;
+  const activeOrdersCount = orders.filter(order => {
+    const status = order.status.toLowerCase();
+    return status !== "delivered" && status !== "completed" && status !== "cancelled";
+  }).length;
 
-  // Get recent orders (last 5)
-  const recentOrders = orders.slice(0, 5);
+  // Get recent orders (last 5, sorted by date)
+  const recentOrders = [...orders]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5);
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
