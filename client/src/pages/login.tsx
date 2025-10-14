@@ -70,7 +70,7 @@ export default function Login() {
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img src={logoPath} alt="TajWay Logo" className="h-24 w-auto" style={{ objectFit: 'cover', objectPosition: 'top', maxHeight: '96px', clipPath: 'inset(0 0 50% 0)' }} />
+            <img src={logoPath} alt="TajWay Logo" className="h-20 w-auto" style={{ objectFit: 'cover', objectPosition: 'top', maxHeight: '80px', clipPath: 'inset(0 0 50% 0)' }} />
           </div>
           <CardTitle className="text-2xl font-bold">TajWay</CardTitle>
           <p className="text-muted-foreground">{t('logisticsManagementSystem')}</p>

@@ -55,7 +55,7 @@ export function Sidebar() {
       {/* Logo and branding */}
       <div className="p-6 border-b border-border">
         <div className="flex items-center justify-center">
-          <img src={logoPath} alt="TajWay Logo" className="h-16 w-auto" style={{ objectFit: 'cover', objectPosition: 'top', maxHeight: '64px', clipPath: 'inset(0 0 50% 0)' }} />
+          <img src={logoPath} alt="TajWay Logo" className="h-24 w-auto" style={{ objectFit: 'cover', objectPosition: 'top', maxHeight: '96px', clipPath: 'inset(0 0 50% 0)' }} />
         </div>
       </div>
 
