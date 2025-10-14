@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/components/auth-provider";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import logoPath from "@assets/tajway_logo[1]_1760402240997.pdf";
+import logoPath from "@assets/tajway_logo_1_-removebg-preview_1760403020566.png";
 
 const navigationItems = [
   { key: "dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"] },
@@ -55,11 +55,7 @@ export function Sidebar() {
       {/* Logo and branding */}
       <div className="p-6 border-b border-border">
         <div className="flex items-center justify-center">
-          <object data={logoPath} type="application/pdf" className="h-16 w-auto">
-            <div className="h-16 w-32 flex items-center justify-center bg-primary/10 rounded">
-              <span className="text-2xl font-bold text-primary">TajWay</span>
-            </div>
-          </object>
+          <img src={logoPath} alt="TajWay Logo" className="h-16 w-auto" style={{ objectFit: 'cover', objectPosition: 'top', maxHeight: '64px', clipPath: 'inset(0 0 50% 0)' }} />
         </div>
       </div>
 

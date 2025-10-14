@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth-provider";
 import { apiRequest } from "@/lib/queryClient";
 import { loginSchema, type LoginCredentials } from "@shared/schema";
-import logoPath from "@assets/tajway_logo[1]_1760402240997.pdf";
+import logoPath from "@assets/tajway_logo_1_-removebg-preview_1760403020566.png";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -70,11 +70,7 @@ export default function Login() {
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <object data={logoPath} type="application/pdf" className="h-24 w-auto">
-              <div className="h-24 w-48 flex items-center justify-center bg-primary/10 rounded-lg border-2 border-primary">
-                <span className="text-4xl font-bold text-primary">TajWay</span>
-              </div>
-            </object>
+            <img src={logoPath} alt="TajWay Logo" className="h-24 w-auto" style={{ objectFit: 'cover', objectPosition: 'top', maxHeight: '96px', clipPath: 'inset(0 0 50% 0)' }} />
           </div>
           <CardTitle className="text-2xl font-bold">TajWay</CardTitle>
           <p className="text-muted-foreground">{t('logisticsManagementSystem')}</p>

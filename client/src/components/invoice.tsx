@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import logoPath from "@assets/tajway_logo[1]_1760402240997.pdf";
+import logoPath from "@assets/tajway_logo_1_-removebg-preview_1760403020566.png";
 
 interface OrderWithItems {
   id: string;
@@ -157,11 +157,7 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
       <div className="mb-8 border-b-4 pb-6" style={{ borderColor: '#b8860b' }}>
         <div className="flex justify-between items-start">
           <div className="flex items-center space-x-4">
-            <object data={logoPath} type="application/pdf" className="h-20 w-auto">
-              <div className="h-20 w-40 flex items-center justify-center rounded border-2" style={{ backgroundColor: '#fef3c7', borderColor: '#b8860b' }}>
-                <span className="text-3xl font-bold" style={{ color: '#b8860b' }}>TajWay</span>
-              </div>
-            </object>
+            <img src={logoPath} alt="TajWay Logo" className="h-20 w-auto" style={{ objectFit: 'cover', objectPosition: 'top', maxHeight: '80px', clipPath: 'inset(0 0 50% 0)' }} />
           </div>
           <div className="text-right">
             <h2 className="text-3xl font-bold mb-2" style={{ color: '#b8860b' }}>{t('invoice')}</h2>
