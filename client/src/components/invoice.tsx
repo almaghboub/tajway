@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import logoPath from "@assets/lynx-logo.png";
+import logoPath from "@assets/tajway_logo[1]_1760402240997.pdf";
 
 interface OrderWithItems {
   id: string;
@@ -154,13 +154,17 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
   return (
     <div className="invoice-container max-w-4xl mx-auto p-8 bg-white text-black">
       {/* Invoice Header with Logo and Company Info */}
-      <div className="mb-8 border-b-4 border-red-700 pb-6">
+      <div className="mb-8 border-b-4 border-teal-600 pb-6">
         <div className="flex justify-between items-start">
           <div className="flex items-center space-x-4">
-            <img src={logoPath} alt="Lynx Logo" className="h-20 w-auto" />
+            <object data={logoPath} type="application/pdf" className="h-20 w-auto">
+              <div className="h-20 w-40 flex items-center justify-center bg-teal-50 rounded border-2 border-teal-600">
+                <span className="text-3xl font-bold text-teal-600">TajWay</span>
+              </div>
+            </object>
           </div>
           <div className="text-right">
-            <h2 className="text-3xl font-bold text-red-700 mb-2">{t('invoice')}</h2>
+            <h2 className="text-3xl font-bold text-teal-600 mb-2">{t('invoice')}</h2>
             <div className="text-sm space-y-1">
               <p className="font-semibold">{t('invoiceNumber')}: {order.orderNumber}</p>
               <p>{t('date')}: {new Date(order.createdAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', { 
@@ -168,7 +172,7 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
                 month: 'long', 
                 day: 'numeric' 
               })}</p>
-              <p className="text-gray-600">{t('status')}: <span className="capitalize font-semibold text-red-700">{t(order.status)}</span></p>
+              <p className="text-gray-600">{t('status')}: <span className="capitalize font-semibold text-teal-600">{t(order.status)}</span></p>
             </div>
           </div>
         </div>
@@ -178,19 +182,19 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
       <div className="grid grid-cols-2 gap-8 mb-8">
         {/* From Section */}
         <div>
-          <h3 className="text-sm font-bold text-red-700 mb-3 uppercase tracking-wide">{t('from')}:</h3>
+          <h3 className="text-sm font-bold text-teal-600 mb-3 uppercase tracking-wide">{t('from')}:</h3>
           <div className="space-y-1">
-            <p className="font-bold text-lg">Lynx</p>
+            <p className="font-bold text-lg">TajWay</p>
             <p className="text-sm">{t('companyTagline')}</p>
           </div>
         </div>
 
         {/* Bill To Section */}
         <div>
-          <h3 className="text-sm font-bold text-red-700 mb-3 uppercase tracking-wide">{t('billTo')}:</h3>
+          <h3 className="text-sm font-bold text-teal-600 mb-3 uppercase tracking-wide">{t('billTo')}:</h3>
           <div className="bg-gray-50 p-4 rounded-lg space-y-1">
             <p className="font-bold">{order.customer.firstName} {order.customer.lastName}</p>
-            {order.customer.shippingCode && <p className="text-sm font-semibold text-red-700">Code: {order.customer.shippingCode}</p>}
+            {order.customer.shippingCode && <p className="text-sm font-semibold text-teal-600">Code: {order.customer.shippingCode}</p>}
             {order.customer.email && <p className="text-sm">{order.customer.email}</p>}
             {order.customer.phone && <p className="text-sm">{order.customer.phone}</p>}
             {order.customer.address && (
@@ -208,11 +212,11 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
 
       {/* Order Items Table */}
       <div className="mb-8">
-        <h3 className="text-sm font-bold text-red-700 mb-3 uppercase tracking-wide">{t('shipmentDetails')}:</h3>
+        <h3 className="text-sm font-bold text-teal-600 mb-3 uppercase tracking-wide">{t('shipmentDetails')}:</h3>
         <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="bg-red-700 text-white">
+              <tr className="bg-teal-600 text-white">
                 <th className="px-4 py-3 text-left font-semibold">{t('productDescription')}</th>
                 <th className="px-4 py-3 text-center font-semibold">{t('qty')}</th>
                 <th className="px-4 py-3 text-right font-semibold">{t('unitPrice')}</th>
@@ -257,8 +261,8 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
             </div>
             <div className="border-t-2 border-gray-300 pt-3 mt-3">
               <div className="flex justify-between items-center">
-                <span className="text-lg font-bold text-red-700">{t('total')}:</span>
-                <span className="text-2xl font-bold text-red-700">${total.toFixed(2)}</span>
+                <span className="text-lg font-bold text-teal-600">{t('total')}:</span>
+                <span className="text-2xl font-bold text-teal-600">${total.toFixed(2)}</span>
               </div>
             </div>
             <div className="border-t-2 border-gray-300 pt-3 mt-3">
@@ -308,7 +312,7 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
       {/* Footer */}
       <div className="border-t-2 border-gray-200 pt-6 mt-8">
         <div className="text-center space-y-2">
-          <p className="text-sm font-semibold text-red-700">{t('thankYou')}</p>
+          <p className="text-sm font-semibold text-teal-600">{t('thankYou')}</p>
           <p className="text-xs text-gray-600">{t('companyTagline')}</p>
           <p className="text-xs text-gray-500 mt-4">{t('autoGenerated')}</p>
         </div>
@@ -346,22 +350,22 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
               print-color-adjust: exact;
             }
             
-            .bg-red-700 {
-              background: #b91c1c !important;
+            .bg-teal-600 {
+              background: #0d9488 !important;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
             }
             
-            .text-red-700 {
-              color: #b91c1c !important;
+            .text-teal-600 {
+              color: #0d9488 !important;
             }
             
             .text-white {
               color: white !important;
             }
             
-            .border-red-700 {
-              border-color: #b91c1c !important;
+            .border-teal-600 {
+              border-color: #0d9488 !important;
             }
             
             .border-blue-500 {

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/components/auth-provider";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import logoPath from "@assets/lynx-logo.png";
+import logoPath from "@assets/tajway_logo[1]_1760402240997.pdf";
 
 const navigationItems = [
   { key: "dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"] },
@@ -55,7 +55,11 @@ export function Sidebar() {
       {/* Logo and branding */}
       <div className="p-6 border-b border-border">
         <div className="flex items-center justify-center">
-          <img src={logoPath} alt="Lynx Logo" className="h-16 w-auto" />
+          <object data={logoPath} type="application/pdf" className="h-16 w-auto">
+            <div className="h-16 w-32 flex items-center justify-center bg-primary/10 rounded">
+              <span className="text-2xl font-bold text-primary">TajWay</span>
+            </div>
+          </object>
         </div>
       </div>
 

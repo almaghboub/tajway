@@ -74,7 +74,7 @@ export default function Login() {
               <Truck className="w-8 h-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">LYNX LY</CardTitle>
+          <CardTitle className="text-2xl font-bold">TajWay</CardTitle>
           <p className="text-muted-foreground">{t('logisticsManagementSystem')}</p>
         </CardHeader>
         <CardContent>
