@@ -13,6 +13,13 @@ export function Header({ title, description }: HeaderProps) {
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'ar' : 'en';
     i18n.changeLanguage(newLang);
+    
+    // Manually save to localStorage since we removed LanguageDetector
+    try {
+      localStorage.setItem('i18nextLng', newLang);
+    } catch (error) {
+      console.warn('Failed to save language preference');
+    }
   };
 
   return (

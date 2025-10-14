@@ -752,6 +752,14 @@ export default function Settings() {
 
   const handleLanguageChange = (language: string) => {
     i18n.changeLanguage(language);
+    
+    // Manually save to localStorage since we removed LanguageDetector
+    try {
+      localStorage.setItem('i18nextLng', language);
+    } catch (error) {
+      console.warn('Failed to save language preference');
+    }
+    
     toast({
       title: t('languageUpdated'),
       description: language === 'en' ? t('languageChangedToEnglish') : t('languageChangedToArabic'),

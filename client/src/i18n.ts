@@ -1631,20 +1631,16 @@ const resources = {
   }
 };
 
+// Do NOT use LanguageDetector - it causes iOS Safari freeze when system language is Arabic
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'en', // Force English as initial language to prevent iOS Safari RTL initialization bug
+    lng: 'en', // Always start with English - we'll manually switch based on localStorage
     fallbackLng: 'en',
     debug: false,
     interpolation: {
       escapeValue: false,
-    },
-    detection: {
-      order: ['localStorage'], // Only use localStorage, ignore system/navigator language
-      caches: ['localStorage'],
     },
     react: {
       useSuspense: false,
