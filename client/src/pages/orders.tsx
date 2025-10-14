@@ -1163,6 +1163,17 @@ export default function Orders() {
                         />
                       </div>
                       <div>
+                        <Label htmlFor="phone">Phone*</Label>
+                        <Input
+                          id="phone"
+                          value={newCustomer.phone}
+                          onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
+                          required
+                          placeholder={t('enterPhone')}
+                          data-testid="input-phone"
+                        />
+                      </div>
+                      <div>
                         <Label htmlFor="city">City*</Label>
                         <Input
                           id="city"
@@ -1177,7 +1188,7 @@ export default function Orders() {
                     <Button
                       type="button"
                       onClick={handleCreateCustomer}
-                      disabled={createCustomerMutation.isPending || !newCustomer.fullName || !newCustomer.city}
+                      disabled={createCustomerMutation.isPending || !newCustomer.fullName || !newCustomer.city || !newCustomer.phone}
                       data-testid="button-create-customer"
                     >
                       {createCustomerMutation.isPending ? t('creating') : t('createCustomer')}
@@ -1680,6 +1691,17 @@ export default function Orders() {
                         />
                       </div>
                       <div>
+                        <Label htmlFor="phone">Phone*</Label>
+                        <Input
+                          id="phone"
+                          value={newCustomer.phone}
+                          onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
+                          required
+                          placeholder={t('enterPhone')}
+                          data-testid="input-phone"
+                        />
+                      </div>
+                      <div>
                         <Label htmlFor="city">City*</Label>
                         <Input
                           id="city"
@@ -1694,7 +1716,7 @@ export default function Orders() {
                     <Button
                       type="button"
                       onClick={handleCreateCustomer}
-                      disabled={createCustomerMutation.isPending || !newCustomer.fullName || !newCustomer.city}
+                      disabled={createCustomerMutation.isPending || !newCustomer.fullName || !newCustomer.city || !newCustomer.phone}
                       data-testid="button-create-customer"
                     >
                       {createCustomerMutation.isPending ? t('creating') : t('createCustomer')}
