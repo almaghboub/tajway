@@ -414,6 +414,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Invalid order items data", errors: invalidItems });
         }
 
+        // Auto-generate shipping code for customer if they don't have one
+        const customer = await storage.getCustomer(orderResult.data.customerId);
+        if (customer && !customer.shippingCode) {
+          // Generate unique shipping code: TW + timestamp + random 4 digits
+          const timestamp = Date.now().toString().slice(-6);
+          const random = Math.floor(1000 + Math.random() * 9000);
+          const shippingCode = `TW${timestamp}${random}`;
+          
+          await storage.updateCustomer(customer.id, { shippingCode });
+        }
+
         // Create order first
         const order = await storage.createOrder(orderResult.data);
         
@@ -450,6 +461,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const result = insertOrderSchema.safeParse(req.body);
         if (!result.success) {
           return res.status(400).json({ message: "Invalid order data", errors: result.error.errors });
+        }
+
+        // Auto-generate shipping code for customer if they don't have one
+        const customer = await storage.getCustomer(result.data.customerId);
+        if (customer && !customer.shippingCode) {
+          // Generate unique shipping code: TW + timestamp + random 4 digits
+          const timestamp = Date.now().toString().slice(-6);
+          const random = Math.floor(1000 + Math.random() * 9000);
+          const shippingCode = `TW${timestamp}${random}`;
+          
+          await storage.updateCustomer(customer.id, { shippingCode });
         }
 
         const order = await storage.createOrder(result.data);
