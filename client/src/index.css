@@ -129,6 +129,7 @@
     align-items: center !important;
     justify-content: center !important;
     padding: 16px !important;
+    pointer-events: auto !important;
   }
   
   [data-radix-dialog-content] {
@@ -136,9 +137,24 @@
     z-index: 9999 !important;
     width: 90% !important;
     max-width: 500px !important;
+    min-height: 200px !important;
     max-height: 85vh !important;
     overflow-y: auto !important;
     margin: 0 auto !important;
+    pointer-events: auto !important;
+    touch-action: auto !important;
+    background: white !important;
+  }
+  
+  .dark [data-radix-dialog-content] {
+    background: hsl(228 9.8039% 10%) !important;
+  }
+  
+  /* Fix for mobile RTL touch issues */
+  [dir="rtl"] [data-radix-dialog-overlay],
+  [dir="rtl"] [data-radix-dialog-content] {
+    pointer-events: auto !important;
+    touch-action: auto !important;
   }
   
   /* Prevent body scroll lock issues on mobile */
