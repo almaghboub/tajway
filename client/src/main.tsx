@@ -20,10 +20,18 @@ function DirectionHandler() {
     requestAnimationFrame(() => {
       setIsReady(true);
       
-      // Now apply the actual language direction
-      const savedLanguage = localStorage.getItem('i18nextLng');
-      if (savedLanguage && savedLanguage.startsWith('ar')) {
-        i18nInstance.changeLanguage('ar');
+      // Now apply the actual language direction (with Safari private mode safety)
+      try {
+        const savedLanguage = localStorage.getItem('i18nextLng');
+        if (savedLanguage && savedLanguage.startsWith('ar')) {
+          i18nInstance.changeLanguage('ar').catch(() => {
+            // Fallback to English if language change fails
+            console.warn('Failed to change language, staying in English');
+          });
+        }
+      } catch (error) {
+        // Safari private mode or localStorage access denied - stay in English
+        console.warn('localStorage access denied, defaulting to English');
       }
     });
   }, [i18nInstance]);

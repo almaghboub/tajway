@@ -61,7 +61,14 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
   - Fixed text alignment in dialog headers with RTL support (`rtl:sm:text-right`)
   - Added touch-action: none to dialog overlays to prevent mobile scroll issues
   - Fixed Select component padding and checkmark positioning for RTL (`rtl:pl-2 rtl:pr-8`, `rtl:left-auto rtl:right-2`)
-  - Resolved freezing issues when using Arabic language with mobile zoom on touch devices
+  - **CRITICAL FIX: iOS Safari RTL Initialization Freeze (October 14, 2025)**:
+    - Root cause: i18next auto-detecting Arabic from device system language and setting `dir="rtl"` before React finishes loading caused complete UI freeze on iOS Safari
+    - Solution implemented: Force initial language to English in i18n config, disable navigator language detection (use localStorage only)
+    - Safe initialization: Always start with LTR, then check localStorage after React mounts and safely switch to RTL if user previously selected Arabic
+    - Trade-off: First-time Arabic users see English initially and must manually switch to Arabic (intentional safety measure)
+    - Safari private mode safety: Wrapped localStorage access in try/catch with graceful fallback to English
+    - Result: App now works perfectly in both LTR and RTL modes without any freezing on iOS Safari
+    - E2E tested: Language toggle, dialogs, navigation, and all interactions work correctly in both directions
 
 # External Dependencies
 
