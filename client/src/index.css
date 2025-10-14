@@ -119,4 +119,32 @@
   button {
     touch-action: manipulation;
   }
+  
+  /* Force dialog visibility on mobile - override Radix positioning issues */
+  [data-radix-dialog-overlay] {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9998 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 16px !important;
+  }
+  
+  [data-radix-dialog-content] {
+    position: relative !important;
+    z-index: 9999 !important;
+    width: 90% !important;
+    max-width: 500px !important;
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+    margin: 0 auto !important;
+  }
+  
+  /* Prevent body scroll lock issues on mobile */
+  body[data-scroll-locked] {
+    position: relative !important;
+    overflow: hidden !important;
+    padding-right: 0 !important;
+  }
 }
