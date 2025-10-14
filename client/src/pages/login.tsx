@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth-provider";
 import { apiRequest } from "@/lib/queryClient";
 import { loginSchema, type LoginCredentials } from "@shared/schema";
-import { Truck } from "lucide-react";
+import logoPath from "@assets/tajway_logo[1]_1760402240997.pdf";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -70,9 +70,11 @@ export default function Login() {
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center">
-              <Truck className="w-8 h-8 text-primary-foreground" />
-            </div>
+            <object data={logoPath} type="application/pdf" className="h-24 w-auto">
+              <div className="h-24 w-48 flex items-center justify-center bg-primary/10 rounded-lg border-2 border-primary">
+                <span className="text-4xl font-bold text-primary">TajWay</span>
+              </div>
+            </object>
           </div>
           <CardTitle className="text-2xl font-bold">TajWay</CardTitle>
           <p className="text-muted-foreground">{t('logisticsManagementSystem')}</p>

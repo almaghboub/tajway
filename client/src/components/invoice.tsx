@@ -154,17 +154,17 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
   return (
     <div className="invoice-container max-w-4xl mx-auto p-8 bg-white text-black">
       {/* Invoice Header with Logo and Company Info */}
-      <div className="mb-8 border-b-4 border-yellow-500 pb-6">
+      <div className="mb-8 border-b-4 pb-6" style={{ borderColor: '#b8860b' }}>
         <div className="flex justify-between items-start">
           <div className="flex items-center space-x-4">
             <object data={logoPath} type="application/pdf" className="h-20 w-auto">
-              <div className="h-20 w-40 flex items-center justify-center bg-yellow-50 rounded border-2 border-yellow-600">
-                <span className="text-3xl font-bold text-yellow-600">TajWay</span>
+              <div className="h-20 w-40 flex items-center justify-center rounded border-2" style={{ backgroundColor: '#fef3c7', borderColor: '#b8860b' }}>
+                <span className="text-3xl font-bold" style={{ color: '#b8860b' }}>TajWay</span>
               </div>
             </object>
           </div>
           <div className="text-right">
-            <h2 className="text-3xl font-bold text-yellow-600 mb-2">{t('invoice')}</h2>
+            <h2 className="text-3xl font-bold mb-2" style={{ color: '#b8860b' }}>{t('invoice')}</h2>
             <div className="text-sm space-y-1">
               <p className="font-semibold">{t('invoiceNumber')}: {order.orderNumber}</p>
               <p>{t('date')}: {new Date(order.createdAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', { 
@@ -172,7 +172,7 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
                 month: 'long', 
                 day: 'numeric' 
               })}</p>
-              <p className="text-gray-600">{t('status')}: <span className="capitalize font-semibold text-yellow-600">{t(order.status)}</span></p>
+              <p className="text-gray-600">{t('status')}: <span className="capitalize font-semibold" style={{ color: '#b8860b' }}>{t(order.status)}</span></p>
             </div>
           </div>
         </div>
@@ -182,7 +182,7 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
       <div className="grid grid-cols-2 gap-8 mb-8">
         {/* From Section */}
         <div>
-          <h3 className="text-sm font-bold text-yellow-600 mb-3 uppercase tracking-wide">{t('from')}:</h3>
+          <h3 className="text-sm font-bold mb-3 uppercase tracking-wide" style={{ color: '#b8860b' }}>{t('from')}:</h3>
           <div className="space-y-1">
             <p className="font-bold text-lg">TajWay</p>
             <p className="text-sm">{t('companyTagline')}</p>
@@ -191,10 +191,10 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
 
         {/* Bill To Section */}
         <div>
-          <h3 className="text-sm font-bold text-yellow-600 mb-3 uppercase tracking-wide">{t('billTo')}:</h3>
+          <h3 className="text-sm font-bold mb-3 uppercase tracking-wide" style={{ color: '#b8860b' }}>{t('billTo')}:</h3>
           <div className="bg-gray-50 p-4 rounded-lg space-y-1">
             <p className="font-bold">{order.customer.firstName} {order.customer.lastName}</p>
-            {order.customer.shippingCode && <p className="text-sm font-semibold text-yellow-600">Code: {order.customer.shippingCode}</p>}
+            {order.customer.shippingCode && <p className="text-sm font-semibold" style={{ color: '#b8860b' }}>Code: {order.customer.shippingCode}</p>}
             {order.customer.email && <p className="text-sm">{order.customer.email}</p>}
             {order.customer.phone && <p className="text-sm">{order.customer.phone}</p>}
             {order.customer.address && (
@@ -212,11 +212,11 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
 
       {/* Order Items Table */}
       <div className="mb-8">
-        <h3 className="text-sm font-bold text-yellow-600 mb-3 uppercase tracking-wide">{t('shipmentDetails')}:</h3>
+        <h3 className="text-sm font-bold mb-3 uppercase tracking-wide" style={{ color: '#b8860b' }}>{t('shipmentDetails')}:</h3>
         <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="bg-yellow-600 text-white">
+              <tr className="text-white" style={{ backgroundColor: '#b8860b' }}>
                 <th className="px-4 py-3 text-left font-semibold">{t('productDescription')}</th>
                 <th className="px-4 py-3 text-center font-semibold">{t('qty')}</th>
                 <th className="px-4 py-3 text-right font-semibold">{t('unitPrice')}</th>
@@ -261,8 +261,8 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
             </div>
             <div className="border-t-2 border-gray-300 pt-3 mt-3">
               <div className="flex justify-between items-center">
-                <span className="text-lg font-bold text-yellow-600">{t('total')}:</span>
-                <span className="text-2xl font-bold text-yellow-600">${total.toFixed(2)}</span>
+                <span className="text-lg font-bold" style={{ color: '#b8860b' }}>{t('total')}:</span>
+                <span className="text-2xl font-bold" style={{ color: '#b8860b' }}>${total.toFixed(2)}</span>
               </div>
             </div>
             <div className="border-t-2 border-gray-300 pt-3 mt-3">
@@ -312,7 +312,7 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
       {/* Footer */}
       <div className="border-t-2 border-gray-200 pt-6 mt-8">
         <div className="text-center space-y-2">
-          <p className="text-sm font-semibold text-yellow-600">{t('thankYou')}</p>
+          <p className="text-sm font-semibold" style={{ color: '#b8860b' }}>{t('thankYou')}</p>
           <p className="text-xs text-gray-600">{t('companyTagline')}</p>
           <p className="text-xs text-gray-500 mt-4">{t('autoGenerated')}</p>
         </div>
