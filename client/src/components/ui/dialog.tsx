@@ -23,9 +23,12 @@ const DialogOverlay = React.forwardRef<
     data-radix-dialog-overlay=""
     className={cn(
       "fixed inset-0 z-[9998] bg-black/80",
-      "flex items-center justify-center p-4",
+      "flex items-start sm:items-center justify-center",
+      "p-0 sm:p-4",
+      "overflow-y-auto",
       className
     )}
+    style={{ touchAction: 'none' }}
     {...props}
   />
 ))
@@ -41,9 +44,12 @@ const DialogContent = React.forwardRef<
         ref={ref}
         data-radix-dialog-content=""
         className={cn(
-          "relative z-[9999] grid gap-4 border bg-background p-6 shadow-lg rounded-lg",
-          "w-full max-w-lg",
-          "max-h-[85vh] overflow-y-auto",
+          "relative z-[9999] grid gap-4 border bg-background shadow-lg",
+          "w-full sm:max-w-lg sm:rounded-lg",
+          "min-h-screen sm:min-h-0 sm:max-h-[85vh]",
+          "p-4 sm:p-6",
+          "overflow-y-auto",
+          "my-0 sm:my-8",
           className
         )}
         {...props}
