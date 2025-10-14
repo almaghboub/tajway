@@ -22,15 +22,9 @@ const DialogOverlay = React.forwardRef<
     ref={ref}
     className={cn(
       "fixed inset-0 z-[9998] bg-black/80",
+      "flex items-center justify-center p-4",
       className
     )}
-    style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-    }}
     {...props}
   />
 ))
@@ -41,30 +35,24 @@ const DialogContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => (
   <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed z-[9999] grid gap-4 border bg-background p-6 shadow-lg sm:rounded-lg",
-        "w-[90vw] max-w-lg",
-        "max-h-[80vh] overflow-y-auto",
-        className
-      )}
-      style={{
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        margin: 0,
-      }}
-      {...props}
-    >
-      {children}
-      <DialogPrimitive.Close className="absolute top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground ltr:right-4 rtl:left-4">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
-    </DialogPrimitive.Content>
+    <DialogOverlay>
+      <DialogPrimitive.Content
+        ref={ref}
+        className={cn(
+          "relative z-[9999] grid gap-4 border bg-background p-6 shadow-lg rounded-lg",
+          "w-full max-w-lg",
+          "max-h-[85vh] overflow-y-auto",
+          className
+        )}
+        {...props}
+      >
+        {children}
+        <DialogPrimitive.Close className="absolute top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground ltr:right-4 rtl:left-4">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
+      </DialogPrimitive.Content>
+    </DialogOverlay>
   </DialogPortal>
 ))
 DialogContent.displayName = DialogPrimitive.Content.displayName
