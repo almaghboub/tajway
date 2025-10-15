@@ -33,25 +33,30 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, style, ...props }, ref) => {
-  const [isRTL, setIsRTL] = React.useState(document.documentElement.dir === 'rtl');
+  const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
   
-  // Watch for direction changes
+  // Watch for direction changes and orientation changes
   React.useEffect(() => {
-    const updateDirection = () => {
-      setIsRTL(document.documentElement.dir === 'rtl');
+    const handleUpdate = () => {
+      forceUpdate();
     };
     
-    // Update immediately
-    updateDirection();
-    
-    // Watch for attribute changes
-    const observer = new MutationObserver(updateDirection);
+    // Watch for direction attribute changes
+    const observer = new MutationObserver(handleUpdate);
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ['dir']
     });
     
-    return () => observer.disconnect();
+    // Watch for orientation and resize changes
+    window.addEventListener('resize', handleUpdate);
+    window.addEventListener('orientationchange', handleUpdate);
+    
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', handleUpdate);
+      window.removeEventListener('orientationchange', handleUpdate);
+    };
   }, []);
   
   return (
@@ -62,15 +67,17 @@ const DialogContent = React.forwardRef<
         style={{
           position: 'fixed',
           top: '50%',
-          left: isRTL ? 'auto' : '50%',
-          right: isRTL ? '50%' : 'auto',
-          transform: isRTL ? 'translate(50%, -50%)' : 'translate(-50%, -50%)',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
           zIndex: 50,
+          maxWidth: '90vw',
+          maxHeight: '90vh',
+          width: '100%',
           ...style,
         }}
         className={cn(
-          "grid w-[95vw] sm:w-full sm:max-w-2xl gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-lg",
-          "max-h-[calc(100dvh-2rem)] overflow-y-auto",
+          "grid w-full sm:max-w-2xl gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-lg",
+          "overflow-y-auto",
           className
         )}
         {...props}
