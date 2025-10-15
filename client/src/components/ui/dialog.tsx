@@ -38,7 +38,9 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg",
+        "fixed top-[50%] z-50 grid w-full max-w-lg -translate-y-1/2 gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-top-[48%] rounded-lg",
+        "ltr:left-[50%] ltr:-translate-x-1/2 ltr:data-[state=closed]:slide-out-to-left-1/2 ltr:data-[state=open]:slide-in-from-left-1/2",
+        "rtl:right-[50%] rtl:translate-x-1/2 rtl:data-[state=closed]:slide-out-to-right-1/2 rtl:data-[state=open]:slide-in-from-right-1/2",
         "max-h-[calc(100dvh-2rem)] overflow-y-auto",
         className
       )}
