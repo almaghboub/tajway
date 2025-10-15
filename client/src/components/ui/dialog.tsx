@@ -35,7 +35,7 @@ const DialogContent = React.forwardRef<
 >(({ className, children, style, ...props }, ref) => {
   const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
   
-  // Watch for direction changes and orientation changes
+  // Watch for direction changes, orientation changes, and keyboard
   React.useEffect(() => {
     const handleUpdate = () => {
       forceUpdate();
@@ -48,14 +48,22 @@ const DialogContent = React.forwardRef<
       attributeFilter: ['dir']
     });
     
-    // Watch for orientation and resize changes
+    // Watch for orientation and resize changes (includes keyboard)
     window.addEventListener('resize', handleUpdate);
     window.addEventListener('orientationchange', handleUpdate);
+    
+    // Visual viewport API for better keyboard detection on mobile
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleUpdate);
+    }
     
     return () => {
       observer.disconnect();
       window.removeEventListener('resize', handleUpdate);
       window.removeEventListener('orientationchange', handleUpdate);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleUpdate);
+      }
     };
   }, []);
   
@@ -64,20 +72,9 @@ const DialogContent = React.forwardRef<
       <DialogOverlay />
       <DialogPrimitive.Content
         ref={ref}
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          zIndex: 50,
-          maxWidth: '90vw',
-          maxHeight: '90vh',
-          width: '100%',
-          ...style,
-        }}
+        style={style}
         className={cn(
-          "grid w-full sm:max-w-2xl gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-lg",
-          "overflow-y-auto",
+          "grid sm:max-w-2xl gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-lg",
           className
         )}
         {...props}
