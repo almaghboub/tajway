@@ -121,38 +121,4 @@
     touch-action: manipulation;
   }
   
-  /* Prevent body scroll lock issues on mobile */
-  body[data-scroll-locked] {
-    position: relative !important;
-    overflow: hidden !important;
-    padding-right: 0 !important;
-  }
-  
-  /* Dialog centering - Same for both LTR and RTL */
-  [data-radix-dialog-content] {
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    z-index: 50 !important;
-    max-width: 90vw !important;
-    max-height: 80vh !important;
-    overflow-y: auto !important;
-  }
-  
-  /* Dialog overlay - no overflow hidden */
-  [data-radix-dialog-overlay] {
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 49 !important;
-  }
-  
-  /* Mobile viewport adjustments - keyboard handling */
-  @media (max-width: 640px) {
-    [data-radix-dialog-content] {
-      max-width: 95vw !important;
-      max-height: 80vh !important;
-      width: auto !important;
-    }
-  }
 }
