@@ -33,7 +33,26 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, style, ...props }, ref) => {
-  const isRTL = document.documentElement.dir === 'rtl';
+  const [isRTL, setIsRTL] = React.useState(document.documentElement.dir === 'rtl');
+  
+  // Watch for direction changes
+  React.useEffect(() => {
+    const updateDirection = () => {
+      setIsRTL(document.documentElement.dir === 'rtl');
+    };
+    
+    // Update immediately
+    updateDirection();
+    
+    // Watch for attribute changes
+    const observer = new MutationObserver(updateDirection);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['dir']
+    });
+    
+    return () => observer.disconnect();
+  }, []);
   
   return (
     <DialogPortal>
