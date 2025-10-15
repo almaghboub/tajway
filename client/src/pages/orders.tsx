@@ -948,13 +948,7 @@ export default function Orders() {
               </PopoverContent>
             </Popover>
           </div>
-          <Button 
-            onClick={() => {
-              console.log('Add Order button clicked, current modal state:', isModalOpen);
-              setIsModalOpen(true);
-            }} 
-            data-testid="button-new-order"
-          >
+          <Button onClick={() => setIsModalOpen(true)} data-testid="button-new-order">
             <Plus className="w-4 h-4 ltr:mr-2 rtl:ml-2" />
             {t('newOrder')}
           </Button>
@@ -1078,20 +1072,8 @@ export default function Orders() {
         </Card>
 
         {/* Order Creation Modal */}
-        <Dialog 
-          open={isModalOpen} 
-          onOpenChange={(open) => {
-            console.log('Dialog onOpenChange called with:', open);
-            handleCloseModal(open);
-          }}
-        >
-          <DialogContent 
-            className="max-w-4xl w-[95vw] max-h-[90dvh] overflow-y-auto" 
-            data-testid="modal-create-order"
-            onOpenAutoFocus={(e) => {
-              console.log('Dialog opened and focused');
-            }}
-          >
+        <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
+          <DialogContent className="max-w-4xl w-[95vw] max-h-[90dvh] overflow-y-auto" data-testid="modal-create-order">
             <DialogHeader>
               <DialogTitle>{t('createNewOrder')}</DialogTitle>
             </DialogHeader>
