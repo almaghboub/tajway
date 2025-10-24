@@ -10,7 +10,6 @@ interface OrderSummary {
   profit: string;
   itemsProfit?: string;
   shippingProfit?: string;
-  commission: string;
   country: string;
   createdAt: string;
 }
@@ -18,23 +17,15 @@ interface OrderSummary {
 interface ReportData {
   totalRevenue: number;
   totalProfit: number;
-  totalCommission: number;
   profitMargin: number;
   orderCount: number;
   orders?: OrderSummary[];
   periodStart?: string;
   periodEnd?: string;
-  countryBreakdown?: {
-    country: string;
-    revenue: number;
-    commission: number;
-    commissionRate: number;
-    orderCount: number;
-  }[];
 }
 
 interface SalesReportProps {
-  reportType: "profit" | "commission" | "financial";
+  reportType: "profit" | "financial";
   data: ReportData;
   onPrint?: () => void;
 }
@@ -47,8 +38,6 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
     switch (reportType) {
       case "profit":
         return t('profitAnalysisReport');
-      case "commission":
-        return t('commissionBreakdownReport');
       case "financial":
         return t('financialSummaryReport');
       default:
@@ -60,8 +49,6 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
     switch (reportType) {
       case "profit":
         return t('profitAnalysisDescription');
-      case "commission":
-        return t('commissionBreakdownDescription');
       case "financial":
         return t('financialSummaryDescription');
       default:
@@ -155,33 +142,6 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
         </div>
       )}
 
-      {reportType === "commission" && data.countryBreakdown && (
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-blue-600">{t('countryWiseCommissionAnalysis')}</h3>
-          <table className="w-full border-collapse border border-gray-300">
-            <thead>
-              <tr className="bg-blue-50">
-                <th className="border border-gray-300 px-4 py-2 text-left">{t('country')}</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">{t('revenue')}</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">{t('commissionRate')}</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">{t('commissionAmount')}</th>
-                <th className="border border-gray-300 px-4 py-2 text-center">{t('orders')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.countryBreakdown.map((country) => (
-                <tr key={country.country}>
-                  <td className="border border-gray-300 px-4 py-2">{country.country}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right">${country.revenue.toFixed(2)}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right">{(country.commissionRate * 100).toFixed(1)}%</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right">${country.commission.toFixed(2)}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">{country.orderCount}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
 
       {reportType === "financial" && (
         <div className="mb-8">
@@ -193,10 +153,6 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
                 <div className="flex justify-between">
                   <span>{t('grossRevenue')}:</span>
                   <span className="font-medium">${data.totalRevenue.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>{t('totalCommission')}:</span>
-                  <span className="font-medium">${data.totalCommission.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between border-t pt-2">
                   <span>{t('netProfit')}:</span>

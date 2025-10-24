@@ -9,7 +9,6 @@ interface OrderWithItems {
   downPayment: string;
   remainingBalance: string;
   shippingCost: string;
-  commission: string;
   profit: string;
   notes?: string;
   createdAt: string;
@@ -145,7 +144,6 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
   const { t, i18n } = useTranslation();
   const subtotal = order.items?.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) || 0;
   const shipping = parseFloat(order.shippingCost || "0");
-  const commission = parseFloat(order.commission || "0");
   const total = parseFloat(order.totalAmount || "0");
   const downPayment = parseFloat(order.downPayment || "0");
   const remainingBalance = parseFloat(order.remainingBalance || "0");
@@ -252,8 +250,6 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
               <span className="font-semibold">${shipping.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">{t('commission')}:</span>
-              <span className="font-semibold">${commission.toFixed(2)}</span>
             </div>
             <div className="border-t-2 border-gray-300 pt-3 mt-3">
               <div className="flex justify-between items-center">

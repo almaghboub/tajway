@@ -62,6 +62,7 @@ export const orderItems = pgTable("order_items", {
   productCode: text("product_code"),
   productUrl: text("product_url"),
   quantity: integer("quantity").notNull(),
+  numberOfPieces: integer("number_of_pieces").notNull().default(1),
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
   originalPrice: decimal("original_price", { precision: 10, scale: 2 }),
   discountedPrice: decimal("discounted_price", { precision: 10, scale: 2 }),

@@ -28,6 +28,7 @@ interface OrderItem {
   originalPrice: number;
   discountedPrice: number;
   quantity: number;
+  numberOfPieces: number;
   unitPrice: number;
   totalPrice: number;
 }
@@ -98,7 +99,6 @@ export default function Orders() {
   const [lydExchangeRate, setLydExchangeRate] = useState<number>(0);
   const [shippingCalculation, setShippingCalculation] = useState<{
     base_shipping: number;
-    commission: number;
     total: number;
     currency: string;
     orderValue: number;
@@ -162,7 +162,7 @@ export default function Orders() {
   });
 
   const updateOrderMutation = useMutation({
-    mutationFn: async ({ id, status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount }: { 
+    mutationFn: async ({ id, status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, totalAmount }: { 
       id: string; 
       status: string; 
       notes: string; 
@@ -172,10 +172,9 @@ export default function Orders() {
       shippingCountry?: string;
       shippingCategory?: string;
       shippingCost?: string;
-      commission?: string;
       totalAmount?: string;
     }) => {
-      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount });
+      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, totalAmount });
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || t('failedUpdateOrder'));
@@ -370,6 +369,7 @@ export default function Orders() {
           updateOrderItemMutation.mutateAsync({
             id: item.id,
             quantity: item.quantity,
+            numberOfPieces: item.numberOfPieces || 1,
             originalPrice: item.originalPrice?.toString(),
             discountedPrice: item.discountedPrice?.toString(),
             unitPrice: item.unitPrice?.toString(),
@@ -388,7 +388,6 @@ export default function Orders() {
         shippingCountry: editingOrder.shippingCountry || undefined,
         shippingCategory: editingOrder.shippingCategory || undefined,
         shippingCost: editingOrder.shippingCost,
-        commission: editingOrder.commission,
         totalAmount: editingOrder.totalAmount,
         notes: notes
       });
@@ -582,6 +581,7 @@ export default function Orders() {
       originalPrice: 0,
       discountedPrice: 0,
       quantity: 1,
+      numberOfPieces: 1,
       unitPrice: 0,
       totalPrice: 0,
     }]);
@@ -620,39 +620,30 @@ export default function Orders() {
       const usdRate = exchangeRates[shippingCalculation.currency as keyof typeof exchangeRates] || 1;
       
       const shippingInUSD = shippingCalculation.base_shipping * usdRate;
-      const commissionInUSD = shippingCalculation.commission * usdRate;
       
       const total = subtotal + shippingInUSD;
-      const shippingProfit = commissionInUSD;
-      const totalProfit = itemsProfit + shippingProfit;
+      const totalProfit = itemsProfit;
       
       return { 
         subtotal, 
         total, 
-        commission: commissionInUSD, 
         profit: totalProfit,
         itemsProfit,
-        shippingProfit,
         shippingCost: shippingInUSD,
         currency: 'USD', // Normalize to USD
         originalCurrency: shippingCalculation.currency,
-        originalShipping: shippingCalculation.base_shipping,
-        originalCommission: shippingCalculation.commission
+        originalShipping: shippingCalculation.base_shipping
       };
     } else {
       // Fallback to manual calculation
       const total = subtotal + shippingCost;
-      const commission = total * 0.15; // Default commission rate
-      const shippingProfit = commission;
-      const totalProfit = itemsProfit + shippingProfit;
+      const totalProfit = itemsProfit;
       
       return { 
         subtotal, 
         total, 
-        commission, 
         profit: totalProfit,
         itemsProfit,
-        shippingProfit,
         shippingCost,
         currency: 'USD'
       };
@@ -679,8 +670,7 @@ export default function Orders() {
       return sum + markupProfit;
     }, 0);
     
-    const shippingProfit = totals.commission;
-    const totalProfit = itemsProfit + shippingProfit;
+    const totalProfit = itemsProfit;
     
     // Calculate remaining balance
     const remainingBalance = totals.total - downPayment;
@@ -701,8 +691,6 @@ export default function Orders() {
       shippingWeight: shippingWeight.toFixed(2),
       shippingCountry: shippingCountry || undefined,
       shippingCategory: shippingCategory || undefined,
-      commission: totals.commission.toFixed(2),
-      shippingProfit: shippingProfit.toFixed(2),
       itemsProfit: itemsProfit.toFixed(2),
       totalProfit: totalProfit.toFixed(2),
       lydExchangeRate: lydExchangeRate > 0 ? lydExchangeRate.toFixed(4) : undefined,
@@ -1273,8 +1261,8 @@ export default function Orders() {
                             </div>
                           </div>
 
-                          {/* Third row: Prices, Quantity, Total */}
-                          <div className="grid grid-cols-4 gap-4">
+                          {/* Third row: Prices, Quantity, Number of Pieces, Total */}
+                          <div className="grid grid-cols-5 gap-4">
                             <div>
                               <Label htmlFor={`original-price-${index}`}>Original Price ($)*</Label>
                               <Input
@@ -1313,6 +1301,18 @@ export default function Orders() {
                                 onChange={(e) => updateOrderItem(index, "quantity", parseInt(e.target.value) || 1)}
                                 required
                                 data-testid={`input-quantity-${index}`}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`number-of-pieces-${index}`}>No. of Pieces*</Label>
+                              <Input
+                                id={`number-of-pieces-${index}`}
+                                type="number"
+                                min="1"
+                                value={item.numberOfPieces}
+                                onChange={(e) => updateOrderItem(index, "numberOfPieces", parseInt(e.target.value) || 1)}
+                                required
+                                data-testid={`input-number-of-pieces-${index}`}
                               />
                             </div>
                             <div>
@@ -1451,8 +1451,7 @@ export default function Orders() {
                   
                   {shippingCalculation && (
                     <div className="text-sm text-green-600 font-medium" data-testid="text-shipping-calculated">
-                      {t('calculatedShipping')} {shippingCalculation.currency} {shippingCalculation.base_shipping.toFixed(2)}, 
-                      {t('calculatedCommission')} {shippingCalculation.currency} {shippingCalculation.commission.toFixed(2)}
+                      {t('calculatedShipping')} {shippingCalculation.currency} {shippingCalculation.base_shipping.toFixed(2)}
                       {shippingCalculation.currency !== 'USD' && (
                         <span className="text-blue-600"> {t('convertedToUsd')}</span>
                       )}
@@ -1500,12 +1499,6 @@ export default function Orders() {
                       <span>{t('shipping')}</span>
                       <span data-testid="text-shipping">
                         {calculateTotals().currency} {calculateTotals().shippingCost.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{shippingCalculation ? t('commissionDynamic') : t('commissionFifteen')}</span>
-                      <span data-testid="text-commission">
-                        {calculateTotals().currency} {calculateTotals().commission.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between font-medium text-lg border-t pt-2">
@@ -1629,6 +1622,7 @@ export default function Orders() {
                                 <th className="px-3 py-2 text-left">{t('shippingCodeLabel')}</th>
                                 <th className="px-3 py-2 text-left">{t('productCode')}</th>
                                 <th className="px-3 py-2 text-center">{t('quantity')}</th>
+                                <th className="px-3 py-2 text-center">No. of Pieces</th>
                                 <th className="px-3 py-2 text-right">{t('originalPrice')}</th>
                                 <th className="px-3 py-2 text-right">{t('discountedPrice')}</th>
                                 <th className="px-3 py-2 text-right">{t('unitPrice')}</th>
@@ -1656,6 +1650,16 @@ export default function Orders() {
                                       onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value))}
                                       className="w-20 text-center"
                                       data-testid={`input-edit-quantity-${index}`}
+                                    />
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      value={item.numberOfPieces || 1}
+                                      onChange={(e) => handleItemChange(index, 'numberOfPieces', parseInt(e.target.value))}
+                                      className="w-20 text-center"
+                                      data-testid={`input-edit-number-of-pieces-${index}`}
                                     />
                                   </td>
                                   <td className="px-3 py-2">
@@ -1785,8 +1789,7 @@ export default function Orders() {
                               if (response.ok) {
                                 const calc = await response.json();
                                 const newShippingCost = parseFloat(calc.base_shipping);
-                                const newCommission = parseFloat(calc.commission);
-                                const newTotal = itemsTotal + newShippingCost + newCommission;
+                                const newTotal = itemsTotal + newShippingCost;
                                 
                                 setEditingOrder(prev => {
                                   if (!prev) return null;
@@ -1794,7 +1797,6 @@ export default function Orders() {
                                     ...prev,
                                     shippingWeight: newWeight.toFixed(2),
                                     shippingCost: newShippingCost.toFixed(2),
-                                    commission: newCommission.toFixed(2),
                                     totalAmount: newTotal.toFixed(2),
                                   };
                                 });
@@ -1848,8 +1850,7 @@ export default function Orders() {
                               if (response.ok) {
                                 const calc = await response.json();
                                 const newShippingCost = parseFloat(calc.base_shipping);
-                                const newCommission = parseFloat(calc.commission);
-                                const newTotal = itemsTotal + newShippingCost + newCommission;
+                                const newTotal = itemsTotal + newShippingCost;
                                 
                                 setEditingOrder(prev => {
                                   if (!prev) return null;
@@ -1857,7 +1858,6 @@ export default function Orders() {
                                     ...prev,
                                     shippingCountry: value,
                                     shippingCost: newShippingCost.toFixed(2),
-                                    commission: newCommission.toFixed(2),
                                     totalAmount: newTotal.toFixed(2),
                                   };
                                 });
@@ -1919,8 +1919,7 @@ export default function Orders() {
                               if (response.ok) {
                                 const calc = await response.json();
                                 const newShippingCost = parseFloat(calc.base_shipping);
-                                const newCommission = parseFloat(calc.commission);
-                                const newTotal = itemsTotal + newShippingCost + newCommission;
+                                const newTotal = itemsTotal + newShippingCost;
                                 
                                 setEditingOrder(prev => {
                                   if (!prev) return null;
@@ -1928,7 +1927,6 @@ export default function Orders() {
                                     ...prev,
                                     shippingCategory: value,
                                     shippingCost: newShippingCost.toFixed(2),
-                                    commission: newCommission.toFixed(2),
                                     totalAmount: newTotal.toFixed(2),
                                   };
                                 });
@@ -1960,7 +1958,6 @@ export default function Orders() {
                       <div className="font-medium">Shipping Details:</div>
                       <div>Country: {editingOrder.shippingCountry}, Category: {editingOrder.shippingCategory}</div>
                       <div>Shipping Cost: ${parseFloat(editingOrder.shippingCost || "0").toFixed(2)}</div>
-                      <div>Commission: ${parseFloat(editingOrder.commission || "0").toFixed(2)}</div>
                       <div className="font-medium pt-1 border-t border-blue-200">Total: ${parseFloat(editingOrder.totalAmount || "0").toFixed(2)}</div>
                     </div>
                   )}

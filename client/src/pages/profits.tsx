@@ -20,7 +20,7 @@ import type { OrderWithCustomer } from "@shared/schema";
 export default function Profits() {
   const { t } = useTranslation();
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [selectedReportType, setSelectedReportType] = useState<"profit" | "commission" | "financial">("profit");
+  const [selectedReportType, setSelectedReportType] = useState<"profit" | "financial">("profit");
   const [reportData, setReportData] = useState<any>(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -80,7 +80,7 @@ export default function Profits() {
 
   const isLoading = isLoadingOrders;
 
-  const generateReport = async (reportType: "profit" | "commission" | "financial") => {
+  const generateReport = async (reportType: "profit" | "financial") => {
     setIsGeneratingReport(true);
     setSelectedReportType(reportType);
     
@@ -112,7 +112,6 @@ export default function Profits() {
           profit: order.totalProfit || order.profit || "0",
           itemsProfit: order.itemsProfit || "0",
           shippingProfit: order.shippingProfit || "0",
-          commission: order.commission,
           country: customer?.country || t('unknown'),
           createdAt: order.createdAt
         };
@@ -121,39 +120,14 @@ export default function Profits() {
       // Calculate totals
       const totalRevenue = orders.reduce((sum: number, order: any) => sum + parseFloat(order.totalAmount), 0);
       const totalProfit = orders.reduce((sum: number, order: any) => sum + parseFloat(order.totalProfit || order.profit || "0"), 0);
-      const totalCommission = orders.reduce((sum: number, order: any) => sum + parseFloat(order.commission), 0);
       const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-      
-      // Create country breakdown for commission report
-      const countryBreakdown = Object.values(
-        orderSummaries.reduce((acc: any, order: any) => {
-          const country = order.country;
-          if (!acc[country]) {
-            acc[country] = {
-              country,
-              revenue: 0,
-              commission: 0,
-              commissionRate: 0.15, // Default 15%
-              orderCount: 0
-            };
-          }
-          acc[country].revenue += parseFloat(order.totalAmount);
-          acc[country].commission += parseFloat(order.commission);
-          acc[country].orderCount += 1;
-          // Calculate average commission rate for this country
-          acc[country].commissionRate = acc[country].revenue > 0 ? acc[country].commission / acc[country].revenue : 0.15;
-          return acc;
-        }, {})
-      );
       
       const reportData = {
         totalRevenue,
         totalProfit,
-        totalCommission,
         profitMargin,
         orderCount: orders.length,
         orders: reportType === "profit" ? orderSummaries : undefined,
-        countryBreakdown: reportType === "commission" ? countryBreakdown : undefined,
         periodStart: orders.length > 0 ? orders[orders.length - 1].createdAt : undefined,
         periodEnd: orders.length > 0 ? orders[0].createdAt : undefined
       };
@@ -399,40 +373,6 @@ export default function Profits() {
             </CardContent>
           </Card>
 
-          <Card data-testid="card-commission-breakdown">
-            <CardHeader>
-              <CardTitle>{t('commissionBreakdown')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-center py-8">
-                  <Calculator className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-foreground mb-2">{t('commissionAnalysis')}</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {t('commissionCalculationsDescription')}
-                  </p>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>{t('chinaCommissionRate')}</span>
-                      <span className="font-medium">18.0%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{t('turkeyCommissionRate')}</span>
-                      <span className="font-medium">20.0%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{t('ukCommissionRate')}</span>
-                      <span className="font-medium">15.0%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{t('uaeCommissionRate')}</span>
-                      <span className="font-medium">12.0%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Report Actions */}
@@ -441,7 +381,7 @@ export default function Profits() {
             <CardTitle>{t('generateReports')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button 
                 className="h-auto p-4 flex-col" 
                 onClick={() => generateReport("profit")}
@@ -453,19 +393,7 @@ export default function Profits() {
                 <span className="text-xs text-muted-foreground">{t('orderWiseProfitAnalysis')}</span>
               </Button>
 
-              <Button 
-                variant="outline" 
-                className="h-auto p-4 flex-col" 
-                onClick={() => generateReport("commission")}
-                disabled={isGeneratingReport}
-                data-testid="button-commission-report"
-              >
-                <Calculator className="w-6 h-6 mb-2" />
-                <span className="font-medium">{t('commissionReportTitle')}</span>
-                <span className="text-xs text-muted-foreground">{t('countryWiseCommissions')}</span>
-              </Button>
-
-              <Button 
+<Button 
                 variant="secondary" 
                 className="h-auto p-4 flex-col" 
                 onClick={() => generateReport("financial")}

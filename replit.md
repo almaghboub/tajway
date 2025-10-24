@@ -14,7 +14,7 @@ The frontend is a React 18 single-page application using TypeScript. It employs 
 
 ## Backend Architecture
 
-The backend is an Express.js application with TypeScript, serving as a REST API. It uses Passport.js for authentication and role-based access control. PostgreSQL, accessed via Drizzle ORM, handles data persistence. Session management is also PostgreSQL-based. Business logic includes a commission calculation engine with country-specific rules. API endpoints are organized by feature with Zod for request validation.
+The backend is an Express.js application with TypeScript, serving as a REST API. It uses Passport.js for authentication and role-based access control. PostgreSQL, accessed via Drizzle ORM, handles data persistence. Session management is also PostgreSQL-based. API endpoints are organized by feature with Zod for request validation.
 
 ## Data Storage Solutions
 
@@ -52,9 +52,17 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
 - Flexible order creation allowing orders without prior shipping calculation.
 - **Complete Arabic Translation Coverage (October 2025)**:
   - All edit order modal fields now fully translated (Original Price → السعر الأصلي, Discounted Price → السعر المخفض, Shipping Country → دولة الشحن, Shipping Category → فئة الشحن)
-  - All three sales report types (Profit Analysis, Commission Breakdown, Financial Summary) completely translated with Arabic table headers, metrics, and date formatting
+  - All sales report types (Profit Analysis, Financial Summary) completely translated with Arabic table headers, metrics, and date formatting
   - Invoice and order details modals with locale-aware date formatting
   - Persistent dark mode functionality via ThemeProvider
+- **Commission Functionality Removed (October 2025)**:
+  - Complete removal of commission calculations and displays from all pages (orders, profits, invoices, sales reports)
+  - Commission-related database fields remain in schema but are no longer calculated or displayed in UI
+  - Simplified profit tracking focuses on items profit, shipping profit, and total profit without commission deductions
+- **Number of Pieces Field Added (October 2025)**:
+  - New "numberOfPieces" field added to order items schema (integer, default: 1)
+  - Field appears in both new order creation form and edit order modal
+  - Located beside quantity field for easy data entry when items have multiple pieces per unit
 - **Mobile RTL (Arabic) Fixes (October 2025)**:
   - Fixed dialog/modal positioning in RTL mode - changed from `translate-x-[-50%]` to `-translate-x-1/2` for proper Tailwind RTL support
   - Added RTL-aware close button positioning in dialogs (`rtl:right-auto rtl:left-4`)
