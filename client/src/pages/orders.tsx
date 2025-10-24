@@ -92,6 +92,7 @@ export default function Orders() {
   const [editableItems, setEditableItems] = useState<any[]>([]);
   const [shippingCost, setShippingCost] = useState(0);
   const [shippingCountry, setShippingCountry] = useState("");
+  const [shippingCity, setShippingCity] = useState("");
   const [shippingCategory, setShippingCategory] = useState("normal");
   const [shippingWeight, setShippingWeight] = useState(1);
   const [clothingSize, setClothingSize] = useState("");
@@ -496,6 +497,7 @@ export default function Orders() {
     setOrderImages([]);
     setShippingCost(0);
     setShippingCountry("");
+    setShippingCity("");
     setShippingCategory("normal");
     setShippingWeight(1);
     setClothingSize("");
@@ -701,6 +703,7 @@ export default function Orders() {
       shippingCost: totals.shippingCost.toFixed(2),
       shippingWeight: shippingWeight.toFixed(2),
       shippingCountry: shippingCountry || undefined,
+      shippingCity: shippingCity || undefined,
       shippingCategory: shippingCategory || undefined,
       itemsProfit: itemsProfit.toFixed(2),
       totalProfit: totalProfit.toFixed(2),
@@ -1441,7 +1444,7 @@ export default function Orders() {
 
               {/* Shipping Configuration and Notes */}
               <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="shipping-country">{t('shippingCountry')}</Label>
                     <Select value={shippingCountry} onValueChange={setShippingCountry}>
@@ -1457,6 +1460,19 @@ export default function Orders() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <Label htmlFor="shipping-city">{t('shippingCity')}</Label>
+                    <Input
+                      id="shipping-city"
+                      type="text"
+                      value={shippingCity}
+                      onChange={(e) => setShippingCity(e.target.value)}
+                      placeholder={t('enterCity') || 'Enter city'}
+                      data-testid="input-shipping-city"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="shipping-category">{t('shippingCategory')}</Label>
                     <Select value={shippingCategory} onValueChange={setShippingCategory}>
