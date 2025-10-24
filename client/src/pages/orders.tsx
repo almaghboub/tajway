@@ -95,6 +95,7 @@ export default function Orders() {
   const [shippingCategory, setShippingCategory] = useState("normal");
   const [shippingWeight, setShippingWeight] = useState(1);
   const [clothingSize, setClothingSize] = useState("");
+  const [hasDownPayment, setHasDownPayment] = useState(false);
   const [downPayment, setDownPayment] = useState(0);
   const [lydExchangeRate, setLydExchangeRate] = useState<number>(0);
   const [hasPromptedForLydRate, setHasPromptedForLydRate] = useState(false);
@@ -1640,21 +1641,41 @@ export default function Orders() {
                       </div>
                     </div>
                     <div className="border-t pt-3 space-y-3">
-                      <div>
-                        <Label htmlFor="down-payment" className="text-sm">{t('downPaymentOptional')}</Label>
-                        <Input
-                          id="down-payment"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          max={calculateTotals().total}
-                          value={downPayment}
-                          onChange={(e) => setDownPayment(parseFloat(e.target.value) || 0)}
-                          placeholder="0.00"
-                          className="mt-1"
-                          data-testid="input-down-payment"
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="has-down-payment"
+                          checked={hasDownPayment}
+                          onChange={(e) => {
+                            setHasDownPayment(e.target.checked);
+                            if (!e.target.checked) {
+                              setDownPayment(0);
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-gray-300"
+                          data-testid="checkbox-has-down-payment"
                         />
+                        <Label htmlFor="has-down-payment" className="text-sm font-medium cursor-pointer">
+                          {t('hasDownPayment') || 'Is there a down payment?'}
+                        </Label>
                       </div>
+                      {hasDownPayment && (
+                        <div>
+                          <Label htmlFor="down-payment" className="text-sm">{t('downPaymentAmount') || 'Down Payment Amount'}</Label>
+                          <Input
+                            id="down-payment"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max={calculateTotals().total}
+                            value={downPayment}
+                            onChange={(e) => setDownPayment(parseFloat(e.target.value) || 0)}
+                            placeholder="0.00"
+                            className="mt-1"
+                            data-testid="input-down-payment"
+                          />
+                        </div>
+                      )}
                       {downPayment > 0 && (
                         <div className="flex justify-between text-orange-600 font-medium">
                           <span>{t('remainingBalance')}:</span>
