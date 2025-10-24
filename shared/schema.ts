@@ -6,6 +6,7 @@ import { z } from "zod";
 export const userRoleEnum = pgEnum("user_role", ["owner", "customer_service", "receptionist", "sorter", "stock_manager", "shipping_staff"]);
 export const orderStatusEnum = pgEnum("order_status", ["pending", "processing", "shipped", "delivered", "cancelled", "partially_arrived", "ready_to_collect", "with_shipping_company"]);
 export const taskStatusEnum = pgEnum("task_status", ["pending", "completed", "to_collect"]);
+export const expenseCategoryEnum = pgEnum("expense_category", ["employee_salaries", "supplier_expenses", "marketing_commission", "rent", "cleaning_salaries", "other"]);
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -137,6 +138,15 @@ export const deliveryTasks = pgTable("delivery_tasks", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const expenses = pgTable("expenses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  category: expenseCategoryEnum("category").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  description: text("description"),
+  date: timestamp("date").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -198,6 +208,11 @@ export const insertDeliveryTaskSchema = createInsertSchema(deliveryTasks).omit({
   paymentAmount: z.union([z.string(), z.number()]).optional().transform(val => val?.toString()),
 });
 
+export const insertExpenseSchema = createInsertSchema(expenses).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Login schema
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -234,6 +249,9 @@ export type Message = typeof messages.$inferSelect;
 
 export type InsertDeliveryTask = z.infer<typeof insertDeliveryTaskSchema>;
 export type DeliveryTask = typeof deliveryTasks.$inferSelect;
+
+export type InsertExpense = z.infer<typeof insertExpenseSchema>;
+export type Expense = typeof expenses.$inferSelect;
 
 export type LoginCredentials = z.infer<typeof loginSchema>;
 

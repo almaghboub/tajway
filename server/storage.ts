@@ -19,6 +19,8 @@ import {
   type InsertMessage,
   type DeliveryTask,
   type InsertDeliveryTask,
+  type Expense,
+  type InsertExpense,
   type DeliveryTaskWithDetails,
   type OrderWithCustomer,
   type CustomerWithOrders,
@@ -32,6 +34,7 @@ import {
   settings,
   messages,
   deliveryTasks,
+  expenses,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { hashPassword } from "./auth";
@@ -133,6 +136,11 @@ export interface IStorage {
   updateDeliveryTask(id: string, task: Partial<InsertDeliveryTask>): Promise<DeliveryTask | undefined>;
   deleteDeliveryTask(id: string): Promise<boolean>;
   getShippingStaffUsers(): Promise<User[]>;
+
+  // Expenses
+  createExpense(expense: InsertExpense): Promise<Expense>;
+  getAllExpenses(): Promise<Expense[]>;
+  deleteExpense(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -1403,6 +1411,21 @@ export class PostgreSQLStorage implements IStorage {
     return await db.select()
       .from(users)
       .where(eq(users.role, "shipping_staff"));
+  }
+
+  // Expenses methods
+  async createExpense(insertExpense: InsertExpense): Promise<Expense> {
+    const result = await db.insert(expenses).values(insertExpense).returning();
+    return result[0];
+  }
+
+  async getAllExpenses(): Promise<Expense[]> {
+    return await db.select().from(expenses).orderBy(desc(expenses.date));
+  }
+
+  async deleteExpense(id: string): Promise<boolean> {
+    const result = await db.delete(expenses).where(eq(expenses.id, id)).returning();
+    return result.length > 0;
   }
 }
 

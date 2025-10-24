@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { Truck, LayoutDashboard, Package, Users, Box, TrendingUp, Users2, Settings, LogOut, MessageSquare, ClipboardList, UserCog, History } from "lucide-react";
+import { Truck, LayoutDashboard, Package, Users, Box, TrendingUp, DollarSign, Users2, Settings, LogOut, MessageSquare, ClipboardList, UserCog, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/components/auth-provider";
@@ -16,6 +16,7 @@ const navigationItems = [
   { key: "taskAssignment", href: "/task-assignment", icon: UserCog, roles: ["owner", "customer_service", "receptionist"] },
   { key: "taskHistory", href: "/task-history", icon: History, roles: ["owner", "customer_service", "receptionist"] },
   { key: "profitReports", href: "/profits", icon: TrendingUp, roles: ["owner"] },
+  { key: "expenses", href: "/expenses", icon: DollarSign, roles: ["owner"] },
   { key: "userManagement", href: "/users", icon: Users2, roles: ["owner"] },
   { key: "messages", href: "/messages", icon: MessageSquare, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager", "shipping_staff"], showBadge: true },
   { key: "settings", href: "/settings", icon: Settings, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager", "shipping_staff"] },

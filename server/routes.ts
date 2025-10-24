@@ -16,6 +16,7 @@ import {
   insertSettingSchema,
   insertMessageSchema,
   insertDeliveryTaskSchema,
+  insertExpenseSchema,
   loginSchema,
 } from "@shared/schema";
 
@@ -1149,6 +1150,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(tasks);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch task history" });
+    }
+  });
+
+  // Expenses routes
+  app.get("/api/expenses", requireAuth, async (req, res) => {
+    try {
+      const expenses = await storage.getAllExpenses();
+      res.json(expenses);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch expenses" });
+    }
+  });
+
+  app.post("/api/expenses", requireOwner, async (req, res) => {
+    try {
+      const result = insertExpenseSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid expense data", errors: result.error.errors });
+      }
+
+      const expense = await storage.createExpense(result.data);
+      res.status(201).json(expense);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create expense" });
+    }
+  });
+
+  app.delete("/api/expenses/:id", requireOwner, async (req, res) => {
+    try {
+      const success = await storage.deleteExpense(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Expense not found" });
+      }
+      res.json({ message: "Expense deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete expense" });
     }
   });
 

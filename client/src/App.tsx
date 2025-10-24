@@ -12,6 +12,7 @@ import Dashboard from "@/pages/dashboard";
 import Orders from "@/pages/orders";
 import Customers from "@/pages/customers";
 import Profits from "@/pages/profits";
+import Expenses from "@/pages/expenses";
 import Users from "@/pages/users";
 import Messages from "@/pages/messages";
 import Settings from "@/pages/settings";
@@ -128,6 +129,12 @@ function Router() {
       <Route path="/profits">
         <ProtectedRoute>
           <Profits />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/expenses">
+        <ProtectedRoute>
+          <Expenses />
         </ProtectedRoute>
       </Route>
 
