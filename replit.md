@@ -45,6 +45,17 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
 - New order statuses: "Partially Arrived," "Ready to Collect," "With Shipping Company."
 - Dynamic country filtering across dashboards and profit reports.
 - Integrated LYD exchange rate and calendar date range filters for orders and customers.
+- **LYD Currency Conversion System (October 2025)**:
+  - Created shared `useLydExchangeRate` custom hook in `client/src/hooks/use-lyd-exchange-rate.ts` for centralized exchange rate management
+  - Hook provides `exchangeRate`, `convertToLYD(amount)` helper, and loading state
+  - Dual-currency display (USD/LYD) across Dashboard, Orders, and Customers pages
+  - Color-coded LYD amounts for clarity: green (totals/revenue), blue (down payments), orange (remaining balance), purple (profit)
+  - LYD amounts display conditionally when exchange rate is set (> 0)
+  - Dashboard: Revenue and profit metrics show both USD and LYD
+  - Orders page: Total amount, down payment, remaining balance, and profit all show USD/LYD
+  - Customers page: Total order amount and down payment display in both currencies (table and view modal)
+  - Exchange rate stored in settings table with key `lyd_exchange_rate`
+  - All LYD values formatted to 2 decimal places for consistency
 - Down payment management moved to customer-level with proportional distribution across orders.
 - Improved customer search supporting multiple fields (phone, name, code).
 - Enhanced visibility of customer codes in invoices and order/customer tables.

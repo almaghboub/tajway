@@ -99,7 +99,6 @@ export default function Orders() {
   const [shippingWeight, setShippingWeight] = useState(1);
   const [clothingSize, setClothingSize] = useState("");
   const [downPayment, setDownPayment] = useState(0);
-  const [lydExchangeRate, setLydExchangeRate] = useState<number>(0);
   const [shippingCalculation, setShippingCalculation] = useState<{
     base_shipping: number;
     commission: number;
@@ -498,7 +497,6 @@ export default function Orders() {
     setShippingWeight(1);
     setClothingSize("");
     setDownPayment(0);
-    setLydExchangeRate(0);
     setShippingCalculation(null);
     setNotes("");
     setCustomOrderCode("");
@@ -712,7 +710,7 @@ export default function Orders() {
       shippingProfit: shippingProfit.toFixed(2),
       itemsProfit: itemsProfit.toFixed(2),
       totalProfit: totalProfit.toFixed(2),
-      lydExchangeRate: lydExchangeRate > 0 ? lydExchangeRate.toFixed(4) : undefined,
+      lydExchangeRate: exchangeRate > 0 ? exchangeRate.toFixed(4) : undefined,
       notes: finalNotes || undefined,
       orderNumber: customOrderCode || undefined,
     };
@@ -1489,21 +1487,6 @@ export default function Orders() {
                       )}
                     </div>
                   )}
-                </div>
-
-                <div>
-                  <Label htmlFor="lyd-exchange-rate">{t('lydExchangeRate')}</Label>
-                  <Input
-                    id="lyd-exchange-rate"
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    value={lydExchangeRate || ""}
-                    onChange={(e) => setLydExchangeRate(parseFloat(e.target.value) || 0)}
-                    placeholder={t('enterLydRate')}
-                    required
-                    data-testid="input-lyd-exchange-rate"
-                  />
                 </div>
 
                 <div>
