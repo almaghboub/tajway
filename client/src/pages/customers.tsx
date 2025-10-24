@@ -76,6 +76,12 @@ export default function Customers() {
     },
   });
 
+  const { data: settings = [] } = useQuery<Array<{ id: string; key: string; value: string }>>({
+    queryKey: ["/api/settings"],
+  });
+
+  const lydExchangeRate = parseFloat(settings.find(s => s.key === 'lyd_exchange_rate')?.value || '0');
+
   const createCustomerMutation = useMutation({
     mutationFn: async (customerData: InsertCustomer) => {
       const response = await apiRequest("POST", "/api/customers", customerData);
@@ -470,10 +476,32 @@ export default function Customers() {
                           <span className="font-semibold text-primary">{customer.shippingCode || "-"}</span>
                         </TableCell>
                         <TableCell data-testid={`text-total-amount-${customer.id}`}>
-                          <span className="font-semibold">${totalAmount.toFixed(2)}</span>
+                          {lydExchangeRate > 0 ? (
+                            <div>
+                              <div className="font-bold text-blue-600">
+                                {(totalAmount * lydExchangeRate).toFixed(2)} LYD
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                ${totalAmount.toFixed(2)}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="font-semibold">${totalAmount.toFixed(2)}</span>
+                          )}
                         </TableCell>
                         <TableCell data-testid={`text-down-payment-${customer.id}`}>
-                          <span className="font-semibold text-green-600">${totalDownPayment.toFixed(2)}</span>
+                          {lydExchangeRate > 0 ? (
+                            <div>
+                              <div className="font-bold text-green-600">
+                                {(totalDownPayment * lydExchangeRate).toFixed(2)} LYD
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                ${totalDownPayment.toFixed(2)}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="font-semibold text-green-600">${totalDownPayment.toFixed(2)}</span>
+                          )}
                         </TableCell>
                         <TableCell data-testid={`text-phone-${customer.id}`}>
                           {customer.phone || t("emptyPhone")}
@@ -794,15 +822,42 @@ export default function Customers() {
                         </div>
                         <div>
                           <span className="font-medium text-muted-foreground">{t('totalOrderAmount')}:</span>
-                          <p className="mt-1 font-semibold" data-testid="text-view-total-amount">${totalAmount.toFixed(2)}</p>
+                          {lydExchangeRate > 0 ? (
+                            <div className="mt-1">
+                              <p className="font-bold text-blue-600" data-testid="text-view-total-amount">
+                                {(totalAmount * lydExchangeRate).toFixed(2)} LYD
+                              </p>
+                              <p className="text-xs text-muted-foreground">${totalAmount.toFixed(2)}</p>
+                            </div>
+                          ) : (
+                            <p className="mt-1 font-semibold" data-testid="text-view-total-amount">${totalAmount.toFixed(2)}</p>
+                          )}
                         </div>
                         <div>
                           <span className="font-medium text-muted-foreground">{t('totalDownPayment')}:</span>
-                          <p className="mt-1 text-blue-600 font-semibold" data-testid="text-view-total-down-payment">${totalDownPayment.toFixed(2)}</p>
+                          {lydExchangeRate > 0 ? (
+                            <div className="mt-1">
+                              <p className="font-bold text-green-600" data-testid="text-view-total-down-payment">
+                                {(totalDownPayment * lydExchangeRate).toFixed(2)} LYD
+                              </p>
+                              <p className="text-xs text-muted-foreground">${totalDownPayment.toFixed(2)}</p>
+                            </div>
+                          ) : (
+                            <p className="mt-1 text-blue-600 font-semibold" data-testid="text-view-total-down-payment">${totalDownPayment.toFixed(2)}</p>
+                          )}
                         </div>
                         <div>
                           <span className="font-medium text-muted-foreground">{t('totalRemainingBalance')}:</span>
-                          <p className="mt-1 text-red-600 font-semibold" data-testid="text-view-total-remaining-balance">${totalRemainingBalance.toFixed(2)}</p>
+                          {lydExchangeRate > 0 ? (
+                            <div className="mt-1">
+                              <p className="font-bold text-orange-600" data-testid="text-view-total-remaining-balance">
+                                {(totalRemainingBalance * lydExchangeRate).toFixed(2)} LYD
+                              </p>
+                              <p className="text-xs text-muted-foreground">${totalRemainingBalance.toFixed(2)}</p>
+                            </div>
+                          ) : (
+                            <p className="mt-1 text-red-600 font-semibold" data-testid="text-view-total-remaining-balance">${totalRemainingBalance.toFixed(2)}</p>
+                          )}
                         </div>
                       </div>
                     </div>
