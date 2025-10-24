@@ -43,6 +43,12 @@ export default function Profits() {
     },
   });
 
+  const { data: settings = [] } = useQuery<Array<{ id: string; key: string; value: string }>>({
+    queryKey: ["/api/settings"],
+  });
+
+  const lydExchangeRate = parseFloat(settings.find(s => s.key === 'lyd_exchange_rate')?.value || '0');
+
   const toggleCountryFilter = (country: string) => {
     setCountryFilters(prev =>
       prev.includes(country)
@@ -251,6 +257,13 @@ export default function Profits() {
                   <p className="text-sm text-muted-foreground">{t('averageOrderValue')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
+                  ) : lydExchangeRate > 0 ? (
+                    <>
+                      <p className="text-3xl font-bold text-blue-600" data-testid="text-average-order-value">
+                        {(metrics.averageOrderValue * lydExchangeRate).toFixed(2)} LYD
+                      </p>
+                      <p className="text-xs text-muted-foreground">${metrics.averageOrderValue.toFixed(2)}</p>
+                    </>
                   ) : (
                     <p className="text-3xl font-bold text-purple-600" data-testid="text-average-order-value">
                       ${metrics.averageOrderValue.toFixed(2)}
@@ -272,6 +285,13 @@ export default function Profits() {
                   <p className="text-sm text-muted-foreground">{t('totalRevenue')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
+                  ) : lydExchangeRate > 0 ? (
+                    <>
+                      <p className="text-3xl font-bold text-blue-600" data-testid="text-total-revenue">
+                        {(metrics.totalRevenue * lydExchangeRate).toFixed(2)} LYD
+                      </p>
+                      <p className="text-xs text-muted-foreground">${metrics.totalRevenue.toFixed(2)}</p>
+                    </>
                   ) : (
                     <p className="text-3xl font-bold text-primary" data-testid="text-total-revenue">
                       ${metrics.totalRevenue.toFixed(2)}
@@ -296,6 +316,13 @@ export default function Profits() {
                   <p className="text-sm text-muted-foreground">{t('profitFromOrders')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
+                  ) : lydExchangeRate > 0 ? (
+                    <>
+                      <p className="text-3xl font-bold text-blue-600" data-testid="text-items-profit">
+                        {(metrics.totalItemsProfit * lydExchangeRate).toFixed(2)} LYD
+                      </p>
+                      <p className="text-xs text-muted-foreground">${metrics.totalItemsProfit.toFixed(2)}</p>
+                    </>
                   ) : (
                     <p className="text-3xl font-bold text-blue-600" data-testid="text-items-profit">
                       ${metrics.totalItemsProfit.toFixed(2)}
@@ -317,6 +344,13 @@ export default function Profits() {
                   <p className="text-sm text-muted-foreground">{t('profitFromShipping')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
+                  ) : lydExchangeRate > 0 ? (
+                    <>
+                      <p className="text-3xl font-bold text-blue-600" data-testid="text-shipping-profit">
+                        {(metrics.totalShippingProfit * lydExchangeRate).toFixed(2)} LYD
+                      </p>
+                      <p className="text-xs text-muted-foreground">${metrics.totalShippingProfit.toFixed(2)}</p>
+                    </>
                   ) : (
                     <p className="text-3xl font-bold text-orange-600" data-testid="text-shipping-profit">
                       ${metrics.totalShippingProfit.toFixed(2)}
@@ -338,6 +372,13 @@ export default function Profits() {
                   <p className="text-sm text-muted-foreground">{t('totalProfit')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
+                  ) : lydExchangeRate > 0 ? (
+                    <>
+                      <p className="text-3xl font-bold text-blue-600" data-testid="text-total-profit">
+                        {(metrics.totalProfit * lydExchangeRate).toFixed(2)} LYD
+                      </p>
+                      <p className="text-xs text-muted-foreground">${metrics.totalProfit.toFixed(2)}</p>
+                    </>
                   ) : (
                     <p className="text-3xl font-bold text-green-600" data-testid="text-total-profit">
                       ${metrics.totalProfit.toFixed(2)}
