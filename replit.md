@@ -70,6 +70,14 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
   - Added touch-action: none to dialog overlays to prevent mobile scroll issues
   - Fixed Select component padding and checkmark positioning for RTL (`rtl:pl-2 rtl:pr-8`, `rtl:left-auto rtl:right-2`)
   - Resolved freezing issues when using Arabic language with mobile zoom on touch devices
+- **Dual Currency Display System (October 2025)**:
+  - Comprehensive implementation of USD and LYD dual currency display across entire application
+  - Global LYD exchange rate stored in settings table (key: 'lyd_exchange_rate', default: 4.85)
+  - All pages updated to display amounts in both currencies: Expenses, Dashboard, Customers, Profits, Orders
+  - Consistent visual formatting: Bold blue LYD amount displayed prominently with USD shown below in smaller muted text
+  - Exchange rate fetched from global settings and applied consistently across all monetary displays
+  - Fallback to USD-only display when no exchange rate is configured
+  - Expenses page: New page added for tracking business expenses (Employee Salaries, Supplier Expenses, Marketing Commission, Rent, Cleaning Salaries, Other) with dual currency support
 
 # External Dependencies
 
