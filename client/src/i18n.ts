@@ -236,6 +236,8 @@ const resources = {
       skuPlaceholder: "SKU",
       shippingWeightKg: "Shipping Weight (kg)",
       shippingRecalculationNote: "Note: To enable automatic shipping recalculation when changing weight, please select the shipping country and category below.",
+      trackingNumber: "Tracking Number",
+      enterTrackingNumber: "Enter tracking number",
       
       // View Order Modal
       orderDetailsTitle: "Order Details",
@@ -1049,6 +1051,8 @@ const resources = {
       skuPlaceholder: "رمز المنتج",
       shippingWeightKg: "وزن الشحن (كجم)",
       shippingRecalculationNote: "ملاحظة: لتفعيل إعادة حساب الشحن تلقائياً عند تغيير الوزن، يرجى اختيار بلد الشحن وفئة الشحن أدناه.",
+      trackingNumber: "رقم التتبع",
+      enterTrackingNumber: "أدخل رقم التتبع",
       
       // View Order Modal
       orderDetailsTitle: "تفاصيل الطلب",

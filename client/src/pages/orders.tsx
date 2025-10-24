@@ -391,6 +391,7 @@ export default function Orders() {
         shippingCost: editingOrder.shippingCost,
         totalAmount: editingOrder.totalAmount,
         lydExchangeRate: editingOrder.lydExchangeRate || undefined,
+        trackingNumber: editingOrder.trackingNumber || undefined,
         notes: notes
       });
     } catch (error) {
@@ -976,6 +977,7 @@ export default function Orders() {
                   <TableRow>
                     <TableHead>{t('customer')}</TableHead>
                     <TableHead>{t('shippingCodeLabel')}</TableHead>
+                    <TableHead>{t('trackingNumber')}</TableHead>
                     <TableHead>{t('status')}</TableHead>
                     <TableHead>{t('total')}</TableHead>
                     <TableHead>{t('downPaymentLabel')}</TableHead>
@@ -993,6 +995,9 @@ export default function Orders() {
                       </TableCell>
                       <TableCell className="font-medium" data-testid={`text-shipping-code-${order.id}`}>
                         <span className="font-semibold text-primary">{order.customer.shippingCode || order.orderNumber}</span>
+                      </TableCell>
+                      <TableCell data-testid={`text-tracking-${order.id}`}>
+                        <span className="text-sm text-muted-foreground">{order.trackingNumber || "—"}</span>
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(order.status)} data-testid={`badge-status-${order.id}`}>
@@ -1950,9 +1955,17 @@ export default function Orders() {
                                   };
                                 });
                                 
+                                const lydRate = parseFloat(editingOrder.lydExchangeRate || "0");
+                                const shippingMsg = lydRate > 0 
+                                  ? `${(newShippingCost * lydRate).toFixed(2)} LYD ($${newShippingCost.toFixed(2)})`
+                                  : `$${newShippingCost.toFixed(2)}`;
+                                const totalMsg = lydRate > 0
+                                  ? `${(newTotal * lydRate).toFixed(2)} LYD ($${newTotal.toFixed(2)})`
+                                  : `$${newTotal.toFixed(2)}`;
+                                
                                 toast({
                                   title: t('shippingRecalculated'),
-                                  description: `Weight: ${newWeight}kg, Shipping: $${newShippingCost.toFixed(2)}, Total: $${newTotal.toFixed(2)}`,
+                                  description: `Weight: ${newWeight}kg, Shipping: ${shippingMsg}, Total: ${totalMsg}`,
                                 });
                               }
                             } catch (error) {
@@ -2040,9 +2053,17 @@ export default function Orders() {
                                   };
                                 });
                                 
+                                const lydRate = parseFloat(editingOrder.lydExchangeRate || "0");
+                                const shippingMsg = lydRate > 0 
+                                  ? `${(newShippingCost * lydRate).toFixed(2)} LYD ($${newShippingCost.toFixed(2)})`
+                                  : `$${newShippingCost.toFixed(2)}`;
+                                const totalMsg = lydRate > 0
+                                  ? `${(newTotal * lydRate).toFixed(2)} LYD ($${newTotal.toFixed(2)})`
+                                  : `$${newTotal.toFixed(2)}`;
+                                
                                 toast({
                                   title: t('shippingRecalculated'),
-                                  description: `Shipping: $${newShippingCost.toFixed(2)}, Total: $${newTotal.toFixed(2)}`,
+                                  description: `Shipping: ${shippingMsg}, Total: ${totalMsg}`,
                                 });
                               }
                             } catch (error) {
@@ -2109,9 +2130,17 @@ export default function Orders() {
                                   };
                                 });
                                 
+                                const lydRate = parseFloat(editingOrder.lydExchangeRate || "0");
+                                const shippingMsg = lydRate > 0 
+                                  ? `${(newShippingCost * lydRate).toFixed(2)} LYD ($${newShippingCost.toFixed(2)})`
+                                  : `$${newShippingCost.toFixed(2)}`;
+                                const totalMsg = lydRate > 0
+                                  ? `${(newTotal * lydRate).toFixed(2)} LYD ($${newTotal.toFixed(2)})`
+                                  : `$${newTotal.toFixed(2)}`;
+                                
                                 toast({
                                   title: t('shippingRecalculated'),
-                                  description: `Shipping: $${newShippingCost.toFixed(2)}, Total: $${newTotal.toFixed(2)}`,
+                                  description: `Shipping: ${shippingMsg}, Total: ${totalMsg}`,
                                 });
                               }
                             } catch (error) {
@@ -2132,13 +2161,45 @@ export default function Orders() {
                   </div>
 
                   {editingOrder.shippingCountry && editingOrder.shippingCategory && (
-                    <div className="bg-blue-50 p-3 rounded text-sm space-y-1">
-                      <div className="font-medium">Shipping Details:</div>
-                      <div>Country: {editingOrder.shippingCountry}, Category: {editingOrder.shippingCategory}</div>
-                      <div>Shipping Cost: ${parseFloat(editingOrder.shippingCost || "0").toFixed(2)}</div>
-                      <div className="font-medium pt-1 border-t border-blue-200">Total: ${parseFloat(editingOrder.totalAmount || "0").toFixed(2)}</div>
+                    <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded text-sm space-y-1">
+                      <div className="font-medium text-blue-900 dark:text-blue-100">Shipping Details:</div>
+                      <div className="text-blue-800 dark:text-blue-200">Country: {editingOrder.shippingCountry}, Category: {editingOrder.shippingCategory}</div>
+                      {editingOrder.lydExchangeRate && parseFloat(editingOrder.lydExchangeRate) > 0 ? (
+                        <>
+                          <div className="text-blue-800 dark:text-blue-200">
+                            Shipping Cost: <span className="font-bold">{(parseFloat(editingOrder.shippingCost || "0") * parseFloat(editingOrder.lydExchangeRate)).toFixed(2)} LYD</span>
+                            <span className="text-xs ml-2">(${parseFloat(editingOrder.shippingCost || "0").toFixed(2)})</span>
+                          </div>
+                          <div className="font-medium pt-1 border-t border-blue-200 dark:border-blue-700 text-blue-900 dark:text-blue-100">
+                            Total: <span className="font-bold">{(parseFloat(editingOrder.totalAmount || "0") * parseFloat(editingOrder.lydExchangeRate)).toFixed(2)} LYD</span>
+                            <span className="text-xs ml-2">(${parseFloat(editingOrder.totalAmount || "0").toFixed(2)})</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-blue-800 dark:text-blue-200">Shipping Cost: ${parseFloat(editingOrder.shippingCost || "0").toFixed(2)}</div>
+                          <div className="font-medium pt-1 border-t border-blue-200 dark:border-blue-700 text-blue-900 dark:text-blue-100">Total: ${parseFloat(editingOrder.totalAmount || "0").toFixed(2)}</div>
+                        </>
+                      )}
                     </div>
                   )}
+
+                  <div>
+                    <Label htmlFor="edit-tracking-number">{t('trackingNumber')}</Label>
+                    <Input
+                      id="edit-tracking-number"
+                      type="text"
+                      value={editingOrder.trackingNumber || ""}
+                      onChange={(e) => {
+                        setEditingOrder(prev => {
+                          if (!prev) return null;
+                          return { ...prev, trackingNumber: e.target.value };
+                        });
+                      }}
+                      placeholder={t('enterTrackingNumber')}
+                      data-testid="input-edit-tracking-number"
+                    />
+                  </div>
 
                   <div>
                     <Label htmlFor="edit-notes">{t('orderNotesLabel')}</Label>
@@ -2210,6 +2271,12 @@ export default function Orders() {
                       <span className="font-medium text-muted-foreground">{t('createdDate')}</span>
                       <p className="mt-1" data-testid="text-view-created">{new Date(viewingOrder.createdAt).toLocaleString(i18n.language === 'ar' ? 'ar-SA' : 'en-US')}</p>
                     </div>
+                    {viewingOrder.trackingNumber && (
+                      <div className="col-span-2">
+                        <span className="font-medium text-muted-foreground">{t('trackingNumber')}</span>
+                        <p className="mt-1 font-semibold text-primary" data-testid="text-view-tracking">{viewingOrder.trackingNumber}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
