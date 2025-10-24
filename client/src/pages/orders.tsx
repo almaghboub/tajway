@@ -135,6 +135,12 @@ export default function Orders() {
     },
   });
 
+  const { data: settings = [] } = useQuery<Array<{ id: string; key: string; value: string }>>({
+    queryKey: ["/api/settings"],
+  });
+
+  const globalLydExchangeRate = parseFloat(settings.find(s => s.key === 'lyd_exchange_rate')?.value || '0');
+
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: { order: InsertOrder; items: InsertOrderItem[]; images?: OrderImage[] }) => {
       const response = await apiRequest("POST", "/api/orders", orderData);
@@ -1005,10 +1011,10 @@ export default function Orders() {
                         </Badge>
                       </TableCell>
                       <TableCell data-testid={`text-total-${order.id}`}>
-                        {order.lydExchangeRate && parseFloat(order.lydExchangeRate) > 0 ? (
+                        {globalLydExchangeRate > 0 ? (
                           <div>
                             <div className="font-bold text-blue-600">
-                              {(parseFloat(order.totalAmount) * parseFloat(order.lydExchangeRate)).toFixed(2)} LYD
+                              {(parseFloat(order.totalAmount) * globalLydExchangeRate).toFixed(2)} LYD
                             </div>
                             <div className="text-xs text-muted-foreground">
                               ${parseFloat(order.totalAmount).toFixed(2)}
@@ -1019,10 +1025,10 @@ export default function Orders() {
                         )}
                       </TableCell>
                       <TableCell data-testid={`text-down-payment-${order.id}`}>
-                        {order.lydExchangeRate && parseFloat(order.lydExchangeRate) > 0 ? (
+                        {globalLydExchangeRate > 0 ? (
                           <div>
-                            <div className="font-semibold text-green-600">
-                              {(parseFloat(order.downPayment || "0") * parseFloat(order.lydExchangeRate)).toFixed(2)} LYD
+                            <div className="font-bold text-green-600">
+                              {(parseFloat(order.downPayment || "0") * globalLydExchangeRate).toFixed(2)} LYD
                             </div>
                             <div className="text-xs text-muted-foreground">
                               ${parseFloat(order.downPayment || "0").toFixed(2)}
@@ -1033,10 +1039,10 @@ export default function Orders() {
                         )}
                       </TableCell>
                       <TableCell data-testid={`text-remaining-${order.id}`}>
-                        {order.lydExchangeRate && parseFloat(order.lydExchangeRate) > 0 ? (
+                        {globalLydExchangeRate > 0 ? (
                           <div>
-                            <div className="font-bold text-orange-600">
-                              {(parseFloat(order.remainingBalance || "0") * parseFloat(order.lydExchangeRate)).toFixed(2)} LYD
+                            <div className="font-bold text-blue-600">
+                              {(parseFloat(order.remainingBalance || "0") * globalLydExchangeRate).toFixed(2)} LYD
                             </div>
                             <div className="text-xs text-muted-foreground">
                               ${parseFloat(order.remainingBalance || "0").toFixed(2)}
@@ -1047,10 +1053,10 @@ export default function Orders() {
                         )}
                       </TableCell>
                       <TableCell data-testid={`text-profit-${order.id}`}>
-                        {order.lydExchangeRate && parseFloat(order.lydExchangeRate) > 0 ? (
+                        {globalLydExchangeRate > 0 ? (
                           <div>
-                            <div className="font-bold text-green-600">
-                              {(parseFloat(order.totalProfit) * parseFloat(order.lydExchangeRate)).toFixed(2)} LYD
+                            <div className="font-bold text-blue-600">
+                              {(parseFloat(order.totalProfit) * globalLydExchangeRate).toFixed(2)} LYD
                             </div>
                             <div className="text-xs text-muted-foreground">
                               ${parseFloat(order.totalProfit).toFixed(2)}
