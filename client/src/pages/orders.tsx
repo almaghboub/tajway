@@ -1538,12 +1538,18 @@ export default function Orders() {
                     <div className="flex justify-between font-medium text-lg border-t pt-2">
                       <span>{t('total')}:</span>
                       <div className="text-right">
-                        <div data-testid="text-total">
-                          {calculateTotals().currency} {calculateTotals().total.toFixed(2)}
-                        </div>
-                        {lydExchangeRate > 0 && (
-                          <div className="text-base text-blue-600 font-bold">
-                            {(calculateTotals().total * lydExchangeRate).toFixed(2)} LYD
+                        {lydExchangeRate > 0 ? (
+                          <>
+                            <div className="text-lg text-blue-600 font-bold" data-testid="text-total">
+                              {(calculateTotals().total * lydExchangeRate).toFixed(2)} LYD
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              ({calculateTotals().currency} {calculateTotals().total.toFixed(2)})
+                            </div>
+                          </>
+                        ) : (
+                          <div data-testid="text-total">
+                            {calculateTotals().currency} {calculateTotals().total.toFixed(2)}
                           </div>
                         )}
                       </div>
@@ -1568,10 +1574,18 @@ export default function Orders() {
                         <div className="flex justify-between text-orange-600 font-medium">
                           <span>{t('remainingBalance')}:</span>
                           <div className="text-right">
-                            <div data-testid="text-payment-remaining">${(calculateTotals().total - downPayment).toFixed(2)}</div>
-                            {lydExchangeRate > 0 && (
-                              <div className="text-sm">
-                                {((calculateTotals().total - downPayment) * lydExchangeRate).toFixed(2)} LYD
+                            {lydExchangeRate > 0 ? (
+                              <>
+                                <div className="font-bold" data-testid="text-payment-remaining">
+                                  {((calculateTotals().total - downPayment) * lydExchangeRate).toFixed(2)} LYD
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  (${(calculateTotals().total - downPayment).toFixed(2)})
+                                </div>
+                              </>
+                            ) : (
+                              <div data-testid="text-payment-remaining">
+                                ${(calculateTotals().total - downPayment).toFixed(2)}
                               </div>
                             )}
                           </div>
@@ -1581,12 +1595,18 @@ export default function Orders() {
                     <div className="flex justify-between text-green-600 font-medium border-t pt-2">
                       <span>{t('estimatedProfit')}</span>
                       <div className="text-right">
-                        <div data-testid="text-profit">
-                          {calculateTotals().currency} {calculateTotals().profit.toFixed(2)}
-                        </div>
-                        {lydExchangeRate > 0 && (
-                          <div className="text-sm">
-                            {(calculateTotals().profit * lydExchangeRate).toFixed(2)} LYD
+                        {lydExchangeRate > 0 ? (
+                          <>
+                            <div className="font-bold" data-testid="text-profit">
+                              {(calculateTotals().profit * lydExchangeRate).toFixed(2)} LYD
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              ({calculateTotals().currency} {calculateTotals().profit.toFixed(2)})
+                            </div>
+                          </>
+                        ) : (
+                          <div data-testid="text-profit">
+                            {calculateTotals().currency} {calculateTotals().profit.toFixed(2)}
                           </div>
                         )}
                       </div>
