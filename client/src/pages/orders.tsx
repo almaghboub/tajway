@@ -231,7 +231,7 @@ export default function Orders() {
   });
 
   const updateOrderItemMutation = useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; quantity?: number; originalPrice?: string; discountedPrice?: string; unitPrice?: string; productCode?: string }) => {
+    mutationFn: async ({ id, ...data }: { id: string; quantity?: number; numberOfPieces?: number; originalPrice?: string; discountedPrice?: string; unitPrice?: string; productCode?: string }) => {
       const response = await apiRequest("PUT", `/api/order-items/${id}`, data);
       if (!response.ok) {
         throw new Error(t('failedUpdateOrderItem'));
@@ -1480,18 +1480,47 @@ export default function Orders() {
                 </div>
 
                 <div>
-                  <Label htmlFor="lyd-exchange-rate">{t('lydExchangeRate')}</Label>
+                  <Label htmlFor="lyd-exchange-rate" className="flex items-center gap-2">
+                    {t('lydExchangeRate')}
+                    {lydExchangeRate === 0 && shippingWeight !== 1 && (
+                      <span className="text-xs text-orange-600 font-medium animate-pulse">
+                        ← {t('required') || 'Required to see LYD prices'}
+                      </span>
+                    )}
+                  </Label>
                   <Input
                     id="lyd-exchange-rate"
                     type="number"
                     step="0.0001"
                     min="0"
                     value={lydExchangeRate || ""}
-                    onChange={(e) => setLydExchangeRate(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => {
+                      const rate = parseFloat(e.target.value) || 0;
+                      setLydExchangeRate(rate);
+                      // Trigger recalculation if shipping was already calculated
+                      if (rate > 0 && shippingCalculation) {
+                        toast({
+                          title: "LYD Calculation Updated",
+                          description: `Shipping: ${(calculateTotals().shippingCost * rate).toFixed(2)} LYD | Total: ${(calculateTotals().total * rate).toFixed(2)} LYD`,
+                          duration: 3000,
+                        });
+                      }
+                    }}
                     placeholder={t('enterLydRate')}
                     required
+                    className={lydExchangeRate === 0 && shippingWeight !== 1 ? "border-orange-400 border-2 animate-pulse" : ""}
                     data-testid="input-lyd-exchange-rate"
                   />
+                  {lydExchangeRate > 0 && shippingCalculation && (
+                    <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950 rounded text-sm">
+                      <div className="font-medium text-blue-900 dark:text-blue-100">
+                        Shipping in LYD: {(calculateTotals().shippingCost * lydExchangeRate).toFixed(2)} LYD
+                      </div>
+                      <div className="text-xs text-blue-700 dark:text-blue-300">
+                        Total Order: {(calculateTotals().total * lydExchangeRate).toFixed(2)} LYD
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>
