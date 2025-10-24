@@ -10,6 +10,7 @@ import { Header } from "@/components/header";
 import { analyticsApi } from "@/lib/api";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/components/auth-provider";
+import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
 import type { OrderWithCustomer } from "@shared/schema";
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, Legend } from "recharts";
@@ -23,26 +24,8 @@ export default function Dashboard() {
     queryFn: analyticsApi.getDashboardMetrics,
   });
 
-  // Fetch LYD exchange rate from settings
-  const { data: settings = [] } = useQuery({
-    queryKey: ["/api/settings"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/settings");
-      return response.json();
-    },
-  });
-
-  // Get LYD exchange rate
-  const lydExchangeRate = settings.find((s: any) => s.key === "lyd_exchange_rate")?.value;
-  const exchangeRate = lydExchangeRate ? parseFloat(lydExchangeRate) : 0;
-
-  // Helper function to convert USD to LYD
-  const convertToLYD = (usdAmount: number): string => {
-    if (exchangeRate > 0) {
-      return (usdAmount * exchangeRate).toFixed(2);
-    }
-    return "0.00";
-  };
+  // Use shared LYD exchange rate hook
+  const { exchangeRate, convertToLYD } = useLydExchangeRate();
 
   const translateStatus = (status: string) => {
     const statusNormalized = status.toLowerCase().replace(/[\s_-]+/g, '');
