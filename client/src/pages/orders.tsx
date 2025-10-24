@@ -97,6 +97,7 @@ export default function Orders() {
   const [clothingSize, setClothingSize] = useState("");
   const [downPayment, setDownPayment] = useState(0);
   const [lydExchangeRate, setLydExchangeRate] = useState<number>(0);
+  const [hasPromptedForLydRate, setHasPromptedForLydRate] = useState(false);
   const [shippingCalculation, setShippingCalculation] = useState<{
     base_shipping: number;
     total: number;
@@ -491,6 +492,7 @@ export default function Orders() {
     setClothingSize("");
     setDownPayment(0);
     setLydExchangeRate(0);
+    setHasPromptedForLydRate(false);
     setShippingCalculation(null);
     setNotes("");
     setCustomOrderCode("");
@@ -1420,7 +1422,18 @@ export default function Orders() {
                       step="0.1"
                       min="0.1"
                       value={shippingWeight}
-                      onChange={(e) => setShippingWeight(parseFloat(e.target.value) || 1)}
+                      onChange={(e) => {
+                        setShippingWeight(parseFloat(e.target.value) || 1);
+                        // Prompt for LYD exchange rate if not set (only once)
+                        if (lydExchangeRate === 0 && !hasPromptedForLydRate) {
+                          toast({
+                            title: "LYD Exchange Rate",
+                            description: "Please enter the LYD exchange rate to see prices in Libyan Dinar",
+                            duration: 4000,
+                          });
+                          setHasPromptedForLydRate(true);
+                        }
+                      }}
                       data-testid="input-shipping-weight"
                     />
                   </div>
@@ -1451,9 +1464,16 @@ export default function Orders() {
                   
                   {shippingCalculation && (
                     <div className="text-sm text-green-600 font-medium" data-testid="text-shipping-calculated">
-                      {t('calculatedShipping')} {shippingCalculation.currency} {shippingCalculation.base_shipping.toFixed(2)}
-                      {shippingCalculation.currency !== 'USD' && (
-                        <span className="text-blue-600"> {t('convertedToUsd')}</span>
+                      <div>
+                        {t('calculatedShipping')} {shippingCalculation.currency} {shippingCalculation.base_shipping.toFixed(2)}
+                        {shippingCalculation.currency !== 'USD' && (
+                          <span className="text-blue-600"> {t('convertedToUsd')}</span>
+                        )}
+                      </div>
+                      {lydExchangeRate > 0 && (
+                        <div className="text-blue-600 mt-1">
+                          ≈ {(calculateTotals().shippingCost * lydExchangeRate).toFixed(2)} LYD
+                        </div>
                       )}
                     </div>
                   )}
@@ -1493,19 +1513,40 @@ export default function Orders() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>{t('subtotal')}</span>
-                      <span data-testid="text-subtotal">${calculateTotals().subtotal.toFixed(2)}</span>
+                      <div className="text-right">
+                        <div data-testid="text-subtotal">${calculateTotals().subtotal.toFixed(2)}</div>
+                        {lydExchangeRate > 0 && (
+                          <div className="text-xs text-blue-600 font-medium">
+                            {(calculateTotals().subtotal * lydExchangeRate).toFixed(2)} LYD
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between">
                       <span>{t('shipping')}</span>
-                      <span data-testid="text-shipping">
-                        {calculateTotals().currency} {calculateTotals().shippingCost.toFixed(2)}
-                      </span>
+                      <div className="text-right">
+                        <div data-testid="text-shipping">
+                          {calculateTotals().currency} {calculateTotals().shippingCost.toFixed(2)}
+                        </div>
+                        {lydExchangeRate > 0 && (
+                          <div className="text-xs text-blue-600 font-medium">
+                            {(calculateTotals().shippingCost * lydExchangeRate).toFixed(2)} LYD
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between font-medium text-lg border-t pt-2">
                       <span>{t('total')}:</span>
-                      <span data-testid="text-total">
-                        {calculateTotals().currency} {calculateTotals().total.toFixed(2)}
-                      </span>
+                      <div className="text-right">
+                        <div data-testid="text-total">
+                          {calculateTotals().currency} {calculateTotals().total.toFixed(2)}
+                        </div>
+                        {lydExchangeRate > 0 && (
+                          <div className="text-base text-blue-600 font-bold">
+                            {(calculateTotals().total * lydExchangeRate).toFixed(2)} LYD
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="border-t pt-3 space-y-3">
                       <div>
@@ -1526,15 +1567,29 @@ export default function Orders() {
                       {downPayment > 0 && (
                         <div className="flex justify-between text-orange-600 font-medium">
                           <span>{t('remainingBalance')}:</span>
-                          <span data-testid="text-payment-remaining">${(calculateTotals().total - downPayment).toFixed(2)}</span>
+                          <div className="text-right">
+                            <div data-testid="text-payment-remaining">${(calculateTotals().total - downPayment).toFixed(2)}</div>
+                            {lydExchangeRate > 0 && (
+                              <div className="text-sm">
+                                {((calculateTotals().total - downPayment) * lydExchangeRate).toFixed(2)} LYD
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
                     <div className="flex justify-between text-green-600 font-medium border-t pt-2">
                       <span>{t('estimatedProfit')}</span>
-                      <span data-testid="text-profit">
-                        {calculateTotals().currency} {calculateTotals().profit.toFixed(2)}
-                      </span>
+                      <div className="text-right">
+                        <div data-testid="text-profit">
+                          {calculateTotals().currency} {calculateTotals().profit.toFixed(2)}
+                        </div>
+                        {lydExchangeRate > 0 && (
+                          <div className="text-sm">
+                            {(calculateTotals().profit * lydExchangeRate).toFixed(2)} LYD
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
