@@ -2431,7 +2431,7 @@ export default function Orders() {
                 <p className="text-muted-foreground mt-2">{t('loadingOrderDetails')}</p>
               </div>
             ) : orderWithItems ? (
-              <Invoice order={orderWithItems} onPrint={handlePrint} />
+              <Invoice order={orderWithItems} lydExchangeRate={globalLydExchangeRate} onPrint={handlePrint} />
             ) : (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">{t('failedLoadDetails')}</p>

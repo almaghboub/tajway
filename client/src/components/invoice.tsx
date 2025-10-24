@@ -34,6 +34,7 @@ interface OrderWithItems {
 
 interface InvoiceProps {
   order: OrderWithItems;
+  lydExchangeRate?: number;
   onPrint?: () => void;
 }
 
@@ -92,13 +93,13 @@ function numberToWords(num: number, language: string = 'en'): string {
     let result = '';
     
     if (dollars === 0) {
-      result = 'صفر دولار';
+      result = 'صفر دينار';
     } else {
-      result = convert(dollars) + ' دولار';
+      result = convert(dollars) + ' دينار';
     }
     
     if (cents > 0) {
-      result += ' و' + convert(cents) + ' سنت';
+      result += ' و' + convert(cents) + ' درهم';
     }
     
     return result;
@@ -127,26 +128,27 @@ function numberToWords(num: number, language: string = 'en'): string {
     let result = '';
     
     if (dollars === 0) {
-      result = 'Zero Dollars';
+      result = 'Zero Dinars';
     } else {
-      result = convert(dollars) + ' Dollar' + (dollars !== 1 ? 's' : '');
+      result = convert(dollars) + ' Dinar' + (dollars !== 1 ? 's' : '');
     }
     
     if (cents > 0) {
-      result += ' and ' + convert(cents) + ' Cent' + (cents !== 1 ? 's' : '');
+      result += ' and ' + convert(cents) + ' Dirham' + (cents !== 1 ? 's' : '');
     }
     
     return result;
   }
 }
 
-export function Invoice({ order, onPrint }: InvoiceProps) {
+export function Invoice({ order, lydExchangeRate = 0, onPrint }: InvoiceProps) {
   const { t, i18n } = useTranslation();
-  const subtotal = order.items?.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) || 0;
-  const shipping = parseFloat(order.shippingCost || "0");
-  const total = parseFloat(order.totalAmount || "0");
-  const downPayment = parseFloat(order.downPayment || "0");
-  const remainingBalance = parseFloat(order.remainingBalance || "0");
+  const rate = lydExchangeRate || 1;
+  const subtotal = (order.items?.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) || 0) * rate;
+  const shipping = parseFloat(order.shippingCost || "0") * rate;
+  const total = parseFloat(order.totalAmount || "0") * rate;
+  const downPayment = parseFloat(order.downPayment || "0") * rate;
+  const remainingBalance = parseFloat(order.remainingBalance || "0") * rate;
   const totalInWords = numberToWords(total, i18n.language);
 
   return (
@@ -222,8 +224,8 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
                 <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                   <td className="px-4 py-3 font-medium">{item.productName}</td>
                   <td className="px-4 py-3 text-center">{item.quantity}</td>
-                  <td className="px-4 py-3 text-right">${parseFloat(item.unitPrice).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right font-semibold">${parseFloat(item.totalPrice).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-right">{(parseFloat(item.unitPrice) * rate).toFixed(2)} LYD</td>
+                  <td className="px-4 py-3 text-right font-semibold">{(parseFloat(item.totalPrice) * rate).toFixed(2)} LYD</td>
                 </tr>
               )) || (
                 <tr>
@@ -243,28 +245,28 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
           <div className="bg-gray-50 rounded-lg p-6 space-y-3">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">{t('subtotal')}:</span>
-              <span className="font-semibold">${subtotal.toFixed(2)}</span>
+              <span className="font-semibold">{subtotal.toFixed(2)} LYD</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">{t('shippingHandling')}:</span>
-              <span className="font-semibold">${shipping.toFixed(2)}</span>
+              <span className="font-semibold">{shipping.toFixed(2)} LYD</span>
             </div>
             <div className="flex justify-between text-sm">
             </div>
             <div className="border-t-2 border-gray-300 pt-3 mt-3">
               <div className="flex justify-between items-center">
                 <span className="text-lg font-bold" style={{ color: '#b8860b' }}>{t('total')}:</span>
-                <span className="text-2xl font-bold" style={{ color: '#b8860b' }}>${total.toFixed(2)}</span>
+                <span className="text-2xl font-bold" style={{ color: '#b8860b' }}>{total.toFixed(2)} LYD</span>
               </div>
             </div>
             <div className="border-t-2 border-gray-300 pt-3 mt-3">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">{t('downPaymentLabel')}:</span>
-                <span className="font-semibold text-green-600">${downPayment.toFixed(2)}</span>
+                <span className="font-semibold text-green-600">{downPayment.toFixed(2)} LYD</span>
               </div>
               <div className="flex justify-between items-center mt-2">
                 <span className="text-lg font-bold text-orange-600">{t('remainingBalance')}:</span>
-                <span className="text-xl font-bold text-orange-600">${remainingBalance.toFixed(2)}</span>
+                <span className="text-xl font-bold text-orange-600">{remainingBalance.toFixed(2)} LYD</span>
               </div>
             </div>
           </div>

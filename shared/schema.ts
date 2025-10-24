@@ -45,6 +45,7 @@ export const orders = pgTable("orders", {
   shippingCost: decimal("shipping_cost", { precision: 10, scale: 2 }).notNull().default("0"),
   shippingWeight: decimal("shipping_weight", { precision: 10, scale: 2 }).notNull().default("1"),
   shippingCountry: text("shipping_country"),
+  shippingCity: text("shipping_city"),
   shippingCategory: text("shipping_category"),
   commission: decimal("commission", { precision: 10, scale: 2 }).notNull().default("0"),
   shippingProfit: decimal("shipping_profit", { precision: 10, scale: 2 }).notNull().default("0"),
