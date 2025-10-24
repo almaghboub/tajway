@@ -59,6 +59,12 @@ export default function Dashboard() {
     },
   });
 
+  const { data: settings = [] } = useQuery<Array<{ id: string; key: string; value: string }>>({
+    queryKey: ["/api/settings"],
+  });
+
+  const lydExchangeRate = parseFloat(settings.find(s => s.key === 'lyd_exchange_rate')?.value || '0');
+
   // Calculate current month sales
   const currentMonthSales = orders
     .filter(order => {
@@ -223,9 +229,20 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">{t('currentMonthSales')}</p>
-                    <p className="text-2xl font-bold text-primary" data-testid="text-month-sales">
-                      ${currentMonthSales.toFixed(2)}
-                    </p>
+                    {lydExchangeRate > 0 ? (
+                      <>
+                        <p className="text-2xl font-bold text-blue-600" data-testid="text-month-sales">
+                          {(currentMonthSales * lydExchangeRate).toFixed(2)} LYD
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          ${currentMonthSales.toFixed(2)}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-2xl font-bold text-primary" data-testid="text-month-sales">
+                        ${currentMonthSales.toFixed(2)}
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground mt-1">
                       {format(new Date(), 'MMMM yyyy')}
                     </p>
@@ -245,6 +262,15 @@ export default function Dashboard() {
                       <p className="text-sm text-muted-foreground">{t('totalProfit')}</p>
                       {isLoading ? (
                         <Skeleton className="h-8 w-24 mt-1" />
+                      ) : lydExchangeRate > 0 ? (
+                        <>
+                          <p className="text-2xl font-bold text-blue-600" data-testid="text-total-profit">
+                            {((metrics?.totalProfit || 0) * lydExchangeRate).toFixed(2)} LYD
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            ${metrics?.totalProfit?.toFixed(2) || "0.00"}
+                          </p>
+                        </>
                       ) : (
                         <p className="text-2xl font-bold text-green-600" data-testid="text-total-profit">
                           ${metrics?.totalProfit?.toFixed(2) || "0.00"}
@@ -284,7 +310,10 @@ export default function Dashboard() {
                     />
                     <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip 
-                      formatter={(value) => `$${value}`}
+                      formatter={(value) => lydExchangeRate > 0 
+                        ? [`${(Number(value) * lydExchangeRate).toFixed(2)} LYD`, `$${value}`]
+                        : `$${value}`
+                      }
                       contentStyle={{ 
                         backgroundColor: 'hsl(var(--background))',
                         border: '1px solid hsl(var(--border))',
@@ -376,7 +405,14 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">${parseFloat(order.totalAmount).toFixed(2)}</p>
+                        {lydExchangeRate > 0 ? (
+                          <>
+                            <p className="font-bold text-blue-600">{(parseFloat(order.totalAmount) * lydExchangeRate).toFixed(2)} LYD</p>
+                            <p className="text-xs text-muted-foreground">${parseFloat(order.totalAmount).toFixed(2)}</p>
+                          </>
+                        ) : (
+                          <p className="font-medium">${parseFloat(order.totalAmount).toFixed(2)}</p>
+                        )}
                         <Badge variant={
                           order.status.toLowerCase() === "delivered" || order.status.toLowerCase() === "completed" ? "default" : 
                           order.status.toLowerCase() === "cancelled" ? "destructive" : "secondary"
