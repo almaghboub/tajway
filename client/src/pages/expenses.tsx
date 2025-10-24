@@ -19,6 +19,7 @@ export default function Expenses() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [amount, setAmount] = useState("");
+  const [personName, setPersonName] = useState("");
   const [description, setDescription] = useState("");
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -33,7 +34,7 @@ export default function Expenses() {
   const lydExchangeRate = parseFloat(settings.find(s => s.key === 'lyd_exchange_rate')?.value || '0');
 
   const createExpenseMutation = useMutation({
-    mutationFn: async (data: { category: string; amount: string; description?: string; date: string }) => {
+    mutationFn: async (data: { category: string; amount: string; personName: string; description?: string; date: string }) => {
       return await apiRequest("POST", "/api/expenses", data);
     },
     onSuccess: () => {
@@ -77,6 +78,7 @@ export default function Expenses() {
   const resetForm = () => {
     setSelectedCategory("");
     setAmount("");
+    setPersonName("");
     setDescription("");
     setExpenseDate(new Date().toISOString().split('T')[0]);
   };
@@ -84,10 +86,10 @@ export default function Expenses() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedCategory || !amount) {
+    if (!selectedCategory || !amount || !personName) {
       toast({
         title: t('validationError'),
-        description: t('selectCategoryAndAmount'),
+        description: t('fillAllRequired') || 'Please fill all required fields',
         variant: "destructive",
       });
       return;
@@ -96,6 +98,7 @@ export default function Expenses() {
     createExpenseMutation.mutate({
       category: selectedCategory,
       amount: amount,
+      personName: personName,
       description: description || undefined,
       date: expenseDate,
     });
@@ -171,6 +174,19 @@ export default function Expenses() {
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder={t('enterAmount')}
                   data-testid="input-amount"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="person-name">{t('personName')}</Label>
+                <Input
+                  id="person-name"
+                  type="text"
+                  value={personName}
+                  onChange={(e) => setPersonName(e.target.value)}
+                  placeholder={t('enterPersonName') || 'Enter person name'}
+                  data-testid="input-person-name"
                   required
                 />
               </div>
@@ -294,6 +310,7 @@ export default function Expenses() {
                 <TableRow>
                   <TableHead>{t('date')}</TableHead>
                   <TableHead>{t('category')}</TableHead>
+                  <TableHead>{t('personName')}</TableHead>
                   <TableHead>{t('description')}</TableHead>
                   <TableHead className="text-right">{t('amount')}</TableHead>
                   <TableHead className="text-right">{t('actions')}</TableHead>
@@ -307,6 +324,9 @@ export default function Expenses() {
                     </TableCell>
                     <TableCell data-testid={`text-category-${expense.id}`}>
                       {getCategoryLabel(expense.category)}
+                    </TableCell>
+                    <TableCell data-testid={`text-person-name-${expense.id}`}>
+                      {expense.personName}
                     </TableCell>
                     <TableCell data-testid={`text-description-${expense.id}`}>
                       {expense.description || "—"}
