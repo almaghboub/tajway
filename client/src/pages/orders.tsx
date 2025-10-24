@@ -1391,7 +1391,7 @@ export default function Orders() {
                       <SelectTrigger id="shipping-country" data-testid="select-shipping-country">
                         <SelectValue placeholder={t('selectCountry')} />
                       </SelectTrigger>
-                      <SelectContent className="z-[100]">
+                      <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
                         {shippingCountries.map((country) => (
                           <SelectItem key={country} value={country}>
                             {country}
@@ -1406,7 +1406,7 @@ export default function Orders() {
                       <SelectTrigger id="shipping-category" data-testid="select-shipping-category">
                         <SelectValue placeholder={t('selectCategory')} />
                       </SelectTrigger>
-                      <SelectContent className="z-[100]">
+                      <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
                         <SelectItem value="normal">{t('normal')}</SelectItem>
                         <SelectItem value="perfumes">{t('perfumes')}</SelectItem>
                         <SelectItem value="electronics">{t('electronics')}</SelectItem>
