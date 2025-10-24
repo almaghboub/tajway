@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import logoPath from "@assets/lynx-logo.png";
+import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
 
 interface OrderWithItems {
   id: string;
@@ -47,7 +48,7 @@ function numberToWords(num: number, language: string = 'en'): string {
     const tens = ['', '', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
     const hundreds = ['', 'مائة', 'مئتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة', 'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'];
     
-    if (num === 0) return 'صفر دولار';
+    if (num === 0) return 'صفر دينار';
     
     const convert = (n: number): string => {
       if (n === 0) return '';
@@ -93,9 +94,9 @@ function numberToWords(num: number, language: string = 'en'): string {
     let result = '';
     
     if (dollars === 0) {
-      result = 'صفر دولار';
+      result = 'صفر دينار';
     } else {
-      result = convert(dollars) + ' دولار';
+      result = convert(dollars) + ' دينار';
     }
     
     if (cents > 0) {
@@ -109,7 +110,7 @@ function numberToWords(num: number, language: string = 'en'): string {
     const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
     const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
     
-    if (num === 0) return 'Zero Dollars';
+    if (num === 0) return 'Zero Dinars';
     
     const convert = (n: number): string => {
       if (n === 0) return '';
@@ -128,9 +129,9 @@ function numberToWords(num: number, language: string = 'en'): string {
     let result = '';
     
     if (dollars === 0) {
-      result = 'Zero Dollars';
+      result = 'Zero Dinars';
     } else {
-      result = convert(dollars) + ' Dollar' + (dollars !== 1 ? 's' : '');
+      result = convert(dollars) + ' Dinar' + (dollars !== 1 ? 's' : '');
     }
     
     if (cents > 0) {
@@ -143,13 +144,26 @@ function numberToWords(num: number, language: string = 'en'): string {
 
 export function Invoice({ order, onPrint }: InvoiceProps) {
   const { t, i18n } = useTranslation();
-  const subtotal = order.items?.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) || 0;
-  const shipping = parseFloat(order.shippingCost || "0");
-  const commission = parseFloat(order.commission || "0");
-  const total = parseFloat(order.totalAmount || "0");
-  const downPayment = parseFloat(order.downPayment || "0");
-  const remainingBalance = parseFloat(order.remainingBalance || "0");
+  const { exchangeRate, convertToLYD } = useLydExchangeRate();
+  
+  // Calculate USD amounts
+  const subtotalUSD = order.items?.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) || 0;
+  const shippingUSD = parseFloat(order.shippingCost || "0");
+  const commissionUSD = parseFloat(order.commission || "0");
+  const totalUSD = parseFloat(order.totalAmount || "0");
+  const downPaymentUSD = parseFloat(order.downPayment || "0");
+  const remainingBalanceUSD = parseFloat(order.remainingBalance || "0");
+  
+  // Convert to LYD
+  const subtotal = exchangeRate > 0 ? parseFloat(convertToLYD(subtotalUSD)) : subtotalUSD;
+  const shipping = exchangeRate > 0 ? parseFloat(convertToLYD(shippingUSD)) : shippingUSD;
+  const commission = exchangeRate > 0 ? parseFloat(convertToLYD(commissionUSD)) : commissionUSD;
+  const total = exchangeRate > 0 ? parseFloat(convertToLYD(totalUSD)) : totalUSD;
+  const downPayment = exchangeRate > 0 ? parseFloat(convertToLYD(downPaymentUSD)) : downPaymentUSD;
+  const remainingBalance = exchangeRate > 0 ? parseFloat(convertToLYD(remainingBalanceUSD)) : remainingBalanceUSD;
+  
   const totalInWords = numberToWords(total, i18n.language);
+  const currency = exchangeRate > 0 ? "LYD" : "USD";
 
   return (
     <div className="invoice-container max-w-4xl mx-auto p-8 bg-white text-black">
@@ -220,14 +234,21 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {order.items?.map((item, index) => (
-                <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="px-4 py-3 font-medium">{item.productName}</td>
-                  <td className="px-4 py-3 text-center">{item.quantity}</td>
-                  <td className="px-4 py-3 text-right">${parseFloat(item.unitPrice).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right font-semibold">${parseFloat(item.totalPrice).toFixed(2)}</td>
-                </tr>
-              )) || (
+              {order.items?.map((item, index) => {
+                const unitPriceUSD = parseFloat(item.unitPrice);
+                const totalPriceUSD = parseFloat(item.totalPrice);
+                const unitPrice = exchangeRate > 0 ? parseFloat(convertToLYD(unitPriceUSD)) : unitPriceUSD;
+                const totalPrice = exchangeRate > 0 ? parseFloat(convertToLYD(totalPriceUSD)) : totalPriceUSD;
+                
+                return (
+                  <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="px-4 py-3 font-medium">{item.productName}</td>
+                    <td className="px-4 py-3 text-center">{item.quantity}</td>
+                    <td className="px-4 py-3 text-right">{currency} {unitPrice.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-right font-semibold">{currency} {totalPrice.toFixed(2)}</td>
+                  </tr>
+                );
+              }) || (
                 <tr>
                   <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
                     {t('loadingShipmentDetails')}
@@ -245,30 +266,30 @@ export function Invoice({ order, onPrint }: InvoiceProps) {
           <div className="bg-gray-50 rounded-lg p-6 space-y-3">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">{t('subtotal')}:</span>
-              <span className="font-semibold">${subtotal.toFixed(2)}</span>
+              <span className="font-semibold">{currency} {subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">{t('shippingHandling')}:</span>
-              <span className="font-semibold">${shipping.toFixed(2)}</span>
+              <span className="font-semibold">{currency} {shipping.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">{t('commission')}:</span>
-              <span className="font-semibold">${commission.toFixed(2)}</span>
+              <span className="font-semibold">{currency} {commission.toFixed(2)}</span>
             </div>
             <div className="border-t-2 border-gray-300 pt-3 mt-3">
               <div className="flex justify-between items-center">
                 <span className="text-lg font-bold text-red-700">{t('total')}:</span>
-                <span className="text-2xl font-bold text-red-700">${total.toFixed(2)}</span>
+                <span className="text-2xl font-bold text-red-700">{currency} {total.toFixed(2)}</span>
               </div>
             </div>
             <div className="border-t-2 border-gray-300 pt-3 mt-3">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">{t('downPaymentLabel')}:</span>
-                <span className="font-semibold text-green-600">${downPayment.toFixed(2)}</span>
+                <span className="font-semibold text-green-600">{currency} {downPayment.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center mt-2">
                 <span className="text-lg font-bold text-orange-600">{t('remainingBalance')}:</span>
-                <span className="text-xl font-bold text-orange-600">${remainingBalance.toFixed(2)}</span>
+                <span className="text-xl font-bold text-orange-600">{currency} {remainingBalance.toFixed(2)}</span>
               </div>
             </div>
           </div>

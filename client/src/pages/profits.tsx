@@ -15,10 +15,12 @@ import { SalesReport } from "@/components/sales-report";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
 import type { OrderWithCustomer } from "@shared/schema";
 
 export default function Profits() {
   const { t } = useTranslation();
+  const { exchangeRate, convertToLYD } = useLydExchangeRate();
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [selectedReportType, setSelectedReportType] = useState<"profit" | "commission" | "financial">("profit");
   const [reportData, setReportData] = useState<any>(null);
@@ -26,6 +28,7 @@ export default function Profits() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [countryFilters, setCountryFilters] = useState<string[]>([]);
   const { toast } = useToast();
+  const currency = exchangeRate > 0 ? "LYD" : "USD";
 
   const { data: orders = [], isLoading: isLoadingOrders } = useQuery({
     queryKey: ["/api/orders"],
@@ -60,11 +63,18 @@ export default function Profits() {
 
   const metrics = useMemo(() => {
     const orderCount = filteredOrders.length;
-    const totalRevenue = filteredOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount), 0);
-    const totalItemsProfit = filteredOrders.reduce((sum, order) => sum + parseFloat(order.itemsProfit || "0"), 0);
-    const totalShippingProfit = filteredOrders.reduce((sum, order) => sum + parseFloat(order.shippingProfit || "0"), 0);
-    const totalProfit = filteredOrders.reduce((sum, order) => sum + parseFloat(order.totalProfit || "0"), 0);
-    const averageOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
+    const totalRevenueUSD = filteredOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount), 0);
+    const totalItemsProfitUSD = filteredOrders.reduce((sum, order) => sum + parseFloat(order.itemsProfit || "0"), 0);
+    const totalShippingProfitUSD = filteredOrders.reduce((sum, order) => sum + parseFloat(order.shippingProfit || "0"), 0);
+    const totalProfitUSD = filteredOrders.reduce((sum, order) => sum + parseFloat(order.totalProfit || "0"), 0);
+    const averageOrderValueUSD = orderCount > 0 ? totalRevenueUSD / orderCount : 0;
+    
+    // Convert to LYD if exchange rate is set
+    const totalRevenue = exchangeRate > 0 ? parseFloat(convertToLYD(totalRevenueUSD)) : totalRevenueUSD;
+    const totalItemsProfit = exchangeRate > 0 ? parseFloat(convertToLYD(totalItemsProfitUSD)) : totalItemsProfitUSD;
+    const totalShippingProfit = exchangeRate > 0 ? parseFloat(convertToLYD(totalShippingProfitUSD)) : totalShippingProfitUSD;
+    const totalProfit = exchangeRate > 0 ? parseFloat(convertToLYD(totalProfitUSD)) : totalProfitUSD;
+    const averageOrderValue = exchangeRate > 0 ? parseFloat(convertToLYD(averageOrderValueUSD)) : averageOrderValueUSD;
     const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
     return {
@@ -76,7 +86,7 @@ export default function Profits() {
       averageOrderValue,
       profitMargin,
     };
-  }, [filteredOrders]);
+  }, [filteredOrders, exchangeRate, convertToLYD]);
 
   const isLoading = isLoadingOrders;
 
@@ -155,7 +165,9 @@ export default function Profits() {
         orders: reportType === "profit" ? orderSummaries : undefined,
         countryBreakdown: reportType === "commission" ? countryBreakdown : undefined,
         periodStart: orders.length > 0 ? orders[orders.length - 1].createdAt : undefined,
-        periodEnd: orders.length > 0 ? orders[0].createdAt : undefined
+        periodEnd: orders.length > 0 ? orders[0].createdAt : undefined,
+        exchangeRate,
+        currency
       };
       
       setReportData(reportData);
@@ -279,7 +291,7 @@ export default function Profits() {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-3xl font-bold text-purple-600" data-testid="text-average-order-value">
-                      ${metrics.averageOrderValue.toFixed(2)}
+                      {currency} {metrics.averageOrderValue.toFixed(2)}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">{t('perOrder')}</p>
@@ -300,7 +312,7 @@ export default function Profits() {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-3xl font-bold text-primary" data-testid="text-total-revenue">
-                      ${metrics.totalRevenue.toFixed(2)}
+                      {currency} {metrics.totalRevenue.toFixed(2)}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">{t('fromAllOrders')}</p>
@@ -324,7 +336,7 @@ export default function Profits() {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-3xl font-bold text-blue-600" data-testid="text-items-profit">
-                      ${metrics.totalItemsProfit.toFixed(2)}
+                      {currency} {metrics.totalItemsProfit.toFixed(2)}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">{t('orderValueMinusCost')}</p>
@@ -345,7 +357,7 @@ export default function Profits() {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-3xl font-bold text-orange-600" data-testid="text-shipping-profit">
-                      ${metrics.totalShippingProfit.toFixed(2)}
+                      {currency} {metrics.totalShippingProfit.toFixed(2)}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">{t('shippingFeeMinusCost')}</p>
@@ -366,7 +378,7 @@ export default function Profits() {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-3xl font-bold text-green-600" data-testid="text-total-profit">
-                      ${metrics.totalProfit.toFixed(2)}
+                      {currency} {metrics.totalProfit.toFixed(2)}
                     </p>
                   )}
                   <p className="text-xs text-green-600 flex items-center mt-1">

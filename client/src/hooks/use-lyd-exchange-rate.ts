@@ -28,7 +28,8 @@ export function useLydExchangeRate() {
     if (exchangeRate > 0) {
       return (usdAmount * exchangeRate).toFixed(2);
     }
-    return "0.00";
+    // When no exchange rate is set, return the original USD amount
+    return usdAmount.toFixed(2);
   };
 
   return {
