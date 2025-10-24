@@ -1388,10 +1388,10 @@ export default function Orders() {
                   <div>
                     <Label htmlFor="shipping-country">{t('shippingCountry')}</Label>
                     <Select value={shippingCountry} onValueChange={setShippingCountry}>
-                      <SelectTrigger data-testid="select-shipping-country">
+                      <SelectTrigger id="shipping-country" data-testid="select-shipping-country">
                         <SelectValue placeholder={t('selectCountry')} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[100]">
                         {shippingCountries.map((country) => (
                           <SelectItem key={country} value={country}>
                             {country}
@@ -1403,10 +1403,10 @@ export default function Orders() {
                   <div>
                     <Label htmlFor="shipping-category">{t('shippingCategory')}</Label>
                     <Select value={shippingCategory} onValueChange={setShippingCategory}>
-                      <SelectTrigger data-testid="select-shipping-category">
+                      <SelectTrigger id="shipping-category" data-testid="select-shipping-category">
                         <SelectValue placeholder={t('selectCategory')} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[100]">
                         <SelectItem value="normal">{t('normal')}</SelectItem>
                         <SelectItem value="perfumes">{t('perfumes')}</SelectItem>
                         <SelectItem value="electronics">{t('electronics')}</SelectItem>
