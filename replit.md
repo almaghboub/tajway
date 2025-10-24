@@ -48,14 +48,21 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
 - **LYD Currency Conversion System (October 2025)**:
   - Created shared `useLydExchangeRate` custom hook in `client/src/hooks/use-lyd-exchange-rate.ts` for centralized exchange rate management
   - Hook provides `exchangeRate`, `convertToLYD(amount)` helper, and loading state
-  - Dual-currency display (USD/LYD) across Dashboard, Orders, and Customers pages
+  - `convertToLYD` returns original USD amount when exchange rate is not set (≤0), preserving proper USD fallback behavior
+  - Dual-currency display (USD/LYD) across Dashboard, Orders, Customers, Invoices, and Profit Reports
   - Color-coded LYD amounts for clarity: green (totals/revenue), blue (down payments), orange (remaining balance), purple (profit)
   - LYD amounts display conditionally when exchange rate is set (> 0)
   - Dashboard: Revenue and profit metrics show both USD and LYD
   - Orders page: Total amount, down payment, remaining balance, and profit all show USD/LYD
   - Customers page: Total order amount and down payment display in both currencies (table and view modal)
+  - Invoice component: All monetary amounts (total, down payment, remaining) display in LYD with dynamic currency labels
+  - Invoice number-to-words: Updated to output "Dinar(s)/دينار" instead of "Dollar(s)/دولار" for both English and Arabic
+  - Profits page: All financial metrics (revenue, profit, average order value) display in LYD
+  - SalesReport component: All three report types (Profit Analysis, Commission Breakdown, Financial Summary) display amounts in LYD
+  - Report data flow: Profits page passes exchangeRate and currency props to SalesReport for consistent conversion
   - Exchange rate stored in settings table with key `lyd_exchange_rate`
   - All LYD values formatted to 2 decimal places for consistency
+  - USD fallback: When no exchange rate is configured, all pages correctly display USD amounts instead of zeros
 - Down payment management moved to customer-level with proportional distribution across orders.
 - Improved customer search supporting multiple fields (phone, name, code).
 - Enhanced visibility of customer codes in invoices and order/customer tables.
