@@ -23,6 +23,27 @@ export default function Dashboard() {
     queryFn: analyticsApi.getDashboardMetrics,
   });
 
+  // Fetch LYD exchange rate from settings
+  const { data: settings = [] } = useQuery({
+    queryKey: ["/api/settings"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/settings");
+      return response.json();
+    },
+  });
+
+  // Get LYD exchange rate
+  const lydExchangeRate = settings.find((s: any) => s.key === "lyd_exchange_rate")?.value;
+  const exchangeRate = lydExchangeRate ? parseFloat(lydExchangeRate) : 0;
+
+  // Helper function to convert USD to LYD
+  const convertToLYD = (usdAmount: number): string => {
+    if (exchangeRate > 0) {
+      return (usdAmount * exchangeRate).toFixed(2);
+    }
+    return "0.00";
+  };
+
   const translateStatus = (status: string) => {
     const statusNormalized = status.toLowerCase().replace(/[\s_-]+/g, '');
     switch (statusNormalized) {
@@ -221,11 +242,16 @@ export default function Dashboard() {
             <Card className="animate-fade-in" data-testid="card-month-sales">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm text-muted-foreground">{t('currentMonthSales')}</p>
                     <p className="text-2xl font-bold text-primary" data-testid="text-month-sales">
                       ${currentMonthSales.toFixed(2)}
                     </p>
+                    {exchangeRate > 0 && (
+                      <p className="text-lg font-semibold text-green-600 mt-1" data-testid="text-month-sales-lyd">
+                        {convertToLYD(currentMonthSales)} LYD
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground mt-1">
                       {format(new Date(), 'MMMM yyyy')}
                     </p>
@@ -241,14 +267,21 @@ export default function Dashboard() {
               <Card className="animate-fade-in" data-testid="card-total-profit">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <p className="text-sm text-muted-foreground">{t('totalProfit')}</p>
                       {isLoading ? (
                         <Skeleton className="h-8 w-24 mt-1" />
                       ) : (
-                        <p className="text-2xl font-bold text-green-600" data-testid="text-total-profit">
-                          ${metrics?.totalProfit?.toFixed(2) || "0.00"}
-                        </p>
+                        <>
+                          <p className="text-2xl font-bold text-green-600" data-testid="text-total-profit">
+                            ${metrics?.totalProfit?.toFixed(2) || "0.00"}
+                          </p>
+                          {exchangeRate > 0 && metrics?.totalProfit !== undefined && (
+                            <p className="text-lg font-semibold text-primary mt-1" data-testid="text-total-profit-lyd">
+                              {convertToLYD(metrics.totalProfit)} LYD
+                            </p>
+                          )}
+                        </>
                       )}
                       <p className="text-xs text-muted-foreground mt-1">
                         {t('allTime')} • {metrics?.profitMargin?.toFixed(1) || "0.0"}% {t('margin')}
@@ -377,6 +410,11 @@ export default function Dashboard() {
                       </div>
                       <div className="text-right">
                         <p className="font-medium">${parseFloat(order.totalAmount).toFixed(2)}</p>
+                        {exchangeRate > 0 && (
+                          <p className="text-sm text-green-600 font-medium">
+                            {convertToLYD(parseFloat(order.totalAmount))} LYD
+                          </p>
+                        )}
                         <Badge variant={
                           order.status.toLowerCase() === "delivered" || order.status.toLowerCase() === "completed" ? "default" : 
                           order.status.toLowerCase() === "cancelled" ? "destructive" : "secondary"
