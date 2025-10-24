@@ -1818,7 +1818,7 @@ export default function Orders() {
                         <SelectTrigger id="edit-status" data-testid="select-edit-status">
                           <SelectValue placeholder={t('selectStatus')} />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
                           <SelectItem value="pending">{t('pending')}</SelectItem>
                           <SelectItem value="processing">{t('processing')}</SelectItem>
                           <SelectItem value="shipped">{t('shipped')}</SelectItem>
@@ -1980,7 +1980,7 @@ export default function Orders() {
                         <SelectTrigger id="edit-shipping-country" data-testid="select-edit-shipping-country">
                           <SelectValue placeholder={t('selectCountry')} />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
                           {shippingCountries.map((country) => (
                             <SelectItem key={country} value={country}>
                               {country}
@@ -2049,7 +2049,7 @@ export default function Orders() {
                         <SelectTrigger id="edit-shipping-category" data-testid="select-edit-shipping-category">
                           <SelectValue placeholder={t('selectCategory')} />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
                           <SelectItem value="normal">{t('normalShipping')}</SelectItem>
                           <SelectItem value="express">{t('expressShipping')}</SelectItem>
                         </SelectContent>
