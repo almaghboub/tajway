@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Package, Search, Filter, Trash2, X, Printer } from "lucide-react";
+import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,6 +121,9 @@ export default function Orders() {
       return response.json() as Promise<OrderWithCustomer[]>;
     },
   });
+
+  // Use shared LYD exchange rate hook
+  const { exchangeRate, convertToLYD } = useLydExchangeRate();
 
   const { data: customers = [] } = useQuery({
     queryKey: ["/api/customers"],
@@ -1012,16 +1016,28 @@ export default function Orders() {
                         </Badge>
                       </TableCell>
                       <TableCell data-testid={`text-total-${order.id}`}>
-                        ${parseFloat(order.totalAmount).toFixed(2)}
+                        <div className="font-medium">${parseFloat(order.totalAmount).toFixed(2)}</div>
+                        {exchangeRate > 0 && (
+                          <div className="text-sm text-green-600 font-semibold">{convertToLYD(parseFloat(order.totalAmount))} LYD</div>
+                        )}
                       </TableCell>
                       <TableCell data-testid={`text-down-payment-${order.id}`}>
-                        <span className="font-semibold text-green-600">${parseFloat(order.downPayment || "0").toFixed(2)}</span>
+                        <div className="font-semibold text-green-600">${parseFloat(order.downPayment || "0").toFixed(2)}</div>
+                        {exchangeRate > 0 && parseFloat(order.downPayment || "0") > 0 && (
+                          <div className="text-sm text-blue-600 font-medium">{convertToLYD(parseFloat(order.downPayment || "0"))} LYD</div>
+                        )}
                       </TableCell>
                       <TableCell data-testid={`text-remaining-${order.id}`}>
-                        ${parseFloat(order.remainingBalance || "0").toFixed(2)}
+                        <div>${parseFloat(order.remainingBalance || "0").toFixed(2)}</div>
+                        {exchangeRate > 0 && (
+                          <div className="text-sm text-orange-600 font-medium">{convertToLYD(parseFloat(order.remainingBalance || "0"))} LYD</div>
+                        )}
                       </TableCell>
                       <TableCell data-testid={`text-profit-${order.id}`}>
-                        ${parseFloat(order.totalProfit).toFixed(2)}
+                        <div className="font-medium text-green-600">${parseFloat(order.totalProfit).toFixed(2)}</div>
+                        {exchangeRate > 0 && (
+                          <div className="text-sm text-purple-600 font-semibold">{convertToLYD(parseFloat(order.totalProfit))} LYD</div>
+                        )}
                       </TableCell>
                       <TableCell data-testid={`text-date-${order.id}`}>
                         {new Date(order.createdAt).toLocaleDateString()}

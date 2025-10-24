@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Users, Search, Filter, X, Trash2 } from "lucide-react";
+import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,6 +76,9 @@ export default function Customers() {
       return response.json() as Promise<OrderWithCustomer[]>;
     },
   });
+
+  // Use shared LYD exchange rate hook
+  const { exchangeRate, convertToLYD } = useLydExchangeRate();
 
   const createCustomerMutation = useMutation({
     mutationFn: async (customerData: InsertCustomer) => {
@@ -470,10 +474,16 @@ export default function Customers() {
                           <span className="font-semibold text-primary">{customer.shippingCode || "-"}</span>
                         </TableCell>
                         <TableCell data-testid={`text-total-amount-${customer.id}`}>
-                          <span className="font-semibold">${totalAmount.toFixed(2)}</span>
+                          <div className="font-semibold">${totalAmount.toFixed(2)}</div>
+                          {exchangeRate > 0 && (
+                            <div className="text-sm text-green-600 font-medium">{convertToLYD(totalAmount)} LYD</div>
+                          )}
                         </TableCell>
                         <TableCell data-testid={`text-down-payment-${customer.id}`}>
-                          <span className="font-semibold text-green-600">${totalDownPayment.toFixed(2)}</span>
+                          <div className="font-semibold text-green-600">${totalDownPayment.toFixed(2)}</div>
+                          {exchangeRate > 0 && totalDownPayment > 0 && (
+                            <div className="text-sm text-blue-600 font-medium">{convertToLYD(totalDownPayment)} LYD</div>
+                          )}
                         </TableCell>
                         <TableCell data-testid={`text-phone-${customer.id}`}>
                           {customer.phone || t("emptyPhone")}
@@ -795,10 +805,16 @@ export default function Customers() {
                         <div>
                           <span className="font-medium text-muted-foreground">{t('totalOrderAmount')}:</span>
                           <p className="mt-1 font-semibold" data-testid="text-view-total-amount">${totalAmount.toFixed(2)}</p>
+                          {exchangeRate > 0 && (
+                            <p className="mt-1 text-sm text-green-600 font-semibold">{convertToLYD(totalAmount)} LYD</p>
+                          )}
                         </div>
                         <div>
                           <span className="font-medium text-muted-foreground">{t('totalDownPayment')}:</span>
                           <p className="mt-1 text-blue-600 font-semibold" data-testid="text-view-total-down-payment">${totalDownPayment.toFixed(2)}</p>
+                          {exchangeRate > 0 && totalDownPayment > 0 && (
+                            <p className="mt-1 text-sm text-blue-600 font-semibold">{convertToLYD(totalDownPayment)} LYD</p>
+                          )}
                         </div>
                         <div>
                           <span className="font-medium text-muted-foreground">{t('totalRemainingBalance')}:</span>
