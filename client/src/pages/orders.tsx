@@ -390,6 +390,7 @@ export default function Orders() {
         shippingCategory: editingOrder.shippingCategory || undefined,
         shippingCost: editingOrder.shippingCost,
         totalAmount: editingOrder.totalAmount,
+        lydExchangeRate: editingOrder.lydExchangeRate || undefined,
         notes: notes
       });
     } catch (error) {
@@ -999,16 +1000,60 @@ export default function Orders() {
                         </Badge>
                       </TableCell>
                       <TableCell data-testid={`text-total-${order.id}`}>
-                        ${parseFloat(order.totalAmount).toFixed(2)}
+                        {order.lydExchangeRate && parseFloat(order.lydExchangeRate) > 0 ? (
+                          <div>
+                            <div className="font-bold text-blue-600">
+                              {(parseFloat(order.totalAmount) * parseFloat(order.lydExchangeRate)).toFixed(2)} LYD
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              ${parseFloat(order.totalAmount).toFixed(2)}
+                            </div>
+                          </div>
+                        ) : (
+                          `$${parseFloat(order.totalAmount).toFixed(2)}`
+                        )}
                       </TableCell>
                       <TableCell data-testid={`text-down-payment-${order.id}`}>
-                        <span className="font-semibold text-green-600">${parseFloat(order.downPayment || "0").toFixed(2)}</span>
+                        {order.lydExchangeRate && parseFloat(order.lydExchangeRate) > 0 ? (
+                          <div>
+                            <div className="font-semibold text-green-600">
+                              {(parseFloat(order.downPayment || "0") * parseFloat(order.lydExchangeRate)).toFixed(2)} LYD
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              ${parseFloat(order.downPayment || "0").toFixed(2)}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="font-semibold text-green-600">${parseFloat(order.downPayment || "0").toFixed(2)}</span>
+                        )}
                       </TableCell>
                       <TableCell data-testid={`text-remaining-${order.id}`}>
-                        ${parseFloat(order.remainingBalance || "0").toFixed(2)}
+                        {order.lydExchangeRate && parseFloat(order.lydExchangeRate) > 0 ? (
+                          <div>
+                            <div className="font-bold text-orange-600">
+                              {(parseFloat(order.remainingBalance || "0") * parseFloat(order.lydExchangeRate)).toFixed(2)} LYD
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              ${parseFloat(order.remainingBalance || "0").toFixed(2)}
+                            </div>
+                          </div>
+                        ) : (
+                          `$${parseFloat(order.remainingBalance || "0").toFixed(2)}`
+                        )}
                       </TableCell>
                       <TableCell data-testid={`text-profit-${order.id}`}>
-                        ${parseFloat(order.totalProfit).toFixed(2)}
+                        {order.lydExchangeRate && parseFloat(order.lydExchangeRate) > 0 ? (
+                          <div>
+                            <div className="font-bold text-green-600">
+                              {(parseFloat(order.totalProfit) * parseFloat(order.lydExchangeRate)).toFixed(2)} LYD
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              ${parseFloat(order.totalProfit).toFixed(2)}
+                            </div>
+                          </div>
+                        ) : (
+                          `$${parseFloat(order.totalProfit).toFixed(2)}`
+                        )}
                       </TableCell>
                       <TableCell data-testid={`text-date-${order.id}`}>
                         {new Date(order.createdAt).toLocaleDateString()}
@@ -1918,6 +1963,35 @@ export default function Orders() {
                         data-testid="input-edit-shipping-weight"
                       />
                     </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <Label htmlFor="edit-lyd-exchange-rate">{t('lydExchangeRate')}</Label>
+                    <Input
+                      id="edit-lyd-exchange-rate"
+                      type="number"
+                      step="0.0001"
+                      min="0"
+                      value={editingOrder.lydExchangeRate || ""}
+                      onChange={(e) => {
+                        setEditingOrder(prev => {
+                          if (!prev) return null;
+                          return { ...prev, lydExchangeRate: e.target.value };
+                        });
+                      }}
+                      placeholder={t('enterLydRate')}
+                      data-testid="input-edit-lyd-exchange-rate"
+                    />
+                    {editingOrder.lydExchangeRate && parseFloat(editingOrder.lydExchangeRate) > 0 && (
+                      <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950 rounded text-sm">
+                        <div className="font-medium text-blue-900 dark:text-blue-100">
+                          Total in LYD: {(parseFloat(editingOrder.totalAmount || "0") * parseFloat(editingOrder.lydExchangeRate)).toFixed(2)} LYD
+                        </div>
+                        <div className="text-xs text-blue-700 dark:text-blue-300">
+                          Remaining: {(parseFloat(editingOrder.remainingBalance || "0") * parseFloat(editingOrder.lydExchangeRate)).toFixed(2)} LYD
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
