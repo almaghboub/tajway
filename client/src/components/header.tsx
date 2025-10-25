@@ -1,6 +1,7 @@
 import { Bell, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface HeaderProps {
   title: string;
@@ -9,6 +10,7 @@ interface HeaderProps {
 
 export function Header({ title, description }: HeaderProps) {
   const { i18n, t } = useTranslation();
+  const isMobile = useIsMobile();
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'ar' : 'en';
@@ -23,15 +25,18 @@ export function Header({ title, description }: HeaderProps) {
   };
 
   return (
-    <header className="bg-card border-b border-border px-6 py-4">
+    <header className="bg-card border-b border-border px-4 sm:px-6 py-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold text-foreground">{title}</h2>
-          {description && (
-            <p className="text-muted-foreground">{description}</p>
+        {/* Title section - with padding for mobile hamburger menu */}
+        <div className={`${isMobile ? 'ltr:ml-12 rtl:mr-12' : ''}`}>
+          <h2 className="text-xl sm:text-2xl font-semibold text-foreground">{title}</h2>
+          {description && !isMobile && (
+            <p className="text-sm text-muted-foreground">{description}</p>
           )}
         </div>
-        <div className="flex items-center space-x-4">
+        
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 sm:gap-4">
           {/* Language selector */}
           <Button
             variant="ghost"
@@ -40,15 +45,17 @@ export function Header({ title, description }: HeaderProps) {
             className="text-muted-foreground hover:text-foreground"
             data-testid="button-language-selector"
           >
-            <Languages className="w-5 h-5 mr-1" />
-            <span className="text-sm font-medium">{i18n.language === 'en' ? 'AR' : 'EN'}</span>
+            <Languages className="w-4 h-4 sm:w-5 sm:h-5 ltr:mr-1 rtl:ml-1" />
+            <span className="text-xs sm:text-sm font-medium">{i18n.language === 'en' ? 'AR' : 'EN'}</span>
           </Button>
 
-          {/* System status indicator */}
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-sm text-muted-foreground">{t('systemOnline')}</span>
-          </div>
+          {/* System status indicator - hidden on mobile */}
+          {!isMobile && (
+            <div className="flex items-center space-x-2 rtl:space-x-reverse">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm text-muted-foreground">{t('systemOnline')}</span>
+            </div>
+          )}
           
           {/* Notification bell */}
           <Button
@@ -57,8 +64,8 @@ export function Header({ title, description }: HeaderProps) {
             className="relative text-muted-foreground hover:text-foreground"
             data-testid="button-notifications"
           >
-            <Bell className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
+            <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="absolute -top-1 ltr:-right-1 rtl:-left-1 w-4 h-4 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
               3
             </span>
           </Button>

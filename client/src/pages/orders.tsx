@@ -985,20 +985,21 @@ export default function Orders() {
                 )}
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('customer')}</TableHead>
-                    <TableHead>{t('shippingCodeLabel')}</TableHead>
-                    <TableHead>{t('status')}</TableHead>
-                    <TableHead>{t('total')}</TableHead>
-                    <TableHead>{t('downPaymentLabel')}</TableHead>
-                    <TableHead>{t('remainingLabel')}</TableHead>
-                    <TableHead>{t('profit')}</TableHead>
-                    <TableHead>{t('createdAt')}</TableHead>
-                    <TableHead>{t('actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('customer')}</TableHead>
+                      <TableHead>{t('shippingCodeLabel')}</TableHead>
+                      <TableHead>{t('status')}</TableHead>
+                      <TableHead>{t('total')}</TableHead>
+                      <TableHead>{t('downPaymentLabel')}</TableHead>
+                      <TableHead>{t('remainingLabel')}</TableHead>
+                      <TableHead>{t('profit')}</TableHead>
+                      <TableHead>{t('createdAt')}</TableHead>
+                      <TableHead>{t('actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
                 <TableBody>
                   {filteredOrders.map((order) => (
                     <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
@@ -1081,6 +1082,7 @@ export default function Orders() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             )}
           </CardContent>
         </Card>

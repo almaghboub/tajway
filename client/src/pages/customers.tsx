@@ -446,19 +446,20 @@ export default function Customers() {
                 )}
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("name")}</TableHead>
-                    <TableHead>{t('shippingCodeLabel')}</TableHead>
-                    <TableHead>{t('totalAmountLabel')}</TableHead>
-                    <TableHead>{t('downPaymentLabel')}</TableHead>
-                    <TableHead>{t("phone")}</TableHead>
-                    <TableHead>{t("country")}</TableHead>
-                    <TableHead>{t("customerCreated")}</TableHead>
-                    <TableHead>{t("actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("name")}</TableHead>
+                      <TableHead>{t('shippingCodeLabel')}</TableHead>
+                      <TableHead>{t('totalAmountLabel')}</TableHead>
+                      <TableHead>{t('downPaymentLabel')}</TableHead>
+                      <TableHead>{t("phone")}</TableHead>
+                      <TableHead>{t("country")}</TableHead>
+                      <TableHead>{t("customerCreated")}</TableHead>
+                      <TableHead>{t("actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
                 <TableBody>
                   {filteredCustomers.map((customer) => {
                     const customerOrders = orders.filter(order => order.customerId === customer.id);
@@ -522,6 +523,7 @@ export default function Customers() {
                   })}
                 </TableBody>
               </Table>
+            </div>
             )}
           </CardContent>
         </Card>
