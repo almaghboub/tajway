@@ -125,6 +125,11 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
   - **Dashboard Cards**:
     - Responsive grid: `grid-cols-1 md:grid-cols-2 lg:grid-cols-4`
     - Cards stack vertically on mobile, 2 columns on tablet, 4 columns on desktop
+  - **Responsive Action Buttons**:
+    - "New Order" and "Add Customer" buttons adapt to screen size
+    - Mobile (< 640px): Show icon-only to prevent text cutoff
+    - Desktop (≥ 640px): Show icon + text for clarity
+    - Implementation: `hidden sm:inline` for text, `sm:ltr:mr-2 sm:rtl:ml-2` for RTL-aware spacing
   - **Architect Reviewed**: Pass rating with no critical regressions detected
   - **Key Implementation Details**:
     - Used shadcn/ui Sheet component for mobile drawer
