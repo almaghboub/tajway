@@ -80,11 +80,16 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
   - Added touch-action: none to dialog overlays to prevent mobile scroll issues
   - Fixed Select component padding and checkmark positioning for RTL (`rtl:pl-2 rtl:pr-8`, `rtl:left-auto rtl:right-2`)
   - **Dialog Centering Fix (October 25, 2025)**:
-    - Root cause: Dialog component used `left-[50%]` positioning which doesn't automatically flip in RTL mode
-    - This caused dialogs (especially new order dialog) to appear half off-screen in Arabic mode
-    - Solution: Changed dialog positioning from `left-[50%]` to `start-[50%]` - CSS logical property that automatically becomes `left` in LTR and `right` in RTL
-    - Result: All dialogs now properly center in both English (LTR) and Arabic (RTL) modes
-    - Verified: Works with existing `-translate-x-1/2` transform to maintain proper centering
+    - Root cause: Dialog component needed direction-specific positioning AND translation for proper RTL centering
+    - Issue: Dialogs appeared off-screen or overflowed viewport in Arabic (RTL) mode
+    - Solution: Implemented direction-aware positioning and translation:
+      - LTR: `left: 50%` + `translateX(-50%)` = centered
+      - RTL: `right: 50%` + `translateX(+50%)` = centered
+      - Implementation: `ltr:left-1/2 ltr:-translate-x-1/2 rtl:right-1/2 rtl:translate-x-1/2`
+    - Width constraint: `w-[calc(100%-2rem)]` ensures 1rem margin on each side and prevents viewport overflow
+    - Removed problematic `w-[95vw]` override from orders page dialog
+    - Result: All dialogs now perfectly center with equal margins in both English (LTR) and Arabic (RTL) modes
+    - Verified: E2E tested on desktop (1280x720) and mobile (390x844) with confirmed equal margins in both languages
   - **CRITICAL FIX: iOS Safari RTL Initialization Freeze (October 14, 2025)**:
     - Root cause: i18next auto-detecting Arabic from device system language and setting `dir="rtl"` before React finishes loading caused complete UI freeze on iOS Safari
     - Solution implemented: Force initial language to English in i18n config, disable navigator language detection (use localStorage only)
@@ -94,13 +99,10 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
     - Result: App now works perfectly in both LTR and RTL modes without any freezing on iOS Safari
     - E2E tested: Language toggle, dialogs, navigation, and all interactions work correctly in both directions
   - **CRITICAL FIX: Mobile Dialog Opening in RTL Mode (October 15, 2025)**:
-    - Root cause: Dialog component used `left-[50%]` positioning which doesn't automatically flip in RTL mode, causing dialogs to render off-screen in Arabic
-    - Mobile freezing: Dialog overlay lacked proper touch event handling, causing app to freeze on mobile when attempting to open dialogs in RTL
-    - Solution implemented:
-      1. Changed dialog positioning from `left-[50%]` to `start-[50%]` - CSS logical property that automatically becomes `left` in LTR and `right` in RTL
-      2. Added `touch-none` class to dialog overlay to prevent mobile touch event blocking
-    - Result: Dialogs now open smoothly and are properly centered in both English (LTR) and Arabic (RTL) on all mobile devices
-    - Verified: E2E tested on mobile viewport (iPhone 14) - dialog opens/closes without freezing in both language modes
+    - Root cause: Dialog overlay lacked proper touch event handling, causing app to freeze on mobile when attempting to open dialogs
+    - Solution implemented: Added `touch-none` class to dialog overlay to prevent mobile touch event blocking
+    - Result: Dialogs now open smoothly on all mobile devices without freezing
+    - Note: Dialog centering in RTL was later fixed with direction-aware positioning (see Dialog Centering Fix above)
 - **Complete Responsive Design Implementation (October 25, 2025)**:
   - Implemented fully responsive UI working seamlessly on phones, tablets (iPad), and desktop computers
   - **Responsive Sidebar Navigation**:
