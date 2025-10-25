@@ -79,6 +79,12 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
   - Fixed text alignment in dialog headers with RTL support (`rtl:sm:text-right`)
   - Added touch-action: none to dialog overlays to prevent mobile scroll issues
   - Fixed Select component padding and checkmark positioning for RTL (`rtl:pl-2 rtl:pr-8`, `rtl:left-auto rtl:right-2`)
+  - **Dialog Centering Fix (October 25, 2025)**:
+    - Root cause: Dialog component used `left-[50%]` positioning which doesn't automatically flip in RTL mode
+    - This caused dialogs (especially new order dialog) to appear half off-screen in Arabic mode
+    - Solution: Changed dialog positioning from `left-[50%]` to `start-[50%]` - CSS logical property that automatically becomes `left` in LTR and `right` in RTL
+    - Result: All dialogs now properly center in both English (LTR) and Arabic (RTL) modes
+    - Verified: Works with existing `-translate-x-1/2` transform to maintain proper centering
   - **CRITICAL FIX: iOS Safari RTL Initialization Freeze (October 14, 2025)**:
     - Root cause: i18next auto-detecting Arabic from device system language and setting `dir="rtl"` before React finishes loading caused complete UI freeze on iOS Safari
     - Solution implemented: Force initial language to English in i18n config, disable navigator language detection (use localStorage only)
