@@ -1089,7 +1089,7 @@ export default function Orders() {
 
         {/* Order Creation Modal */}
         <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
-          <DialogContent className="max-w-4xl w-[95vw] max-h-[90dvh] overflow-y-auto" data-testid="modal-create-order">
+          <DialogContent className="max-w-4xl max-h-[90dvh] overflow-y-auto" data-testid="modal-create-order">
             <DialogHeader>
               <DialogTitle>{t('createNewOrder')}</DialogTitle>
             </DialogHeader>
