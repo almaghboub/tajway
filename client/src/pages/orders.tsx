@@ -951,8 +951,8 @@ export default function Orders() {
             </Popover>
           </div>
           <Button onClick={() => setIsModalOpen(true)} data-testid="button-new-order">
-            <Plus className="w-4 h-4 ltr:mr-2 rtl:ml-2" />
-            {t('newOrder')}
+            <Plus className="w-4 h-4 sm:ltr:mr-2 sm:rtl:ml-2" />
+            <span className="hidden sm:inline">{t('newOrder')}</span>
           </Button>
         </div>
 

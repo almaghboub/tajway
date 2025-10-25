@@ -412,8 +412,8 @@ export default function Customers() {
             </Popover>
           </div>
           <Button onClick={() => setIsModalOpen(true)} data-testid="button-new-customer">
-            <Plus className="w-4 h-4 mr-2" />
-            {t("addCustomer")}
+            <Plus className="w-4 h-4 sm:ltr:mr-2 sm:rtl:ml-2" />
+            <span className="hidden sm:inline">{t("addCustomer")}</span>
           </Button>
         </div>
 
