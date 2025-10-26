@@ -615,10 +615,12 @@ export default function Orders() {
     const newItems = [...orderItems];
     newItems[index] = { ...newItems[index], [field]: value };
     
-    // Calculate based on ORIGINAL price (what customer pays)
-    if (field === "quantity" || field === "originalPrice" || field === "discountedPrice") {
-      newItems[index].unitPrice = newItems[index].originalPrice;
-      newItems[index].totalPrice = newItems[index].quantity * newItems[index].originalPrice;
+    // Always recalculate total when any price-related field changes
+    // This ensures the total stays in sync with the unit price and quantity
+    if (field === "quantity" || field === "unitPrice" || field === "originalPrice" || field === "discountedPrice") {
+      const unitPrice = newItems[index].unitPrice || 0;
+      const quantity = newItems[index].quantity || 0;
+      newItems[index].totalPrice = quantity * unitPrice;
     }
     
     setOrderItems(newItems);
@@ -705,7 +707,8 @@ export default function Orders() {
       return sum + markupProfit;
     }, 0);
     
-    const shippingProfit = totals.commission;
+    // Only include shipping profit if shipping is actually calculated
+    const shippingProfit = shippingCalculation ? totals.commission : 0;
     const totalProfit = itemsProfit + shippingProfit;
     
     // Calculate remaining balance
@@ -1326,7 +1329,7 @@ export default function Orders() {
                           </div>
 
                           {/* Third row: Prices, Quantity, Total */}
-                          <div className="grid grid-cols-4 gap-4">
+                          <div className="grid grid-cols-5 gap-4">
                             <div>
                               <Label htmlFor={`original-price-${index}`}>Original Price ($)*</Label>
                               <Input
@@ -1353,6 +1356,20 @@ export default function Orders() {
                                 placeholder="0.00"
                                 required
                                 data-testid={`input-discounted-price-${index}`}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`unit-price-${index}`}>Unit Price ($)*</Label>
+                              <Input
+                                id={`unit-price-${index}`}
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={item.unitPrice}
+                                onChange={(e) => updateOrderItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                                placeholder="0.00"
+                                required
+                                data-testid={`input-unit-price-${index}`}
                               />
                             </div>
                             <div>
@@ -1603,7 +1620,7 @@ export default function Orders() {
                     <div className="flex justify-between text-green-600 font-medium border-t pt-2">
                       <span>{t('estimatedProfit')}</span>
                       <span data-testid="text-profit">
-                        {calculateTotals().currency} {calculateTotals().profit.toFixed(2)}
+                        {calculateTotals().currency} {(shippingCalculation ? calculateTotals().profit : calculateTotals().itemsProfit).toFixed(2)}
                       </span>
                     </div>
                   </div>
