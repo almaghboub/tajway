@@ -124,6 +124,12 @@ export default function Orders() {
 
   // Use shared LYD exchange rate hook
   const { exchangeRate, convertToLYD } = useLydExchangeRate();
+  
+  // Helper to convert using order-specific rate or fall back to global rate
+  const convertOrderToLYD = (amount: number, orderRate?: string) => {
+    const rate = orderRate ? parseFloat(orderRate) : exchangeRate;
+    return rate > 0 ? (amount * rate).toFixed(2) : amount.toFixed(2);
+  };
 
   // Pre-fill order LYD rate when modal first opens
   useEffect(() => {
@@ -1032,26 +1038,26 @@ export default function Orders() {
                       </TableCell>
                       <TableCell data-testid={`text-total-${order.id}`}>
                         <div className="font-medium">${parseFloat(order.totalAmount).toFixed(2)}</div>
-                        {exchangeRate > 0 && (
-                          <div className="text-sm text-green-600 font-semibold">{convertToLYD(parseFloat(order.totalAmount))} LYD</div>
+                        {(order.lydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-sm text-green-600 font-semibold">{convertOrderToLYD(parseFloat(order.totalAmount), order.lydExchangeRate)} LYD</div>
                         )}
                       </TableCell>
                       <TableCell data-testid={`text-down-payment-${order.id}`}>
                         <div className="font-semibold text-green-600">${parseFloat(order.downPayment || "0").toFixed(2)}</div>
-                        {exchangeRate > 0 && parseFloat(order.downPayment || "0") > 0 && (
-                          <div className="text-sm text-blue-600 font-medium">{convertToLYD(parseFloat(order.downPayment || "0"))} LYD</div>
+                        {(order.lydExchangeRate || exchangeRate > 0) && parseFloat(order.downPayment || "0") > 0 && (
+                          <div className="text-sm text-blue-600 font-medium">{convertOrderToLYD(parseFloat(order.downPayment || "0"), order.lydExchangeRate)} LYD</div>
                         )}
                       </TableCell>
                       <TableCell data-testid={`text-remaining-${order.id}`}>
                         <div>${parseFloat(order.remainingBalance || "0").toFixed(2)}</div>
-                        {exchangeRate > 0 && (
-                          <div className="text-sm text-orange-600 font-medium">{convertToLYD(parseFloat(order.remainingBalance || "0"))} LYD</div>
+                        {(order.lydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-sm text-orange-600 font-medium">{convertOrderToLYD(parseFloat(order.remainingBalance || "0"), order.lydExchangeRate)} LYD</div>
                         )}
                       </TableCell>
                       <TableCell data-testid={`text-profit-${order.id}`}>
                         <div className="font-medium text-green-600">${parseFloat(order.totalProfit).toFixed(2)}</div>
-                        {exchangeRate > 0 && (
-                          <div className="text-sm text-purple-600 font-semibold">{convertToLYD(parseFloat(order.totalProfit))} LYD</div>
+                        {(order.lydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-sm text-purple-600 font-semibold">{convertOrderToLYD(parseFloat(order.totalProfit), order.lydExchangeRate)} LYD</div>
                         )}
                       </TableCell>
                       <TableCell data-testid={`text-date-${order.id}`}>
@@ -2170,27 +2176,57 @@ export default function Orders() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t('subtotalLabel')}</span>
-                      <span data-testid="text-view-subtotal">${(parseFloat(viewingOrder.totalAmount) - parseFloat(viewingOrder.shippingCost)).toFixed(2)}</span>
+                      <div className="text-right">
+                        <div data-testid="text-view-subtotal">${(parseFloat(viewingOrder.totalAmount) - parseFloat(viewingOrder.shippingCost)).toFixed(2)}</div>
+                        {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-xs text-green-600">{convertOrderToLYD(parseFloat(viewingOrder.totalAmount) - parseFloat(viewingOrder.shippingCost), viewingOrder.lydExchangeRate)} LYD</div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t('shippingCostLabel')}</span>
-                      <span data-testid="text-view-shipping">${parseFloat(viewingOrder.shippingCost).toFixed(2)}</span>
+                      <div className="text-right">
+                        <div data-testid="text-view-shipping">${parseFloat(viewingOrder.shippingCost).toFixed(2)}</div>
+                        {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-xs text-green-600">{convertOrderToLYD(parseFloat(viewingOrder.shippingCost), viewingOrder.lydExchangeRate)} LYD</div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between pt-2 border-t font-semibold text-base">
                       <span>{t('totalAmountLabelColon')}</span>
-                      <span data-testid="text-view-total">${parseFloat(viewingOrder.totalAmount).toFixed(2)}</span>
+                      <div className="text-right">
+                        <div data-testid="text-view-total">${parseFloat(viewingOrder.totalAmount).toFixed(2)}</div>
+                        {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-sm text-green-600 font-semibold">{convertOrderToLYD(parseFloat(viewingOrder.totalAmount), viewingOrder.lydExchangeRate)} LYD</div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between text-green-600">
                       <span>{t('downPaymentLabel')}:</span>
-                      <span data-testid="text-view-down-payment">${parseFloat(viewingOrder.downPayment || "0").toFixed(2)}</span>
+                      <div className="text-right">
+                        <div data-testid="text-view-down-payment">${parseFloat(viewingOrder.downPayment || "0").toFixed(2)}</div>
+                        {(viewingOrder.lydExchangeRate || exchangeRate > 0) && parseFloat(viewingOrder.downPayment || "0") > 0 && (
+                          <div className="text-sm text-blue-600">{convertOrderToLYD(parseFloat(viewingOrder.downPayment || "0"), viewingOrder.lydExchangeRate)} LYD</div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between font-semibold text-orange-600">
                       <span>{t('remainingBalance')}:</span>
-                      <span data-testid="text-view-remaining-balance">${parseFloat(viewingOrder.remainingBalance || "0").toFixed(2)}</span>
+                      <div className="text-right">
+                        <div data-testid="text-view-remaining-balance">${parseFloat(viewingOrder.remainingBalance || "0").toFixed(2)}</div>
+                        {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-sm">{convertOrderToLYD(parseFloat(viewingOrder.remainingBalance || "0"), viewingOrder.lydExchangeRate)} LYD</div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between text-muted-foreground border-t pt-2">
                       <span>{t('estimatedProfitLabel')}</span>
-                      <span data-testid="text-view-profit">${parseFloat(viewingOrder.totalProfit).toFixed(2)}</span>
+                      <div className="text-right">
+                        <div data-testid="text-view-profit">${parseFloat(viewingOrder.totalProfit).toFixed(2)}</div>
+                        {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-sm text-purple-600">{convertOrderToLYD(parseFloat(viewingOrder.totalProfit), viewingOrder.lydExchangeRate)} LYD</div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
