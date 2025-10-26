@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Package, Search, Filter, Trash2, X, Printer } from "lucide-react";
 import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
@@ -109,6 +109,7 @@ export default function Orders() {
   } | null>(null);
   const [calculatingShipping, setCalculatingShipping] = useState(false);
   const [notes, setNotes] = useState("");
+  const [orderLydRate, setOrderLydRate] = useState<number>(0);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -123,6 +124,17 @@ export default function Orders() {
 
   // Use shared LYD exchange rate hook
   const { exchangeRate, convertToLYD } = useLydExchangeRate();
+
+  // Pre-fill order LYD rate when modal first opens
+  useEffect(() => {
+    if (isModalOpen && exchangeRate > 0) {
+      // Only set if orderLydRate hasn't been set (is 0 or undefined)
+      // This allows user edits to persist within the same modal session
+      if (orderLydRate === 0 || !orderLydRate) {
+        setOrderLydRate(exchangeRate);
+      }
+    }
+  }, [isModalOpen, exchangeRate]);
 
   const { data: customers = [] } = useQuery({
     queryKey: ["/api/customers"],
@@ -500,6 +512,7 @@ export default function Orders() {
     setShippingCalculation(null);
     setNotes("");
     setCustomOrderCode("");
+    setOrderLydRate(0);
     setNewCustomer({
       fullName: "",
       city: "",
@@ -612,9 +625,10 @@ export default function Orders() {
   const calculateTotals = () => {
     const subtotal = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
     
-    // Calculate items profit (markup profit)
+    // Calculate items profit (selling price minus cost)
     const itemsProfit = orderItems.reduce((sum, item) => {
-      const markupProfit = (item.originalPrice - item.discountedPrice) * item.quantity;
+      const cost = item.discountedPrice || item.originalPrice;
+      const markupProfit = (item.unitPrice - cost) * item.quantity;
       return sum + markupProfit;
     }, 0);
     
@@ -678,9 +692,10 @@ export default function Orders() {
 
     const totals = calculateTotals();
     
-    // Calculate items profit (difference between original and discounted price)
+    // Calculate items profit (selling price minus cost)
     const itemsProfit = orderItems.reduce((sum, item) => {
-      const markupProfit = (item.originalPrice - item.discountedPrice) * item.quantity;
+      const cost = item.discountedPrice || item.originalPrice;
+      const markupProfit = (item.unitPrice - cost) * item.quantity;
       return sum + markupProfit;
     }, 0);
     
@@ -710,13 +725,14 @@ export default function Orders() {
       shippingProfit: shippingProfit.toFixed(2),
       itemsProfit: itemsProfit.toFixed(2),
       totalProfit: totalProfit.toFixed(2),
-      lydExchangeRate: exchangeRate > 0 ? exchangeRate.toFixed(4) : undefined,
+      lydExchangeRate: (orderLydRate > 0 ? orderLydRate : exchangeRate > 0 ? exchangeRate : undefined)?.toFixed(4),
       notes: finalNotes || undefined,
       orderNumber: customOrderCode || undefined,
     };
 
     const items: InsertOrderItem[] = orderItems.map(item => {
-      const markupProfit = ((item.originalPrice - item.discountedPrice) * item.quantity).toFixed(2);
+      const cost = item.discountedPrice || item.originalPrice;
+      const markupProfit = ((item.unitPrice - cost) * item.quantity).toFixed(2);
       return {
         orderId: "", // Will be set by the backend
         productName: item.productName,
@@ -1489,6 +1505,31 @@ export default function Orders() {
                       )}
                     </div>
                   )}
+                </div>
+
+                <div>
+                  <Label htmlFor="lyd-exchange-rate">
+                    {t('lydExchangeRate') || 'LYD Exchange Rate'} (1 USD = ? LYD)
+                  </Label>
+                  <Input
+                    id="lyd-exchange-rate"
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    value={orderLydRate > 0 ? orderLydRate : ''}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                      setOrderLydRate(isNaN(val) ? 0 : val);
+                    }}
+                    placeholder={exchangeRate > 0 ? exchangeRate.toFixed(4) : "0.0000"}
+                    data-testid="input-lyd-rate"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {orderLydRate > 0 
+                      ? `${t('orderRate') || 'This Order'}: 1 USD = ${orderLydRate.toFixed(4)} LYD`
+                      : `${t('globalRate') || 'Global Rate'}: ${exchangeRate > 0 ? `1 USD = ${exchangeRate.toFixed(4)} LYD` : 'Not set'}`
+                    }
+                  </p>
                 </div>
 
                 <div>

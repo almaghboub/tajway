@@ -543,10 +543,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }, 0);
 
         const itemsProfit = allItems.reduce((sum, i) => {
-          const originalPrice = parseFloat(i.originalPrice || '0');
-          const discountedPrice = parseFloat(i.discountedPrice || '0');
+          const unitPrice = parseFloat(i.unitPrice || '0');
+          const cost = parseFloat(i.discountedPrice || i.originalPrice || '0');
           const quantity = i.quantity;
-          return sum + ((originalPrice - discountedPrice) * quantity);
+          return sum + ((unitPrice - cost) * quantity);
         }, 0);
 
         const shippingCost = parseFloat(order.shippingCost || '0');
