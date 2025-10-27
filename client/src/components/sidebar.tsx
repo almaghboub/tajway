@@ -19,7 +19,6 @@ const navigationItems = [
   { key: "taskAssignment", href: "/task-assignment", icon: UserCog, roles: ["owner", "customer_service", "receptionist"] },
   { key: "taskHistory", href: "/task-history", icon: History, roles: ["owner", "customer_service", "receptionist"] },
   { key: "profitReports", href: "/profits", icon: TrendingUp, roles: ["owner"] },
-  { key: "performanceReport", href: "/performance-report", icon: BarChart3, roles: ["owner"] },
   { key: "userManagement", href: "/users", icon: Users2, roles: ["owner"] },
   { key: "messages", href: "/messages", icon: MessageSquare, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager", "shipping_staff"], showBadge: true },
   { key: "settings", href: "/settings", icon: Settings, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager", "shipping_staff"] },
