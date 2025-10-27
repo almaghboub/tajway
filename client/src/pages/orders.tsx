@@ -80,7 +80,9 @@ export default function Orders() {
   const [searchedCustomer, setSearchedCustomer] = useState<Customer | null>(null);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
-    fullName: "",
+    firstName: "",
+    lastName: "",
+    customerCode: "",
     city: "",
     phone: ""
   });
@@ -266,16 +268,12 @@ export default function Orders() {
 
   const createCustomerMutation = useMutation({
     mutationFn: async (customerData: typeof newCustomer) => {
-      // Split fullName into firstName and lastName
-      const nameParts = customerData.fullName.trim().split(/\s+/);
-      const firstName = nameParts[0] || "";
-      const lastName = nameParts.slice(1).join(" ") || firstName;
-      
       const payload = {
-        firstName,
-        lastName,
+        firstName: customerData.firstName,
+        lastName: customerData.lastName,
         phone: customerData.phone,
         city: customerData.city,
+        shippingCode: customerData.customerCode || undefined,
         email: "",
         country: "",
         address: "",
@@ -295,7 +293,9 @@ export default function Orders() {
       setShippingCountry(customer.country || "");
       setShowCustomerForm(false);
       setNewCustomer({
-        fullName: "",
+        firstName: "",
+        lastName: "",
+        customerCode: "",
         city: "",
         phone: ""
       });
@@ -520,7 +520,9 @@ export default function Orders() {
     setCustomOrderCode("");
     setOrderLydRate(0);
     setNewCustomer({
-      fullName: "",
+      firstName: "",
+      lastName: "",
+      customerCode: "",
       city: "",
       phone: ""
     });
@@ -1206,15 +1208,39 @@ export default function Orders() {
                       </Button>
                     </div>
                     <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="firstName">First Name*</Label>
+                          <Input
+                            id="firstName"
+                            value={newCustomer.firstName}
+                            onChange={(e) => setNewCustomer({...newCustomer, firstName: e.target.value})}
+                            required
+                            placeholder="Enter first name"
+                            data-testid="input-first-name"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="lastName">Last Name*</Label>
+                          <Input
+                            id="lastName"
+                            value={newCustomer.lastName}
+                            onChange={(e) => setNewCustomer({...newCustomer, lastName: e.target.value})}
+                            required
+                            placeholder="Enter last name"
+                            data-testid="input-last-name"
+                          />
+                        </div>
+                      </div>
                       <div>
-                        <Label htmlFor="fullName">Name*</Label>
+                        <Label htmlFor="customerCode">Customer Code*</Label>
                         <Input
-                          id="fullName"
-                          value={newCustomer.fullName}
-                          onChange={(e) => setNewCustomer({...newCustomer, fullName: e.target.value})}
+                          id="customerCode"
+                          value={newCustomer.customerCode}
+                          onChange={(e) => setNewCustomer({...newCustomer, customerCode: e.target.value})}
                           required
-                          placeholder={t('enterFullName')}
-                          data-testid="input-full-name"
+                          placeholder="Enter customer code"
+                          data-testid="input-customer-code"
                         />
                       </div>
                       <div>
@@ -1243,7 +1269,7 @@ export default function Orders() {
                     <Button
                       type="button"
                       onClick={handleCreateCustomer}
-                      disabled={createCustomerMutation.isPending || !newCustomer.fullName || !newCustomer.city || !newCustomer.phone}
+                      disabled={createCustomerMutation.isPending || !newCustomer.firstName || !newCustomer.lastName || !newCustomer.customerCode || !newCustomer.city || !newCustomer.phone}
                       data-testid="button-create-customer"
                     >
                       {createCustomerMutation.isPending ? t('creating') : t('createCustomer')}
