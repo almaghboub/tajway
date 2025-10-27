@@ -31,22 +31,29 @@ The system features:
 - **Internal Messaging System**: Conversation threading, real-time notifications, and chat-style UI.
 - **User Profile Management**: Users can edit username, name, and password.
 - **Enhanced Profit Page**: Detailed metrics, average order value, country-specific filtering, and customer shipping code reporting.
-- **Performance Report System (Owner-Only)**: 
-  - Integrated into Profit page as second tab alongside Profit Metrics
-  - Analytics dashboard with 10 KPIs (Total Orders, Sales, Profit, Discounted Orders, Average Order Value/Profit, Exchange Rate, Growth %)
-  - **Advanced Filtering (October 27, 2025)**:
-    - Time range filters: Daily, Weekly, Monthly
-    - Country filter: Multi-select country filtering with checkboxes
-    - Calendar/Date range filter: Custom date range with "from" and "to" date pickers
-    - Filter badge shows active filter count
-    - Clear filters and apply buttons for easy filter management
-  - Bilingual display (English/Arabic) with proper RTL layout
-  - Visual growth indicators (TrendingUp/TrendingDown icons) with color-coded trends
-  - Dual-currency display (USD/LYD)
-  - Performance summaries with period-over-period comparisons
-  - Backend: GET `/api/reports/performance?range=daily|weekly|monthly&country[]=...&dateFrom=...&dateTo=...`
-  - Custom date range automatically calculates comparison period with same duration
-  - All filters work together (time range + country + custom dates)
+- **Unified Profit Reports Page (Owner-Only)**: 
+  - **Single-page unified view (October 27, 2025)**: Removed tab navigation - all profit metrics and performance analytics in one scrollable page
+  - **Profit Metrics Section**: 
+    - Commission Breakdown showing actual commission rules from settings database
+    - Profit Trend Analysis with real data (Items Profit, Shipping Profit, Total Profit)
+    - Country filtering for profit calculations
+    - Report generation buttons (Profit, Commission, Financial)
+  - **Performance Report Section** (merged):
+    - Analytics dashboard with 10 KPIs (Total Orders, Sales, Profit, Discounted Orders, Average Order Value/Profit, Exchange Rate, Growth %)
+    - **Advanced Filtering**:
+      - Time range filters: Daily, Weekly, Monthly
+      - Country filter: Multi-select country filtering with checkboxes
+      - Calendar/Date range filter: Custom date range with "from" and "to" date pickers
+      - Filter badge shows active filter count
+      - Clear filters and apply buttons for easy filter management
+    - Visual growth indicators (TrendingUp/TrendingDown icons) with color-coded trends
+    - Dual-currency display (USD/LYD)
+    - Performance summaries with period-over-period comparisons
+    - Backend: GET `/api/reports/performance?range=daily|weekly|monthly&country[]=...&dateFrom=...&dateTo=...`
+    - Custom date range automatically calculates comparison period with same duration
+    - All filters work together (time range + country + custom dates)
+  - Bilingual display (English/Arabic) with proper RTL layout throughout
+  - Clear visual separator between sections for better hierarchy
 - **LYD Currency Conversion System**: `useLydExchangeRate` hook for centralized management, dual-currency display (USD/LYD) across dashboards, orders, customers, invoices, and profit reports. Color-coded LYD amounts, locale-aware invoice numbering (Dinar/دينار), and exchange rate configurable in settings.
 - **Per-Order LYD Exchange Rate Tracking**: Edit order modal allows recording order-specific LYD exchange rates, stored in `orders.lyd_exchange_rate` for precise historical tracking.
 - **Order Statuses**: "Partially Arrived," "Ready to Collect," "With Shipping Company."
