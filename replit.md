@@ -36,7 +36,19 @@ The system features:
 - **Per-Order LYD Exchange Rate Tracking**: Edit order modal allows recording order-specific LYD exchange rates, stored in `orders.lyd_exchange_rate` for precise historical tracking.
 - **Order Statuses**: "Partially Arrived," "Ready to Collect," "With Shipping Company."
 - **Dynamic Filtering**: Country filtering, LYD exchange rate, and date range filters for orders and customers.
-- **Customer Management**: Customer-level down payment management, multi-field customer search (phone, name, code), enhanced visibility of customer codes.
+- **Customer Management**: 
+  - Customer-level down payment management
+  - Multi-field customer search (phone, name, code)
+  - Enhanced visibility of customer codes
+  - **Customer Creation Form (October 27, 2025)**: Updated to collect 5 essential fields:
+    1. First Name (required) - separate field with placeholder
+    2. Last Name (required) - separate field with placeholder  
+    3. Phone Number (required) - unique constraint
+    4. City (required)
+    5. Customer Code (optional) - stored as shippingCode
+  - Form layout: First Name and Last Name displayed side-by-side in a 2-column grid
+  - All fields fully translated (English/Arabic) with proper RTL support
+  - E2E tested and verified working correctly
 - **Streamlined Workflows**: Simplified customer editing, product code workflows, flexible order creation without prior shipping calculation.
 - **Complete Arabic Translation Coverage**: All UI elements, including modals and reports, fully translated with proper RTL layout.
 - **Responsive Design Implementation**: Fully responsive UI across phones, tablets, and desktops. Includes responsive sidebar navigation (hamburger menu on mobile), header, main layout, tables with horizontal scrolling, dashboard cards, and action buttons. Specific fixes for iOS Safari RTL initialization and mobile dialog opening. Dialogs are perfectly centered in both LTR and RTL.
