@@ -85,6 +85,15 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
   - Exchange rate stored in settings table with key `lyd_exchange_rate`
   - All LYD values formatted to 2 decimal places for consistency
   - USD fallback: When no exchange rate is configured, all pages correctly display USD amounts instead of zeros
+- **Per-Order LYD Exchange Rate Tracking (October 27, 2025)**:
+  - Edit order modal now includes LYD Exchange Rate field allowing users to record order-specific exchange rates
+  - Field accepts decimal values with up to 4 decimal places (e.g., 4.8500) for precise rate tracking
+  - Stored in orders.lyd_exchange_rate column (decimal precision: 10, scale: 4)
+  - Optional field - orders can have individual exchange rates or use the global setting rate
+  - Fully bilingual with translations: "LYD Exchange Rate" / "سعر صرف الدينار الليبي"
+  - Integration: Field positioned alongside order status and payment fields in edit modal
+  - Backend: Automatically handled via existing schema validation and storage layer
+  - Use case: Tracks historical exchange rates at time of order creation/modification for accurate profit calculations
 - Down payment management moved to customer-level with proportional distribution across orders.
 - Improved customer search supporting multiple fields (phone, name, code).
 - Enhanced visibility of customer codes in invoices and order/customer tables.
