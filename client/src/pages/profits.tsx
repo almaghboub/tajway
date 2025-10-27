@@ -307,16 +307,22 @@ export default function Profits() {
         description={t('profitReportsDescription')} 
       />
       
-      <div className="flex-1 p-6 space-y-6">
-        {/* Filter Section */}
-        <div className="flex items-center justify-end">
+      <div className="flex-1 p-6 space-y-8 bg-gradient-to-br from-background via-background to-muted/20">
+        {/* Header Section with Filter */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              {t('profitMetrics')}
+            </h2>
+            <p className="text-muted-foreground mt-1">{t('basedOnOrders', { count: filteredOrders.length })}</p>
+          </div>
           <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" data-testid="button-filter-profits">
+              <Button variant="outline" className="shadow-sm hover:shadow-md transition-shadow" data-testid="button-filter-profits">
                 <Filter className="w-4 h-4 mr-2" />
                 {t("filter")}
                 {countryFilters.length > 0 && (
-                  <Badge variant="secondary" className="ml-2">
+                  <Badge variant="default" className="ml-2">
                     {countryFilters.length}
                   </Badge>
                 )}
@@ -373,137 +379,150 @@ export default function Profits() {
 
         {/* Key Metrics - First Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card data-testid="card-order-count">
+          <Card data-testid="card-order-count" className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-background">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t('numberOfOrders')}</p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t('numberOfOrders')}</p>
                   {isLoading ? (
-                    <Skeleton className="h-8 w-24 mt-1" />
+                    <Skeleton className="h-10 w-28 mt-2" />
                   ) : (
-                    <p className="text-3xl font-bold text-primary" data-testid="text-order-count">
+                    <p className="text-4xl font-extrabold text-blue-600 dark:text-blue-400 mt-2" data-testid="text-order-count">
                       {metrics.orderCount}
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1">{t('totalOrders')}</p>
+                  <p className="text-xs text-muted-foreground mt-2">{t('totalOrders')}</p>
                 </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <ShoppingCart className="w-6 h-6 text-blue-600" />
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <ShoppingCart className="w-8 h-8 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card data-testid="card-average-order-value">
+          <Card data-testid="card-average-order-value" className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-background">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t('averageOrderValue')}</p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t('averageOrderValue')}</p>
                   {isLoading ? (
-                    <Skeleton className="h-8 w-24 mt-1" />
+                    <Skeleton className="h-10 w-32 mt-2" />
                   ) : (
-                    <p className="text-3xl font-bold text-purple-600" data-testid="text-average-order-value">
+                    <p className="text-4xl font-extrabold text-purple-600 dark:text-purple-400 mt-2" data-testid="text-average-order-value">
                       {currency} {metrics.averageOrderValue.toFixed(2)}
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1">{t('perOrder')}</p>
+                  <p className="text-xs text-muted-foreground mt-2">{t('perOrder')}</p>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Calculator className="w-6 h-6 text-purple-600" />
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Calculator className="w-8 h-8 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card data-testid="card-total-revenue">
+          <Card data-testid="card-total-revenue" className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/20 dark:to-background">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t('totalRevenue')}</p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t('totalRevenue')}</p>
                   {isLoading ? (
-                    <Skeleton className="h-8 w-24 mt-1" />
+                    <Skeleton className="h-10 w-36 mt-2" />
                   ) : (
-                    <p className="text-3xl font-bold text-primary" data-testid="text-total-revenue">
+                    <p className="text-4xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-2" data-testid="text-total-revenue">
                       {currency} {metrics.totalRevenue.toFixed(2)}
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1">{t('fromAllOrders')}</p>
+                  <p className="text-xs text-muted-foreground mt-2">{t('fromAllOrders')}</p>
                 </div>
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-primary" />
+                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <DollarSign className="w-8 h-8 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Profit Breakdown - Second Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card data-testid="card-items-profit">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t('profitFromOrders')}</p>
-                  {isLoading ? (
-                    <Skeleton className="h-8 w-24 mt-1" />
-                  ) : (
-                    <p className="text-3xl font-bold text-blue-600" data-testid="text-items-profit">
-                      {currency} {metrics.totalItemsProfit.toFixed(2)}
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1">{t('orderValueMinusCost')}</p>
+        {/* Profit Breakdown - Highlighted Section */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-teal-500/10 rounded-3xl blur-xl"></div>
+          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card data-testid="card-items-profit" className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-cyan-50 to-white dark:from-cyan-950/20 dark:to-background overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-400/20 to-transparent rounded-full -mr-16 -mt-16"></div>
+              <CardContent className="p-6 relative">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t('profitFromOrders')}</p>
+                    {isLoading ? (
+                      <Skeleton className="h-10 w-32 mt-2" />
+                    ) : (
+                      <p className="text-4xl font-extrabold text-cyan-600 dark:text-cyan-400 mt-2" data-testid="text-items-profit">
+                        {currency} {metrics.totalItemsProfit.toFixed(2)}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">{t('orderValueMinusCost')}</p>
+                  </div>
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl flex items-center justify-center shadow-lg">
+                    <Package className="w-8 h-8 text-white" />
+                  </div>
                 </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Package className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card data-testid="card-shipping-profit">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t('profitFromShipping')}</p>
-                  {isLoading ? (
-                    <Skeleton className="h-8 w-24 mt-1" />
-                  ) : (
-                    <p className="text-3xl font-bold text-orange-600" data-testid="text-shipping-profit">
-                      {currency} {metrics.totalShippingProfit.toFixed(2)}
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1">{t('shippingFeeMinusCost')}</p>
+            <Card data-testid="card-shipping-profit" className="border-0 shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-orange-50 to-white dark:from-orange-950/20 dark:to-background overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-400/20 to-transparent rounded-full -mr-16 -mt-16"></div>
+              <CardContent className="p-6 relative">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t('profitFromShipping')}</p>
+                    {isLoading ? (
+                      <Skeleton className="h-10 w-32 mt-2" />
+                    ) : (
+                      <p className="text-4xl font-extrabold text-orange-600 dark:text-orange-400 mt-2" data-testid="text-shipping-profit">
+                        {currency} {metrics.totalShippingProfit.toFixed(2)}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">{t('shippingFeeMinusCost')}</p>
+                  </div>
+                  <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
+                    <TrendingUp className="w-8 h-8 text-white" />
+                  </div>
                 </div>
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-orange-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card data-testid="card-total-profit">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t('totalProfit')}</p>
-                  {isLoading ? (
-                    <Skeleton className="h-8 w-24 mt-1" />
-                  ) : (
-                    <p className="text-3xl font-bold text-green-600" data-testid="text-total-profit">
-                      {currency} {metrics.totalProfit.toFixed(2)}
+            <Card data-testid="card-total-profit" className="border-2 border-green-200 dark:border-green-800 shadow-xl hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-400/30 to-transparent rounded-full -mr-16 -mt-16"></div>
+              <CardContent className="p-6 relative">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-green-700 dark:text-green-400 uppercase tracking-wide flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4" />
+                      {t('totalProfit')}
                     </p>
-                  )}
-                  <p className="text-xs text-green-600 flex items-center mt-1">
-                    <TrendingUp className="w-3 h-3 mr-1" />
-                    {metrics.profitMargin.toFixed(1)}% {t('margin')}
-                  </p>
+                    {isLoading ? (
+                      <Skeleton className="h-12 w-40 mt-2" />
+                    ) : (
+                      <p className="text-5xl font-black text-green-600 dark:text-green-400 mt-2" data-testid="text-total-profit">
+                        {currency} {metrics.totalProfit.toFixed(2)}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 mt-3">
+                      <div className="h-2 flex-1 bg-green-200 dark:bg-green-900 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full" style={{ width: `${Math.min(metrics.profitMargin, 100)}%` }}></div>
+                      </div>
+                      <span className="text-sm font-bold text-green-600 dark:text-green-400">
+                        {metrics.profitMargin.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl flex items-center justify-center shadow-2xl">
+                    <DollarSign className="w-10 h-10 text-white" />
+                  </div>
                 </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Profit Analysis */}
@@ -633,44 +652,58 @@ export default function Profits() {
         </div>
 
         {/* Report Actions */}
-        <Card data-testid="card-report-actions">
-          <CardHeader>
-            <CardTitle>{t('generateReports')}</CardTitle>
+        <Card className="border-0 shadow-xl bg-gradient-to-br from-slate-50 to-white dark:from-slate-950/50 dark:to-background" data-testid="card-report-actions">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/60 rounded-xl flex items-center justify-center">
+                <FileText className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">{t('generateReports')}</CardTitle>
+                <p className="text-sm text-muted-foreground">Export detailed analytics reports</p>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Button 
-                className="h-auto p-4 flex-col" 
+                className="h-auto p-6 flex-col gap-3 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300" 
                 onClick={() => generateReport("profit")}
                 disabled={isGeneratingReport}
                 data-testid="button-profit-report"
               >
-                <FileText className="w-6 h-6 mb-2" />
-                <span className="font-medium">{t('profitReportTitle')}</span>
-                <span className="text-xs text-muted-foreground">{t('orderWiseProfitAnalysis')}</span>
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-white" />
+                </div>
+                <span className="font-semibold text-lg text-white">{t('profitReportTitle')}</span>
+                <span className="text-xs text-blue-100">{t('orderWiseProfitAnalysis')}</span>
               </Button>
 
               <Button 
                 variant="outline" 
-                className="h-auto p-4 flex-col" 
+                className="h-auto p-6 flex-col gap-3 border-2 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/20 shadow-lg hover:shadow-xl transition-all duration-300" 
                 onClick={() => generateReport("commission")}
                 disabled={isGeneratingReport}
                 data-testid="button-commission-report"
               >
-                <Calculator className="w-6 h-6 mb-2" />
-                <span className="font-medium">{t('commissionReportTitle')}</span>
+                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                  <Calculator className="w-6 h-6 text-purple-600" />
+                </div>
+                <span className="font-semibold text-lg">{t('commissionReportTitle')}</span>
                 <span className="text-xs text-muted-foreground">{t('countryWiseCommissions')}</span>
               </Button>
 
               <Button 
-                variant="secondary" 
-                className="h-auto p-4 flex-col" 
+                variant="outline"
+                className="h-auto p-6 flex-col gap-3 border-2 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-950/20 shadow-lg hover:shadow-xl transition-all duration-300" 
                 onClick={() => generateReport("financial")}
                 disabled={isGeneratingReport}
                 data-testid="button-financial-summary"
               >
-                <TrendingUp className="w-6 h-6 mb-2" />
-                <span className="font-medium">{t('financialSummaryTitle')}</span>
+                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-green-600" />
+                </div>
+                <span className="font-semibold text-lg">{t('financialSummaryTitle')}</span>
                 <span className="text-xs text-muted-foreground">{t('completeFinancialOverview')}</span>
               </Button>
             </div>
@@ -694,15 +727,24 @@ export default function Profits() {
         </Card>
 
         {/* Section Separator */}
-        <Separator className="my-8" />
+        <div className="relative my-12">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t-2 border-gradient"></div>
+          </div>
+          <div className="relative flex justify-center">
+            <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 px-8 py-2 rounded-full border border-primary/20">
+              <BarChart3 className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+        </div>
 
         {/* Performance Report Section */}
-        <div className="space-y-4 mb-6">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
+        <div className="space-y-6 mb-8">
+          <div className="text-center">
+            <h2 className="text-4xl font-black tracking-tight bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
               {isRTL ? 'تقرير الأداء' : 'Performance Report'}
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
               {isRTL 
                 ? 'تقرير شامل عن المبيعات والأرباح والنمو مع مقارنات الفترات السابقة' 
                 : 'Comprehensive sales, profit, and growth analysis with period-over-period comparisons'}
