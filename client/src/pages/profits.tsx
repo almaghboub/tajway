@@ -88,6 +88,14 @@ export default function Profits() {
     },
   });
 
+  const { data: commissionRules = [], isLoading: isLoadingCommissionRules } = useQuery({
+    queryKey: ["/api/commission-rules"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/commission-rules");
+      return response.json();
+    },
+  });
+
   const performanceQueryParams = useMemo(() => {
     const params = new URLSearchParams();
     params.append('range', timeRange);
@@ -517,13 +525,61 @@ export default function Profits() {
               <CardTitle>{t('profitTrendAnalysis')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
-                <div className="text-center">
-                  <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">{t('profitChartPlaceholder')}</p>
-                  <p className="text-xs text-muted-foreground">{t('trendAnalysisWillRender')}</p>
+              {isLoading ? (
+                <div className="h-64 flex items-center justify-center">
+                  <Skeleton className="h-full w-full" />
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-950 rounded-lg">
+                    <div>
+                      <p className="text-sm text-muted-foreground">{t('totalProfit')}</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        {currency} {metrics.totalProfit.toFixed(2)}
+                      </p>
+                    </div>
+                    <TrendingUp className="w-8 h-8 text-green-600" />
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Package className="w-5 h-5 text-blue-600" />
+                        <span className="text-sm">{t('profitFromOrders')}</span>
+                      </div>
+                      <span className="font-semibold text-blue-600">
+                        {currency} {metrics.totalItemsProfit.toFixed(2)}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5 text-orange-600" />
+                        <span className="text-sm">{t('profitFromShipping')}</span>
+                      </div>
+                      <span className="font-semibold text-orange-600">
+                        {currency} {metrics.totalShippingProfit.toFixed(2)}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 border rounded-lg bg-primary/5">
+                      <div className="flex items-center gap-2">
+                        <Percent className="w-5 h-5 text-primary" />
+                        <span className="text-sm font-medium">{t('profitMargin')}</span>
+                      </div>
+                      <span className="font-bold text-primary">
+                        {metrics.profitMargin.toFixed(1)}%
+                      </span>
+                    </div>
+                    
+                    <div className="pt-2 text-center">
+                      <p className="text-xs text-muted-foreground">
+                        {t('basedOnOrders', { count: metrics.orderCount })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -532,33 +588,58 @@ export default function Profits() {
               <CardTitle>{t('commissionBreakdown')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="text-center py-8">
-                  <Calculator className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-foreground mb-2">{t('commissionAnalysis')}</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {t('commissionCalculationsDescription')}
-                  </p>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>{t('chinaCommissionRate')}</span>
-                      <span className="font-medium">18.0%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{t('turkeyCommissionRate')}</span>
-                      <span className="font-medium">20.0%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{t('ukCommissionRate')}</span>
-                      <span className="font-medium">15.0%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{t('uaeCommissionRate')}</span>
-                      <span className="font-medium">12.0%</span>
-                    </div>
+              {isLoadingCommissionRules ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : commissionRules.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Calculator className="w-5 h-5 text-primary" />
+                    <p className="text-sm text-muted-foreground">
+                      {t('commissionRulesFromSettings')}
+                    </p>
+                  </div>
+                  <div className="space-y-2 max-h-72 overflow-y-auto">
+                    {commissionRules.map((rule: any) => (
+                      <div key={rule.id} className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-semibold text-sm">{rule.country}</span>
+                          <span className="font-bold text-primary">
+                            {(parseFloat(rule.percentage) * 100).toFixed(2)}%
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>
+                            {t('range')}: ${parseFloat(rule.minValue).toFixed(2)}
+                            {rule.maxValue ? ` - $${parseFloat(rule.maxValue).toFixed(2)}` : '+'}
+                          </span>
+                          {parseFloat(rule.fixedFee) > 0 && (
+                            <span className="text-orange-600">
+                              +${parseFloat(rule.fixedFee).toFixed(2)} {t('fixedFee')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="pt-2 text-center">
+                    <p className="text-xs text-muted-foreground">
+                      {t('totalCommissionRules', { count: commissionRules.length })}
+                    </p>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Calculator className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">{t('noCommissionRules')}</h3>
+                  <p className="text-muted-foreground text-sm">
+                    {t('addCommissionRulesInSettings')}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
