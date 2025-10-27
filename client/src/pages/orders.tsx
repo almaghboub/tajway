@@ -188,7 +188,7 @@ export default function Orders() {
   });
 
   const updateOrderMutation = useMutation({
-    mutationFn: async ({ id, status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount }: { 
+    mutationFn: async ({ id, status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount, lydExchangeRate }: { 
       id: string; 
       status: string; 
       notes: string; 
@@ -200,8 +200,9 @@ export default function Orders() {
       shippingCost?: string;
       commission?: string;
       totalAmount?: string;
+      lydExchangeRate?: string;
     }) => {
-      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount });
+      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, commission, totalAmount, lydExchangeRate });
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || t('failedUpdateOrder'));
@@ -414,6 +415,7 @@ export default function Orders() {
         shippingCost: editingOrder.shippingCost,
         commission: editingOrder.commission,
         totalAmount: editingOrder.totalAmount,
+        lydExchangeRate: editingOrder.lydExchangeRate || undefined,
         notes: notes
       });
     } catch (error) {
@@ -1840,7 +1842,7 @@ export default function Orders() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="edit-status">{t('orderStatus')}</Label>
                       <Select value={editOrderStatus} onValueChange={setEditOrderStatus}>
@@ -1859,6 +1861,31 @@ export default function Orders() {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div>
+                      <Label htmlFor="edit-lyd-rate">{t('lydExchangeRate')}</Label>
+                      <Input
+                        id="edit-lyd-rate"
+                        type="number"
+                        step="0.0001"
+                        min="0"
+                        value={editingOrder.lydExchangeRate || ''}
+                        onChange={(e) => {
+                          const newRate = e.target.value;
+                          setEditingOrder(prev => {
+                            if (!prev) return null;
+                            return {
+                              ...prev,
+                              lydExchangeRate: newRate
+                            };
+                          });
+                        }}
+                        placeholder={t('enterExchangeRate')}
+                        data-testid="input-edit-lyd-rate"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="edit-down-payment">{t('downPaymentDollar')}</Label>
                       <Input
