@@ -60,8 +60,6 @@ export default function Profits() {
   const [selectedReportType, setSelectedReportType] = useState<"profit" | "commission" | "financial">("profit");
   const [reportData, setReportData] = useState<any>(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [countryFilters, setCountryFilters] = useState<string[]>([]);
   const [timeRange, setTimeRange] = useState<TimeRange>('daily');
   const [performanceCountryFilters, setPerformanceCountryFilters] = useState<string[]>([]);
   const [performanceDateFrom, setPerformanceDateFrom] = useState<string>('');
@@ -118,28 +116,29 @@ export default function Profits() {
     },
   });
 
-  const toggleCountryFilter = (country: string) => {
-    setCountryFilters(prev =>
-      prev.includes(country)
-        ? prev.filter(c => c !== country)
-        : [...prev, country]
-    );
-  };
-
-  const togglePerformanceCountryFilter = (country: string) => {
-    setPerformanceCountryFilters(prev =>
-      prev.includes(country)
-        ? prev.filter(c => c !== country)
-        : [...prev, country]
-    );
-  };
-
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      const matchesCountry = countryFilters.length === 0 || countryFilters.includes(order.shippingCountry || "");
-      return matchesCountry;
+      // Country filter
+      const matchesCountry = performanceCountryFilters.length === 0 || performanceCountryFilters.includes(order.shippingCountry || "");
+      
+      // Date range filter
+      let matchesDateRange = true;
+      if (performanceDateFrom || performanceDateTo) {
+        const orderDate = new Date(order.date);
+        if (performanceDateFrom) {
+          const fromDate = new Date(performanceDateFrom);
+          matchesDateRange = matchesDateRange && orderDate >= fromDate;
+        }
+        if (performanceDateTo) {
+          const toDate = new Date(performanceDateTo);
+          toDate.setHours(23, 59, 59, 999); // Include the entire end date
+          matchesDateRange = matchesDateRange && orderDate <= toDate;
+        }
+      }
+      
+      return matchesCountry && matchesDateRange;
     });
-  }, [orders, countryFilters]);
+  }, [orders, performanceCountryFilters, performanceDateFrom, performanceDateTo]);
 
   const metrics = useMemo(() => {
     const orderCount = filteredOrders.length;
@@ -309,72 +308,129 @@ export default function Profits() {
       
       <div className="flex-1 p-6 space-y-8 bg-gradient-to-br from-background via-background to-muted/20">
         {/* Header Section with Filter */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               {t('profitMetrics')}
             </h2>
             <p className="text-muted-foreground mt-1">{t('basedOnOrders', { count: filteredOrders.length })}</p>
           </div>
-          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="shadow-sm hover:shadow-md transition-shadow" data-testid="button-filter-profits">
-                <Filter className="w-4 h-4 mr-2" />
-                {t("filter")}
-                {countryFilters.length > 0 && (
-                  <Badge variant="default" className="ml-2">
-                    {countryFilters.length}
-                  </Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64" data-testid="popover-filter-profits">
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold mb-3">{t("filterByCountry")}</h4>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {shippingCountries.length > 0 ? (
-                      shippingCountries.map((country) => (
-                        <div key={country} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`filter-${country}`}
-                            checked={countryFilters.includes(country)}
-                            onCheckedChange={() => toggleCountryFilter(country)}
-                            data-testid={`checkbox-filter-${country}`}
-                          />
-                          <Label
-                            htmlFor={`filter-${country}`}
-                            className="text-sm font-normal cursor-pointer"
-                          >
-                            {country}
-                          </Label>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground">{t("noCountriesAvailable")}</p>
-                    )}
+          <div className="flex items-center gap-2">
+            {/* Unified Filter Button */}
+            <Popover open={isPerformanceFilterOpen} onOpenChange={setIsPerformanceFilterOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="shadow-sm hover:shadow-md transition-shadow" data-testid="button-filter-profits">
+                  <Filter className="w-4 h-4 ltr:mr-2 rtl:ml-2" />
+                  {t("filter")}
+                  {(performanceCountryFilters.length > 0 || performanceDateFrom || performanceDateTo) && (
+                    <Badge variant="default" className="ltr:ml-2 rtl:mr-2">
+                      {performanceCountryFilters.length + (performanceDateFrom || performanceDateTo ? 1 : 0)}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" data-testid="popover-filter-profits">
+                <div className="space-y-4">
+                  {/* Country Filter */}
+                  <div>
+                    <h4 className="font-semibold mb-3">{t("filterByCountry")}</h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {shippingCountries.length > 0 ? (
+                        shippingCountries.map((country) => (
+                          <div key={country} className="flex items-center space-x-2 rtl:space-x-reverse">
+                            <Checkbox
+                              id={`filter-${country}`}
+                              checked={performanceCountryFilters.includes(country)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setPerformanceCountryFilters(prev => [...prev, country]);
+                                } else {
+                                  setPerformanceCountryFilters(prev => prev.filter(c => c !== country));
+                                }
+                              }}
+                              data-testid={`checkbox-filter-${country}`}
+                            />
+                            <Label htmlFor={`filter-${country}`} className="cursor-pointer flex-1">
+                              {country}
+                            </Label>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground">{t("noCountriesAvailable")}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Date Range Filter */}
+                  <div>
+                    <h4 className="font-semibold mb-3">{t("filterByDate")}</h4>
+                    <div className="space-y-2">
+                      <div>
+                        <Label htmlFor="date-from" className="text-sm">{t("from")}</Label>
+                        <input
+                          id="date-from"
+                          type="date"
+                          value={performanceDateFrom}
+                          onChange={(e) => setPerformanceDateFrom(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-md"
+                          data-testid="input-date-from"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="date-to" className="text-sm">{t("to")}</Label>
+                        <input
+                          id="date-to"
+                          type="date"
+                          value={performanceDateTo}
+                          onChange={(e) => setPerformanceDateTo(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-md"
+                          data-testid="input-date-to"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setPerformanceCountryFilters([]);
+                        setPerformanceDateFrom('');
+                        setPerformanceDateTo('');
+                      }}
+                      data-testid="button-clear-filters"
+                    >
+                      {t("clearFilters")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setIsPerformanceFilterOpen(false)}
+                      data-testid="button-apply-filters"
+                    >
+                      {t("apply")}
+                    </Button>
                   </div>
                 </div>
-                <div className="flex justify-between pt-2 border-t">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCountryFilters([])}
-                    data-testid="button-reset-filters"
-                  >
-                    {t("reset")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => setIsFilterOpen(false)}
-                    data-testid="button-apply-filters"
-                  >
-                    {t("apply")}
-                  </Button>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverContent>
+            </Popover>
+
+            {/* Time Range Selector */}
+            <div className="w-[200px]">
+              <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
+                <SelectTrigger data-testid="select-time-range">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">{isRTL ? 'يومي' : 'Daily'}</SelectItem>
+                  <SelectItem value="weekly">{isRTL ? 'أسبوعي' : 'Weekly'}</SelectItem>
+                  <SelectItem value="monthly">{isRTL ? 'شهري' : 'Monthly'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
 
         {/* Key Metrics - First Row */}
@@ -726,32 +782,7 @@ export default function Profits() {
           </CardContent>
         </Card>
 
-        {/* Section Separator */}
-        <div className="relative my-12">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t-2 border-gradient"></div>
-          </div>
-          <div className="relative flex justify-center">
-            <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 px-8 py-2 rounded-full border border-primary/20">
-              <BarChart3 className="w-6 h-6 text-primary" />
-            </div>
-          </div>
-        </div>
-
-        {/* Performance Report Section */}
-        <div className="space-y-6 mb-8">
-          <div className="text-center">
-            <h2 className="text-4xl font-black tracking-tight bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              {isRTL ? 'تقرير الأداء' : 'Performance Report'}
-            </h2>
-            <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
-              {isRTL 
-                ? 'تقرير شامل عن المبيعات والأرباح والنمو مع مقارنات الفترات السابقة' 
-                : 'Comprehensive sales, profit, and growth analysis with period-over-period comparisons'}
-            </p>
-          </div>
-        </div>
-
+        {/* Performance Analytics */}
         {isLoadingPerformance ? (
               <div className="animate-pulse space-y-4">
                 <div className="h-10 bg-muted rounded w-1/3"></div>
@@ -783,126 +814,6 @@ export default function Profits() {
 
                   return (
                     <>
-                      {/* Filters and Time Range Selector */}
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                          <p className="text-muted-foreground">
-                            {isRTL 
-                              ? 'تقرير شامل عن المبيعات والأرباح والنمو' 
-                              : 'Comprehensive sales, profit, and growth analysis'}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {/* Filter Button */}
-                          <Popover open={isPerformanceFilterOpen} onOpenChange={setIsPerformanceFilterOpen}>
-                            <PopoverTrigger asChild>
-                              <Button variant="outline" data-testid="button-filter-performance">
-                                <Filter className="w-4 h-4 ltr:mr-2 rtl:ml-2" />
-                                {t("filter")}
-                                {(performanceCountryFilters.length > 0 || performanceDateFrom || performanceDateTo) && (
-                                  <Badge variant="secondary" className="ltr:ml-2 rtl:mr-2">
-                                    {performanceCountryFilters.length + (performanceDateFrom || performanceDateTo ? 1 : 0)}
-                                  </Badge>
-                                )}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-80" data-testid="popover-filter-performance">
-                              <div className="space-y-4">
-                                {/* Country Filter */}
-                                <div>
-                                  <h4 className="font-semibold mb-3">{t("filterByCountry")}</h4>
-                                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                                    {shippingCountries.length > 0 ? (
-                                      shippingCountries.map((country) => (
-                                        <div key={country} className="flex items-center space-x-2 rtl:space-x-reverse">
-                                          <Checkbox
-                                            id={`perf-filter-${country}`}
-                                            checked={performanceCountryFilters.includes(country)}
-                                            onCheckedChange={() => togglePerformanceCountryFilter(country)}
-                                          />
-                                          <Label htmlFor={`perf-filter-${country}`} className="cursor-pointer flex-1">
-                                            {country}
-                                          </Label>
-                                        </div>
-                                      ))
-                                    ) : (
-                                      <p className="text-sm text-muted-foreground">{t("noCountriesAvailable")}</p>
-                                    )}
-                                  </div>
-                                </div>
-
-                                <Separator />
-
-                                {/* Date Range Filter */}
-                                <div>
-                                  <h4 className="font-semibold mb-3">{t("filterByDate")}</h4>
-                                  <div className="space-y-2">
-                                    <div>
-                                      <Label htmlFor="perf-date-from" className="text-sm">{t("from")}</Label>
-                                      <input
-                                        id="perf-date-from"
-                                        type="date"
-                                        value={performanceDateFrom}
-                                        onChange={(e) => setPerformanceDateFrom(e.target.value)}
-                                        className="w-full px-3 py-2 border rounded-md"
-                                        data-testid="input-perf-date-from"
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label htmlFor="perf-date-to" className="text-sm">{t("to")}</Label>
-                                      <input
-                                        id="perf-date-to"
-                                        type="date"
-                                        value={performanceDateTo}
-                                        onChange={(e) => setPerformanceDateTo(e.target.value)}
-                                        className="w-full px-3 py-2 border rounded-md"
-                                        data-testid="input-perf-date-to"
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      setPerformanceCountryFilters([]);
-                                      setPerformanceDateFrom('');
-                                      setPerformanceDateTo('');
-                                    }}
-                                    data-testid="button-clear-perf-filters"
-                                  >
-                                    {t("clearFilters")}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => setIsPerformanceFilterOpen(false)}
-                                    data-testid="button-apply-perf-filters"
-                                  >
-                                    {t("apply")}
-                                  </Button>
-                                </div>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-
-                          {/* Time Range Selector */}
-                          <div className="w-[200px]">
-                            <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
-                              <SelectTrigger data-testid="select-time-range">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="daily">{isRTL ? 'يومي' : 'Daily'}</SelectItem>
-                                <SelectItem value="weekly">{isRTL ? 'أسبوعي' : 'Weekly'}</SelectItem>
-                                <SelectItem value="monthly">{isRTL ? 'شهري' : 'Monthly'}</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </div>
-
                       {/* Period Display */}
                       <Card>
                         <CardHeader className="pb-3">
@@ -1068,62 +979,6 @@ export default function Profits() {
                               </div>
                               <p className="text-xs text-muted-foreground">
                                 Average USD to LYD conversion rate
-                              </p>
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        {/* Arabic Section */}
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-right" dir="rtl">
-                              <span>مقاييس تفصيلية</span>
-                              <BarChart3 className="w-5 h-5" />
-                            </CardTitle>
-                            <CardDescription className="text-right" dir="rtl">
-                              مؤشرات الأداء لـ {periodLabel[timeRange]}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-4" dir="rtl">
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center">
-                                <span className="font-semibold" data-testid="text-discounted-orders-ar">
-                                  {metrics.discountedOrders}
-                                </span>
-                                <span className="text-sm text-muted-foreground">عدد الطلبات المخصومة</span>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                الطلبات التي تم دفع مقدم فيها
-                              </p>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center">
-                                <span className="font-semibold text-green-600" data-testid="text-avg-profit-ar">
-                                  {formatPerformanceCurrency(metrics.avgProfitPerOrder)}
-                                </span>
-                                <span className="text-sm text-muted-foreground">متوسط ​​الربح لكل طلب</span>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                الربح المحقق لكل طلب في المتوسط
-                              </p>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center">
-                                <span className="font-semibold" data-testid="text-avg-rate-ar">
-                                  {parseFloat(metrics.avgExchangeRate) > 0 
-                                    ? `1 دولار = ${parseFloat(metrics.avgExchangeRate).toFixed(4)} دينار`
-                                    : 'غير متوفر'}
-                                </span>
-                                <span className="text-sm text-muted-foreground">متوسط ​​سعر الصرف</span>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                متوسط ​​سعر تحويل الدولار إلى الدينار
                               </p>
                             </div>
                           </CardContent>
