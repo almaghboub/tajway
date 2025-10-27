@@ -1305,13 +1305,12 @@ export default function Orders() {
                           {/* First row: Shipping Code, Product Code */}
                           <div className="grid grid-cols-12 gap-4">
                             <div className="col-span-11">
-                              <Label htmlFor={`product-name-${index}`}>{t('shippingCodeRequired')}</Label>
+                              <Label htmlFor={`product-name-${index}`}>Shipping Code (Optional)</Label>
                               <Input
                                 id={`product-name-${index}`}
                                 value={item.productName}
                                 onChange={(e) => updateOrderItem(index, "productName", e.target.value)}
                                 placeholder={t('enterShippingCode')}
-                                required
                                 data-testid={`input-product-name-${index}`}
                               />
                             </div>
