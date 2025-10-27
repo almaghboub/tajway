@@ -96,7 +96,7 @@ export default function Orders() {
   const [shippingCost, setShippingCost] = useState(0);
   const [shippingCountry, setShippingCountry] = useState("");
   const [shippingCategory, setShippingCategory] = useState("normal");
-  const [shippingWeight, setShippingWeight] = useState(1);
+  const [shippingWeight, setShippingWeight] = useState(0);
   const [clothingSize, setClothingSize] = useState("");
   const [downPayment, setDownPayment] = useState(0);
   const [shippingCalculation, setShippingCalculation] = useState<{
@@ -512,7 +512,7 @@ export default function Orders() {
     setShippingCost(0);
     setShippingCountry("");
     setShippingCategory("normal");
-    setShippingWeight(1);
+    setShippingWeight(0);
     setClothingSize("");
     setDownPayment(0);
     setShippingCalculation(null);
@@ -711,8 +711,22 @@ export default function Orders() {
     const shippingProfit = shippingCalculation ? totals.commission : 0;
     const totalProfit = itemsProfit + shippingProfit;
     
+    // Convert down payment from LYD to USD
+    const rate = orderLydRate > 0 ? orderLydRate : exchangeRate;
+    const downPaymentUSD = rate > 0 ? downPayment / rate : downPayment;
+    
+    // Validate down payment doesn't exceed total
+    if (downPaymentUSD > totals.total) {
+      toast({
+        title: t('validationError'),
+        description: "Down payment cannot exceed order total",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Calculate remaining balance
-    const remainingBalance = totals.total - downPayment;
+    const remainingBalance = totals.total - downPaymentUSD;
     
     // Add clothing size to notes if provided
     let finalNotes = notes;
@@ -724,7 +738,7 @@ export default function Orders() {
       customerId: selectedCustomerId,
       status: "pending",
       totalAmount: totals.total.toFixed(2),
-      downPayment: downPayment.toFixed(2),
+      downPayment: downPaymentUSD.toFixed(2),
       remainingBalance: remainingBalance.toFixed(2),
       shippingCost: totals.shippingCost.toFixed(2),
       shippingWeight: shippingWeight.toFixed(2),
@@ -1488,9 +1502,9 @@ export default function Orders() {
                       type="number"
                       inputMode="decimal"
                       step="0.1"
-                      min="0.1"
+                      min="0"
                       value={shippingWeight}
-                      onChange={(e) => setShippingWeight(parseFloat(e.target.value) || 1)}
+                      onChange={(e) => setShippingWeight(parseFloat(e.target.value) || 0)}
                       data-testid="input-shipping-weight"
                     />
                   </div>
@@ -1596,13 +1610,18 @@ export default function Orders() {
                     </div>
                     <div className="border-t pt-3 space-y-3">
                       <div>
-                        <Label htmlFor="down-payment" className="text-sm">{t('downPaymentOptional')}</Label>
+                        <Label htmlFor="down-payment" className="text-sm">
+                          {t('downPaymentOptional')} (LYD)
+                        </Label>
                         <Input
                           id="down-payment"
                           type="number"
                           step="0.01"
                           min="0"
-                          max={calculateTotals().total}
+                          max={(() => {
+                            const rate = orderLydRate > 0 ? orderLydRate : exchangeRate;
+                            return rate > 0 ? calculateTotals().total * rate : calculateTotals().total;
+                          })()}
                           value={downPayment}
                           onChange={(e) => setDownPayment(parseFloat(e.target.value) || 0)}
                           placeholder="0.00"
@@ -1613,7 +1632,20 @@ export default function Orders() {
                       {downPayment > 0 && (
                         <div className="flex justify-between text-orange-600 font-medium">
                           <span>{t('remainingBalance')}:</span>
-                          <span data-testid="text-payment-remaining">${(calculateTotals().total - downPayment).toFixed(2)}</span>
+                          <span data-testid="text-payment-remaining">
+                            {(() => {
+                              const rate = orderLydRate > 0 ? orderLydRate : exchangeRate;
+                              const downPaymentUSD = rate > 0 ? downPayment / rate : 0;
+                              const remainingUSD = calculateTotals().total - downPaymentUSD;
+                              const remainingLYD = rate > 0 ? remainingUSD * rate : 0;
+                              return (
+                                <>
+                                  ${remainingUSD.toFixed(2)}
+                                  {rate > 0 && <span className="text-sm"> ({remainingLYD.toFixed(2)} LYD)</span>}
+                                </>
+                              );
+                            })()}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -1832,10 +1864,10 @@ export default function Orders() {
                         id="edit-shipping-weight"
                         type="number"
                         step="0.1"
-                        min="0.1"
-                        value={editingOrder.shippingWeight || 1}
+                        min="0"
+                        value={editingOrder.shippingWeight || 0}
                         onChange={async (e) => {
-                          const newWeight = parseFloat(e.target.value) || 1;
+                          const newWeight = parseFloat(e.target.value) || 0;
 
                           // Always update the weight first
                           setEditingOrder(prev => {
