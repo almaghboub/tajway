@@ -64,6 +64,10 @@ export default function Profits() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [countryFilters, setCountryFilters] = useState<string[]>([]);
   const [timeRange, setTimeRange] = useState<TimeRange>('daily');
+  const [performanceCountryFilters, setPerformanceCountryFilters] = useState<string[]>([]);
+  const [performanceDateFrom, setPerformanceDateFrom] = useState<string>('');
+  const [performanceDateTo, setPerformanceDateTo] = useState<string>('');
+  const [isPerformanceFilterOpen, setIsPerformanceFilterOpen] = useState(false);
   const { toast } = useToast();
   const currency = exchangeRate > 0 ? "LYD" : "USD";
   const isRTL = i18n.language === 'ar';
@@ -84,12 +88,39 @@ export default function Profits() {
     },
   });
 
+  const performanceQueryParams = useMemo(() => {
+    const params = new URLSearchParams();
+    params.append('range', timeRange);
+    if (performanceCountryFilters.length > 0) {
+      performanceCountryFilters.forEach(country => params.append('country', country));
+    }
+    if (performanceDateFrom) {
+      params.append('dateFrom', performanceDateFrom);
+    }
+    if (performanceDateTo) {
+      params.append('dateTo', performanceDateTo);
+    }
+    return params.toString();
+  }, [timeRange, performanceCountryFilters, performanceDateFrom, performanceDateTo]);
+
   const { data: performanceData, isLoading: isLoadingPerformance } = useQuery<PerformanceData>({
-    queryKey: [`/api/reports/performance?range=${timeRange}`],
+    queryKey: [`/api/reports/performance`, performanceQueryParams],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/reports/performance?${performanceQueryParams}`);
+      return response.json();
+    },
   });
 
   const toggleCountryFilter = (country: string) => {
     setCountryFilters(prev =>
+      prev.includes(country)
+        ? prev.filter(c => c !== country)
+        : [...prev, country]
+    );
+  };
+
+  const togglePerformanceCountryFilter = (country: string) => {
+    setPerformanceCountryFilters(prev =>
       prev.includes(country)
         ? prev.filter(c => c !== country)
         : [...prev, country]
@@ -627,7 +658,7 @@ export default function Profits() {
 
                   return (
                     <>
-                      {/* Time Range Selector */}
+                      {/* Filters and Time Range Selector */}
                       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
                           <p className="text-muted-foreground">
@@ -636,17 +667,114 @@ export default function Profits() {
                               : 'Comprehensive sales, profit, and growth analysis'}
                           </p>
                         </div>
-                        <div className="w-full md:w-[200px]">
-                          <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
-                            <SelectTrigger data-testid="select-time-range">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="daily">{isRTL ? 'يومي' : 'Daily'}</SelectItem>
-                              <SelectItem value="weekly">{isRTL ? 'أسبوعي' : 'Weekly'}</SelectItem>
-                              <SelectItem value="monthly">{isRTL ? 'شهري' : 'Monthly'}</SelectItem>
-                            </SelectContent>
-                          </Select>
+                        <div className="flex items-center gap-2">
+                          {/* Filter Button */}
+                          <Popover open={isPerformanceFilterOpen} onOpenChange={setIsPerformanceFilterOpen}>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" data-testid="button-filter-performance">
+                                <Filter className="w-4 h-4 ltr:mr-2 rtl:ml-2" />
+                                {t("filter")}
+                                {(performanceCountryFilters.length > 0 || performanceDateFrom || performanceDateTo) && (
+                                  <Badge variant="secondary" className="ltr:ml-2 rtl:mr-2">
+                                    {performanceCountryFilters.length + (performanceDateFrom || performanceDateTo ? 1 : 0)}
+                                  </Badge>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80" data-testid="popover-filter-performance">
+                              <div className="space-y-4">
+                                {/* Country Filter */}
+                                <div>
+                                  <h4 className="font-semibold mb-3">{t("filterByCountry")}</h4>
+                                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                                    {shippingCountries.length > 0 ? (
+                                      shippingCountries.map((country) => (
+                                        <div key={country} className="flex items-center space-x-2 rtl:space-x-reverse">
+                                          <Checkbox
+                                            id={`perf-filter-${country}`}
+                                            checked={performanceCountryFilters.includes(country)}
+                                            onCheckedChange={() => togglePerformanceCountryFilter(country)}
+                                          />
+                                          <Label htmlFor={`perf-filter-${country}`} className="cursor-pointer flex-1">
+                                            {country}
+                                          </Label>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <p className="text-sm text-muted-foreground">{t("noCountriesAvailable")}</p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <Separator />
+
+                                {/* Date Range Filter */}
+                                <div>
+                                  <h4 className="font-semibold mb-3">{t("filterByDate")}</h4>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <Label htmlFor="perf-date-from" className="text-sm">{t("from")}</Label>
+                                      <input
+                                        id="perf-date-from"
+                                        type="date"
+                                        value={performanceDateFrom}
+                                        onChange={(e) => setPerformanceDateFrom(e.target.value)}
+                                        className="w-full px-3 py-2 border rounded-md"
+                                        data-testid="input-perf-date-from"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="perf-date-to" className="text-sm">{t("to")}</Label>
+                                      <input
+                                        id="perf-date-to"
+                                        type="date"
+                                        value={performanceDateTo}
+                                        onChange={(e) => setPerformanceDateTo(e.target.value)}
+                                        className="w-full px-3 py-2 border rounded-md"
+                                        data-testid="input-perf-date-to"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setPerformanceCountryFilters([]);
+                                      setPerformanceDateFrom('');
+                                      setPerformanceDateTo('');
+                                    }}
+                                    data-testid="button-clear-perf-filters"
+                                  >
+                                    {t("clearFilters")}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => setIsPerformanceFilterOpen(false)}
+                                    data-testid="button-apply-perf-filters"
+                                  >
+                                    {t("apply")}
+                                  </Button>
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+
+                          {/* Time Range Selector */}
+                          <div className="w-[200px]">
+                            <Select value={timeRange} onValueChange={(value) => setTimeRange(value as TimeRange)}>
+                              <SelectTrigger data-testid="select-time-range">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="daily">{isRTL ? 'يومي' : 'Daily'}</SelectItem>
+                                <SelectItem value="weekly">{isRTL ? 'أسبوعي' : 'Weekly'}</SelectItem>
+                                <SelectItem value="monthly">{isRTL ? 'شهري' : 'Monthly'}</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </div>
 
