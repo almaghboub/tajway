@@ -15,6 +15,15 @@ interface OrderSummary {
   createdAt: string;
 }
 
+interface CommissionRule {
+  id: string;
+  country: string;
+  minValue: string;
+  maxValue: string | null;
+  percentage: string;
+  fixedFee: string;
+}
+
 interface ReportData {
   totalRevenue: number;
   totalProfit: number;
@@ -33,6 +42,7 @@ interface ReportData {
   }[];
   exchangeRate?: number;
   currency?: string;
+  commissionRules?: CommissionRule[];
 }
 
 interface SalesReportProps {
@@ -167,32 +177,68 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
         </div>
       )}
 
-      {reportType === "commission" && data.countryBreakdown && (
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-blue-600">{t('countryWiseCommissionAnalysis')}</h3>
-          <table className="w-full border-collapse border border-gray-300">
-            <thead>
-              <tr className="bg-blue-50">
-                <th className="border border-gray-300 px-4 py-2 text-left">{t('country')}</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">{t('revenue')}</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">{t('commissionRate')}</th>
-                <th className="border border-gray-300 px-4 py-2 text-right">{t('commissionAmount')}</th>
-                <th className="border border-gray-300 px-4 py-2 text-center">{t('orders')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.countryBreakdown.map((country) => (
-                <tr key={country.country}>
-                  <td className="border border-gray-300 px-4 py-2">{country.country}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertToLYD(country.revenue).toFixed(2)}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right">{(country.commissionRate * 100).toFixed(1)}%</td>
-                  <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertToLYD(country.commission).toFixed(2)}</td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">{country.orderCount}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {reportType === "commission" && (
+        <>
+          {/* Commission Rules Section */}
+          {data.commissionRules && data.commissionRules.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold mb-4 text-blue-600">{t('commissionRules')}</h3>
+              <table className="w-full border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-blue-50">
+                    <th className="border border-gray-300 px-4 py-2 text-left">{t('country')}</th>
+                    <th className="border border-gray-300 px-4 py-2 text-right">{t('minValue')}</th>
+                    <th className="border border-gray-300 px-4 py-2 text-right">{t('maxValue')}</th>
+                    <th className="border border-gray-300 px-4 py-2 text-right">{t('percentage')}</th>
+                    <th className="border border-gray-300 px-4 py-2 text-right">{t('fixedFee')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.commissionRules.map((rule) => (
+                    <tr key={rule.id}>
+                      <td className="border border-gray-300 px-4 py-2">{rule.country}</td>
+                      <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertToLYD(parseFloat(rule.minValue)).toFixed(2)}</td>
+                      <td className="border border-gray-300 px-4 py-2 text-right">
+                        {rule.maxValue ? `${currency} ${convertToLYD(parseFloat(rule.maxValue)).toFixed(2)}` : t('noLimit')}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-right">{(parseFloat(rule.percentage) * 100).toFixed(2)}%</td>
+                      <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertToLYD(parseFloat(rule.fixedFee)).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Country-wise Commission Analysis */}
+          {data.countryBreakdown && (
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold mb-4 text-blue-600">{t('countryWiseCommissionAnalysis')}</h3>
+              <table className="w-full border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-blue-50">
+                    <th className="border border-gray-300 px-4 py-2 text-left">{t('country')}</th>
+                    <th className="border border-gray-300 px-4 py-2 text-right">{t('revenue')}</th>
+                    <th className="border border-gray-300 px-4 py-2 text-right">{t('commissionRate')}</th>
+                    <th className="border border-gray-300 px-4 py-2 text-right">{t('commissionAmount')}</th>
+                    <th className="border border-gray-300 px-4 py-2 text-center">{t('orders')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.countryBreakdown.map((country) => (
+                    <tr key={country.country}>
+                      <td className="border border-gray-300 px-4 py-2">{country.country}</td>
+                      <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertToLYD(country.revenue).toFixed(2)}</td>
+                      <td className="border border-gray-300 px-4 py-2 text-right">{(country.commissionRate * 100).toFixed(1)}%</td>
+                      <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertToLYD(country.commission).toFixed(2)}</td>
+                      <td className="border border-gray-300 px-4 py-2 text-center">{country.orderCount}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
 
       {reportType === "financial" && (

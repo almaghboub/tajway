@@ -96,13 +96,21 @@ export default function Profits() {
     
     try {
       // Fetch detailed data for reports
-      const [ordersResponse, customersResponse] = await Promise.all([
+      const requests = [
         apiRequest("GET", "/api/orders"),
         apiRequest("GET", "/api/customers")
-      ]);
+      ];
       
-      const orders = await ordersResponse.json();
-      const customers = await customersResponse.json();
+      // Fetch commission rules only for commission report
+      if (reportType === "commission") {
+        requests.push(apiRequest("GET", "/api/commission-rules"));
+      }
+      
+      const responses = await Promise.all(requests);
+      
+      const orders = await responses[0].json();
+      const customers = await responses[1].json();
+      const commissionRules = reportType === "commission" && responses[2] ? await responses[2].json() : [];
       
       // Create customer lookup map
       const customerMap = customers.reduce((acc: any, customer: any) => {
@@ -164,6 +172,7 @@ export default function Profits() {
         orderCount: orders.length,
         orders: reportType === "profit" ? orderSummaries : undefined,
         countryBreakdown: reportType === "commission" ? countryBreakdown : undefined,
+        commissionRules: reportType === "commission" ? commissionRules : undefined,
         periodStart: orders.length > 0 ? orders[orders.length - 1].createdAt : undefined,
         periodEnd: orders.length > 0 ? orders[0].createdAt : undefined,
         exchangeRate,

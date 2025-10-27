@@ -1489,7 +1489,6 @@ const resources = {
       minValue: "الحد الأدنى",
       maxValue: "الحد الأقصى",
       percentage: "النسبة المئوية",
-      noLimit: "بدون حد",
       commissionRuleCreatedSuccess: "تم إنشاء قاعدة العمولة بنجاح",
       failedCreateCommissionRule: "فشل في إنشاء قاعدة العمولة",
       commissionRuleUpdatedSuccess: "تم تحديث قاعدة العمولة بنجاح",
