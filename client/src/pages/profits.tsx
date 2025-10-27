@@ -9,7 +9,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Header } from "@/components/header";
@@ -308,18 +307,7 @@ export default function Profits() {
         description={t('profitReportsDescription')} 
       />
       
-      <div className="flex-1 p-6">
-        <Tabs defaultValue="profit-metrics" className="w-full">
-          <TabsList className="grid w-full md:w-[400px] grid-cols-2 mb-6">
-            <TabsTrigger value="profit-metrics" data-testid="tab-profit-metrics">
-              {t('profitMetrics') || 'Profit Metrics'}
-            </TabsTrigger>
-            <TabsTrigger value="performance-report" data-testid="tab-performance-report">
-              {isRTL ? 'تقرير الأداء' : 'Performance Report'}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="profit-metrics" className="space-y-6">
+      <div className="flex-1 p-6 space-y-6">
         {/* Filter Section */}
         <div className="flex items-center justify-end">
           <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
@@ -705,10 +693,24 @@ export default function Profits() {
           </CardContent>
         </Card>
 
-          </TabsContent>
+        {/* Section Separator */}
+        <Separator className="my-8" />
 
-          <TabsContent value="performance-report" className="space-y-6">
-            {isLoadingPerformance ? (
+        {/* Performance Report Section */}
+        <div className="space-y-4 mb-6">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">
+              {isRTL ? 'تقرير الأداء' : 'Performance Report'}
+            </h2>
+            <p className="text-muted-foreground">
+              {isRTL 
+                ? 'تقرير شامل عن المبيعات والأرباح والنمو مع مقارنات الفترات السابقة' 
+                : 'Comprehensive sales, profit, and growth analysis with period-over-period comparisons'}
+            </p>
+          </div>
+        </div>
+
+        {isLoadingPerformance ? (
               <div className="animate-pulse space-y-4">
                 <div className="h-10 bg-muted rounded w-1/3"></div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -1252,8 +1254,6 @@ export default function Profits() {
             ) : (
               <div className="text-center py-8">No performance data available</div>
             )}
-          </TabsContent>
-        </Tabs>
 
         {/* Sales Report Modal */}
         <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
