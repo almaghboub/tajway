@@ -42,6 +42,28 @@ The UI/UX design emphasizes a responsive interface, bilingual support (English/A
 - User profile management allowing all users (including admin) to edit their own username, name, and password with secure validation.
 - Enhanced profit page with detailed metrics, average order value, and country-specific filtering.
 - Comprehensive profit report showing customer shipping codes and detailed profit breakdown (items profit, shipping profit, total profit).
+- **Performance Report System (October 2025)**:
+  - Owner-only analytics dashboard with comprehensive business metrics
+  - Time range filters: Daily, Weekly, Monthly with automatic recalculation
+  - 10 key performance indicators:
+    1. Total Orders (current vs previous period)
+    2. Total Sales (revenue tracking)
+    3. Total Profit (profit tracking)
+    4. Discounted Orders (orders with down payments)
+    5. Average Order Value
+    6. Average Profit Per Order
+    7. Average Exchange Rate (LYD)
+    8. Order Growth % (period-over-period comparison)
+    9. Sales Growth % (revenue growth tracking)
+    10. Profit Growth % (profitability trends)
+  - Side-by-side bilingual display (English and Arabic) for detailed metrics and performance summaries
+  - Visual growth indicators (TrendingUp/TrendingDown icons) with color-coded trends
+  - Professional metric cards with dual-currency display (USD/LYD)
+  - Automatic previous-period comparison for meaningful insights
+  - Performance summaries with actionable recommendations
+  - Backend: GET `/api/reports/performance?range=daily|weekly|monthly` with `requireOwner` middleware
+  - Frontend: Protected by `RoleProtectedRoute` with owner-only access
+  - Proper RTL support for Arabic section with responsive design
 - New order statuses: "Partially Arrived," "Ready to Collect," "With Shipping Company."
 - Dynamic country filtering across dashboards and profit reports.
 - Integrated LYD exchange rate and calendar date range filters for orders and customers.
