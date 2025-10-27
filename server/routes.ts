@@ -1130,6 +1130,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Performance Report endpoint - owner only
+  app.get("/api/reports/performance", requireOwner, async (req, res) => {
+    try {
+      const { range = 'daily' } = req.query; // daily, weekly, monthly
+      
+      // Calculate date ranges
+      const now = new Date();
+      let startDate: Date, endDate: Date, prevStartDate: Date, prevEndDate: Date;
+      
+      if (range === 'daily') {
+        // Today
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+        // Yesterday
+        prevStartDate = new Date(startDate);
+        prevStartDate.setDate(prevStartDate.getDate() - 1);
+        prevEndDate = new Date(prevStartDate.getFullYear(), prevStartDate.getMonth(), prevStartDate.getDate(), 23, 59, 59);
+      } else if (range === 'weekly') {
+        // This week (last 7 days)
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+        startDate = new Date(endDate);
+        startDate.setDate(startDate.getDate() - 6);
+        startDate.setHours(0, 0, 0, 0);
+        // Previous week
+        prevEndDate = new Date(startDate);
+        prevEndDate.setDate(prevEndDate.getDate() - 1);
+        prevEndDate.setHours(23, 59, 59);
+        prevStartDate = new Date(prevEndDate);
+        prevStartDate.setDate(prevStartDate.getDate() - 6);
+        prevStartDate.setHours(0, 0, 0, 0);
+      } else {
+        // This month
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        // Previous month
+        prevStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        prevEndDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      }
+      
+      // Get all orders
+      const allOrders = await storage.getAllOrders();
+      
+      // Filter orders for current period
+      const currentOrders = allOrders.filter(order => {
+        const orderDate = new Date(order.createdAt);
+        return orderDate >= startDate && orderDate <= endDate;
+      });
+      
+      // Filter orders for previous period
+      const previousOrders = allOrders.filter(order => {
+        const orderDate = new Date(order.createdAt);
+        return orderDate >= prevStartDate && orderDate <= prevEndDate;
+      });
+      
+      // Calculate metrics for current period
+      const totalOrders = currentOrders.length;
+      const totalSales = currentOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount || "0"), 0);
+      const totalProfit = currentOrders.reduce((sum, order) => sum + parseFloat(order.totalProfit || "0"), 0);
+      const discountedOrders = currentOrders.filter(order => parseFloat(order.downPayment || "0") > 0).length;
+      const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+      const avgProfitPerOrder = totalOrders > 0 ? totalProfit / totalOrders : 0;
+      
+      // Calculate average exchange rate
+      const ordersWithRate = currentOrders.filter(order => order.lydExchangeRate && parseFloat(order.lydExchangeRate) > 0);
+      const avgExchangeRate = ordersWithRate.length > 0
+        ? ordersWithRate.reduce((sum, order) => sum + parseFloat(order.lydExchangeRate || "0"), 0) / ordersWithRate.length
+        : 0;
+      
+      // Calculate metrics for previous period
+      const prevTotalOrders = previousOrders.length;
+      const prevTotalSales = previousOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount || "0"), 0);
+      const prevTotalProfit = previousOrders.reduce((sum, order) => sum + parseFloat(order.totalProfit || "0"), 0);
+      
+      // Calculate growth percentages
+      const orderGrowth = prevTotalOrders > 0 
+        ? ((totalOrders - prevTotalOrders) / prevTotalOrders) * 100 
+        : totalOrders > 0 ? 100 : 0;
+      const salesGrowth = prevTotalSales > 0 
+        ? ((totalSales - prevTotalSales) / prevTotalSales) * 100 
+        : totalSales > 0 ? 100 : 0;
+      const profitGrowth = prevTotalProfit > 0 
+        ? ((totalProfit - prevTotalProfit) / prevTotalProfit) * 100 
+        : totalProfit > 0 ? 100 : 0;
+      
+      res.json({
+        range,
+        period: {
+          start: startDate.toISOString(),
+          end: endDate.toISOString(),
+        },
+        previousPeriod: {
+          start: prevStartDate.toISOString(),
+          end: prevEndDate.toISOString(),
+        },
+        metrics: {
+          totalOrders,
+          totalSales: totalSales.toFixed(2),
+          totalProfit: totalProfit.toFixed(2),
+          discountedOrders,
+          avgOrderValue: avgOrderValue.toFixed(2),
+          avgProfitPerOrder: avgProfitPerOrder.toFixed(2),
+          avgExchangeRate: avgExchangeRate.toFixed(4),
+          orderGrowth: orderGrowth.toFixed(2),
+          salesGrowth: salesGrowth.toFixed(2),
+          profitGrowth: profitGrowth.toFixed(2),
+        },
+        previousMetrics: {
+          totalOrders: prevTotalOrders,
+          totalSales: prevTotalSales.toFixed(2),
+          totalProfit: prevTotalProfit.toFixed(2),
+        }
+      });
+    } catch (error) {
+      console.error("Performance report error:", error);
+      res.status(500).json({ message: "Failed to generate performance report" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

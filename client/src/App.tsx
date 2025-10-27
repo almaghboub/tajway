@@ -13,6 +13,7 @@ import Dashboard from "@/pages/dashboard";
 import Orders from "@/pages/orders";
 import Customers from "@/pages/customers";
 import Profits from "@/pages/profits";
+import PerformanceReport from "@/pages/performance-report";
 import Users from "@/pages/users";
 import Messages from "@/pages/messages";
 import Settings from "@/pages/settings";
@@ -144,6 +145,12 @@ function Router() {
         <ProtectedRoute>
           <Profits />
         </ProtectedRoute>
+      </Route>
+
+      <Route path="/performance-report">
+        <RoleProtectedRoute allowedRoles={["owner"]}>
+          <PerformanceReport />
+        </RoleProtectedRoute>
       </Route>
 
       <Route path="/users">
