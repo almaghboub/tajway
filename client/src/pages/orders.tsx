@@ -265,6 +265,17 @@ export default function Orders() {
       }
       return response.json();
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/dashboard"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('error'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const createCustomerMutation = useMutation({
