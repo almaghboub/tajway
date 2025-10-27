@@ -1133,13 +1133,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Performance Report endpoint - owner only
   app.get("/api/reports/performance", requireOwner, async (req, res) => {
     try {
-      const { range = 'daily' } = req.query; // daily, weekly, monthly
+      const { range = 'daily', dateFrom, dateTo } = req.query;
+      const countryFilters = req.query.country ? (Array.isArray(req.query.country) ? req.query.country : [req.query.country]) : [];
       
       // Calculate date ranges
       const now = new Date();
       let startDate: Date, endDate: Date, prevStartDate: Date, prevEndDate: Date;
       
-      if (range === 'daily') {
+      // Use custom date range if provided
+      if (dateFrom && dateTo) {
+        startDate = new Date(dateFrom as string);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(dateTo as string);
+        endDate.setHours(23, 59, 59, 999);
+        
+        // Calculate previous period with same duration
+        const duration = endDate.getTime() - startDate.getTime();
+        prevEndDate = new Date(startDate.getTime() - 1);
+        prevStartDate = new Date(prevEndDate.getTime() - duration);
+      } else if (range === 'daily') {
         // Today
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
@@ -1175,13 +1187,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Filter orders for current period
       const currentOrders = allOrders.filter(order => {
         const orderDate = new Date(order.createdAt);
-        return orderDate >= startDate && orderDate <= endDate;
+        const matchesDate = orderDate >= startDate && orderDate <= endDate;
+        const matchesCountry = countryFilters.length === 0 || countryFilters.includes(order.shippingCountry || "");
+        return matchesDate && matchesCountry;
       });
       
       // Filter orders for previous period
       const previousOrders = allOrders.filter(order => {
         const orderDate = new Date(order.createdAt);
-        return orderDate >= prevStartDate && orderDate <= prevEndDate;
+        const matchesDate = orderDate >= prevStartDate && orderDate <= prevEndDate;
+        const matchesCountry = countryFilters.length === 0 || countryFilters.includes(order.shippingCountry || "");
+        return matchesDate && matchesCountry;
       });
       
       // Calculate metrics for current period
