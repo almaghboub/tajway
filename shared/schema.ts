@@ -254,7 +254,7 @@ export type CustomerWithOrders = Customer & {
 };
 
 export type DeliveryTaskWithDetails = DeliveryTask & {
-  order: OrderWithCustomer;
+  order?: OrderWithCustomer;
   assignedTo: User;
   assignedBy: User;
 };

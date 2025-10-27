@@ -167,58 +167,83 @@ export default function TaskHistory() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t('date')}</TableHead>
+                      <TableHead>{t('taskType')}</TableHead>
                       <TableHead>{t('customerCode')}</TableHead>
                       <TableHead>{t('customer')}</TableHead>
                       <TableHead>{t('assignedTo')}</TableHead>
                       <TableHead>{t('assignedBy')}</TableHead>
-                      <TableHead>{t('pickupLocation')}</TableHead>
-                      <TableHead>{t('deliveryLocation')}</TableHead>
-                      <TableHead>{t('payment')}</TableHead>
+                      <TableHead>{t('location')}</TableHead>
+                      <TableHead>{t('details')}</TableHead>
                       <TableHead>{t('status')}</TableHead>
                       <TableHead>{t('completedAt')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTasks.map((task) => (
-                      <TableRow key={task.id} data-testid={`task-history-row-${task.id}`}>
-                        <TableCell className="text-sm">
-                          {format(new Date(task.createdAt), "MMM dd, yyyy")}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {task.order.customer.shippingCode || task.order.orderNumber}
-                        </TableCell>
-                        <TableCell>
-                          {task.order.customer.firstName} {task.order.customer.lastName}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <User className="w-3 h-3 text-gray-400" />
-                            {task.assignedTo.firstName} {task.assignedTo.lastName}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {task.assignedBy.firstName} {task.assignedBy.lastName}
-                        </TableCell>
-                        <TableCell className="text-sm">{task.pickupLocation}</TableCell>
-                        <TableCell className="text-sm">{task.deliveryLocation}</TableCell>
-                        <TableCell>
-                          {task.paymentType === "collect" ? (
-                            <span className="text-sm font-medium">
-                              ${parseFloat(task.paymentAmount || "0").toFixed(2)}
-                            </span>
-                          ) : (
-                            <span className="text-sm text-gray-400">{t('naLabel')}</span>
-                          )}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(task.status)}</TableCell>
-                        <TableCell className="text-sm">
-                          {task.completedAt 
-                            ? format(new Date(task.completedAt), "MMM dd, HH:mm")
-                            : "-"
-                          }
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {filteredTasks.map((task) => {
+                      const taskTypeLabel = task.taskType === "task" ? t('taskTypeTask') :
+                        task.taskType === "receive_payment" ? t('taskTypeReceivePayment') :
+                        t('taskTypeReceiveShipments');
+                      
+                      return (
+                        <TableRow key={task.id} data-testid={`task-history-row-${task.id}`}>
+                          <TableCell className="text-sm">
+                            {format(new Date(task.createdAt), "MMM dd, yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{taskTypeLabel}</Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {task.order ? (task.order.customer.shippingCode || task.order.orderNumber) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {task.order ? `${task.order.customer.firstName} ${task.order.customer.lastName}` : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <User className="w-3 h-3 text-gray-400" />
+                              {task.assignedTo.firstName} {task.assignedTo.lastName}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {task.assignedBy.firstName} {task.assignedBy.lastName}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {task.taskType === "task" ? (
+                              <div className="space-y-1">
+                                <div className="text-xs text-gray-500">{t('pickup')}: {task.pickupLocation}</div>
+                                <div className="text-xs text-gray-500">{t('delivery')}: {task.deliveryLocation}</div>
+                              </div>
+                            ) : (
+                              task.address || '-'
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {task.taskType === "task" ? (
+                              task.paymentType === "collect" ? (
+                                <span className="font-medium">
+                                  ${parseFloat(task.paymentAmount || "0").toFixed(2)}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">{t('naLabel')}</span>
+                              )
+                            ) : (
+                              <div className="space-y-1">
+                                {task.value && <div>${parseFloat(task.value).toFixed(2)}</div>}
+                                {task.weight && <div>{parseFloat(task.weight).toFixed(2)} kg</div>}
+                                {!task.value && !task.weight && '-'}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>{getStatusBadge(task.status)}</TableCell>
+                          <TableCell className="text-sm">
+                            {task.completedAt 
+                              ? format(new Date(task.completedAt), "MMM dd, HH:mm")
+                              : "-"
+                            }
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

@@ -114,12 +114,8 @@ export default function DeliveryTasks() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header title={t('deliveryTasks')} description={t('deliveryTasksDescription')} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">{t('deliveryTasks')}</h1>
-          <p className="mt-2 text-gray-600">{t('deliveryTasksDescription')}</p>
-        </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -175,50 +171,96 @@ export default function DeliveryTasks() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>{t('taskType')}</TableHead>
                       <TableHead>{t('customerCode')}</TableHead>
                       <TableHead>{t('customer')}</TableHead>
-                      <TableHead>{t('pickupLocation')}</TableHead>
-                      <TableHead>{t('deliveryLocation')}</TableHead>
-                      <TableHead>{t('payment')}</TableHead>
+                      <TableHead>{t('location')}</TableHead>
+                      <TableHead>{t('details')}</TableHead>
                       <TableHead>{t('status')}</TableHead>
                       <TableHead>{t('actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {tasks.map((task) => (
-                      <TableRow key={task.id} data-testid={`task-row-${task.id}`}>
-                        <TableCell className="font-medium">
-                          {task.order.customer.shippingCode || task.order.orderNumber}
-                        </TableCell>
-                        <TableCell>
-                          {task.order.customer.firstName} {task.order.customer.lastName}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3 text-gray-400" />
-                            {task.pickupLocation}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3 text-gray-400" />
-                            {task.deliveryLocation}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {task.paymentType === "collect" ? (
-                            <span className="text-sm">
-                              ${parseFloat(task.paymentAmount || "0").toFixed(2)}
-                            </span>
-                          ) : (
-                            <span className="text-sm text-gray-400">{t('none')}</span>
-                          )}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(task.status)}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            {task.status === "pending" && (
-                              <>
+                    {tasks.map((task) => {
+                      const taskTypeLabel = task.taskType === "task" ? t('taskTypeTask') :
+                        task.taskType === "receive_payment" ? t('taskTypeReceivePayment') :
+                        t('taskTypeReceiveShipments');
+                      
+                      return (
+                        <TableRow key={task.id} data-testid={`task-row-${task.id}`}>
+                          <TableCell>
+                            <Badge variant="outline">{taskTypeLabel}</Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {task.order ? (task.order.customer.shippingCode || task.order.orderNumber) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {task.order ? `${task.order.customer.firstName} ${task.order.customer.lastName}` : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {task.taskType === "task" ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1 text-sm">
+                                  <MapPin className="w-3 h-3 text-gray-400" />
+                                  <span className="text-xs text-gray-500">{t('pickupLocation')}:</span> {task.pickupLocation}
+                                </div>
+                                <div className="flex items-center gap-1 text-sm">
+                                  <MapPin className="w-3 h-3 text-gray-400" />
+                                  <span className="text-xs text-gray-500">{t('deliveryLocation')}:</span> {task.deliveryLocation}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-gray-400" />
+                                {task.address || '-'}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {task.taskType === "task" ? (
+                              task.paymentType === "collect" ? (
+                                <span className="text-sm">
+                                  ${parseFloat(task.paymentAmount || "0").toFixed(2)}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-gray-400">{t('none')}</span>
+                              )
+                            ) : (
+                              <div className="space-y-1 text-sm">
+                                {task.value && <div>{t('taskValue')}: ${parseFloat(task.value).toFixed(2)}</div>}
+                                {task.weight && <div>{t('taskWeight')}: {parseFloat(task.weight).toFixed(2)} kg</div>}
+                                {!task.value && !task.weight && '-'}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>{getStatusBadge(task.status)}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              {task.status === "pending" && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleMarkComplete(task)}
+                                    data-testid={`button-complete-${task.id}`}
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-1" />
+                                    {t('complete')}
+                                  </Button>
+                                  {task.taskType === "task" && task.paymentType === "collect" && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleMarkToCollect(task)}
+                                      data-testid={`button-to-collect-${task.id}`}
+                                    >
+                                      <DollarSign className="w-4 h-4 mr-1" />
+                                      {t('toCollect')}
+                                    </Button>
+                                  )}
+                                </>
+                              )}
+                              {task.status === "to_collect" && (
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -228,34 +270,12 @@ export default function DeliveryTasks() {
                                   <CheckCircle className="w-4 h-4 mr-1" />
                                   {t('complete')}
                                 </Button>
-                                {task.paymentType === "collect" && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleMarkToCollect(task)}
-                                    data-testid={`button-to-collect-${task.id}`}
-                                  >
-                                    <DollarSign className="w-4 h-4 mr-1" />
-                                    {t('toCollect')}
-                                  </Button>
-                                )}
-                              </>
-                            )}
-                            {task.status === "to_collect" && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleMarkComplete(task)}
-                                data-testid={`button-complete-${task.id}`}
-                              >
-                                <CheckCircle className="w-4 h-4 mr-1" />
-                                {t('complete')}
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
