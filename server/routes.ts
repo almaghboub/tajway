@@ -496,6 +496,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
+
+      // Auto-send to Darb Assabil when status changes to "delivered" (non-Tripoli orders)
+      if (result.data.status === "delivered" && darbAssabilService.isConfigured()) {
+        const fullOrder = await storage.getOrderWithCustomer(req.params.id);
+        
+        if (fullOrder && 
+            fullOrder.shippingCity && 
+            fullOrder.shippingCity.toLowerCase() !== 'tripoli' &&
+            !fullOrder.darbAssabilReference) {
+          
+          try {
+            const customer = fullOrder.customer;
+            const items = await storage.getOrderItems(fullOrder.id);
+
+            const darbAssabilPayload = {
+              receiverName: `${customer.firstName} ${customer.lastName}`,
+              receiverPhone: customer.phone,
+              receiverAddress: {
+                city: fullOrder.shippingCity || customer.city || 'Libya',
+                street: customer.address || '',
+                notes: fullOrder.notes || '',
+              },
+              items: items.map(item => ({
+                name: item.productName,
+                quantity: item.quantity,
+                price: parseFloat(item.unitPrice),
+                weight: item.quantity * 0.5,
+              })),
+              totalAmount: parseFloat(fullOrder.totalAmount),
+              notes: fullOrder.notes || `Order #${fullOrder.orderNumber}`,
+              collectOnDelivery: parseFloat(fullOrder.remainingBalance) > 0,
+              codAmount: parseFloat(fullOrder.remainingBalance),
+            };
+
+            const darbResult = await darbAssabilService.createOrder(darbAssabilPayload);
+
+            if (darbResult.success) {
+              await storage.updateOrder(fullOrder.id, {
+                darbAssabilOrderId: darbResult.data?.orderId,
+                darbAssabilReference: darbResult.data?.reference,
+                trackingNumber: darbResult.data?.trackingNumber || darbResult.data?.reference,
+                status: "with_shipping_company",
+              });
+              console.log(`Auto-sent order ${fullOrder.orderNumber} to Darb Assabil. Reference: ${darbResult.data?.reference}`);
+            } else {
+              console.error(`Failed to auto-send order ${fullOrder.orderNumber} to Darb Assabil:`, darbResult.error);
+            }
+          } catch (darbError) {
+            console.error('Auto Darb Assabil integration error:', darbError);
+          }
+        }
+      }
+
       res.json(order);
     } catch (error) {
       res.status(500).json({ message: "Failed to update order" });
