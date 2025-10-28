@@ -161,6 +161,14 @@ export default function Orders() {
     },
   });
 
+  const { data: commissionRules = [] } = useQuery({
+    queryKey: ["/api/commission-rules"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/commission-rules");
+      return response.json();
+    },
+  });
+
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: { order: InsertOrder; items: InsertOrderItem[]; images?: OrderImage[] }) => {
       const response = await apiRequest("POST", "/api/orders", orderData);
@@ -682,8 +690,33 @@ export default function Orders() {
         originalCommission: shippingCalculation.commission
       };
     } else {
-      // Fallback to manual calculation
-      const commission = (subtotal + shippingCost) * 0.15; // Default commission rate
+      // Fallback to manual calculation using commission rules
+      const orderValue = subtotal + shippingCost;
+      
+      // Find matching commission rule for the country and order value
+      let commission = 0;
+      if (shippingCountry && commissionRules.length > 0) {
+        const matchingRule = commissionRules.find((rule: any) => {
+          const minValue = parseFloat(rule.minValue);
+          const maxValue = rule.maxValue ? parseFloat(rule.maxValue) : Infinity;
+          return rule.country === shippingCountry && 
+                 orderValue >= minValue && 
+                 orderValue <= maxValue;
+        });
+        
+        if (matchingRule) {
+          const percentage = parseFloat(matchingRule.percentage);
+          const fixedFee = parseFloat(matchingRule.fixedFee || "0");
+          commission = (orderValue * percentage) + fixedFee;
+        } else {
+          // If no matching rule found, use 15% default
+          commission = orderValue * 0.15;
+        }
+      } else {
+        // If no country or rules, use 15% default
+        commission = orderValue * 0.15;
+      }
+      
       const total = subtotal + shippingCost + commission;
       const shippingProfit = commission;
       const totalProfit = itemsProfit + shippingProfit;
