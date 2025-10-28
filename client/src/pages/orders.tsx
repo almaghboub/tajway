@@ -664,7 +664,7 @@ export default function Orders() {
       const shippingInUSD = shippingCalculation.base_shipping * usdRate;
       const commissionInUSD = shippingCalculation.commission * usdRate;
       
-      const total = subtotal + shippingInUSD;
+      const total = subtotal + shippingInUSD + commissionInUSD;
       const shippingProfit = commissionInUSD;
       const totalProfit = itemsProfit + shippingProfit;
       
@@ -683,8 +683,8 @@ export default function Orders() {
       };
     } else {
       // Fallback to manual calculation
-      const total = subtotal + shippingCost;
-      const commission = total * 0.15; // Default commission rate
+      const commission = (subtotal + shippingCost) * 0.15; // Default commission rate
+      const total = subtotal + shippingCost + commission;
       const shippingProfit = commission;
       const totalProfit = itemsProfit + shippingProfit;
       
