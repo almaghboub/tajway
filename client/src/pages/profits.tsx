@@ -124,7 +124,7 @@ export default function Profits() {
       // Date range filter
       let matchesDateRange = true;
       if (performanceDateFrom || performanceDateTo) {
-        const orderDate = new Date(order.date);
+        const orderDate = new Date(order.createdAt);
         if (performanceDateFrom) {
           const fromDate = new Date(performanceDateFrom);
           matchesDateRange = matchesDateRange && orderDate >= fromDate;
