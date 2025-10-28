@@ -648,10 +648,9 @@ export default function Orders() {
   const calculateTotals = () => {
     const subtotal = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
     
-    // Calculate items profit (selling price minus cost)
+    // Calculate items profit (original price minus discounted price)
     const itemsProfit = orderItems.reduce((sum, item) => {
-      const cost = item.discountedPrice || item.originalPrice;
-      const markupProfit = (item.unitPrice - cost) * item.quantity;
+      const markupProfit = (item.originalPrice - item.unitPrice) * item.quantity;
       return sum + markupProfit;
     }, 0);
     
@@ -715,10 +714,9 @@ export default function Orders() {
 
     const totals = calculateTotals();
     
-    // Calculate items profit (selling price minus cost)
+    // Calculate items profit (original price minus discounted price)
     const itemsProfit = orderItems.reduce((sum, item) => {
-      const cost = item.discountedPrice || item.originalPrice;
-      const markupProfit = (item.unitPrice - cost) * item.quantity;
+      const markupProfit = (item.originalPrice - item.unitPrice) * item.quantity;
       return sum + markupProfit;
     }, 0);
     
@@ -769,8 +767,7 @@ export default function Orders() {
     };
 
     const items: InsertOrderItem[] = orderItems.map(item => {
-      const cost = item.discountedPrice || item.originalPrice;
-      const markupProfit = ((item.unitPrice - cost) * item.quantity).toFixed(2);
+      const markupProfit = ((item.originalPrice - item.unitPrice) * item.quantity).toFixed(2);
       return {
         orderId: "", // Will be set by the backend
         productName: item.productName,
