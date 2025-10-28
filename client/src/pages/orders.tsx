@@ -82,7 +82,6 @@ export default function Orders() {
     phone: ""
   });
   const [customOrderCode, setCustomOrderCode] = useState("");
-  const [orderImages, setOrderImages] = useState<OrderImage[]>([]);
   const [statusFilters, setStatusFilters] = useState<string[]>(["pending", "processing", "shipped", "delivered", "cancelled", "partially_arrived", "ready_to_collect", "with_shipping_company"]);
   const [countryFilters, setCountryFilters] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
@@ -523,7 +522,6 @@ export default function Orders() {
     setSearchedCustomer(null);
     setShowCustomerForm(false);
     setOrderItems([]);
-    setOrderImages([]);
     setShippingCost(0);
     setShippingCountry("");
     setShippingCity("");
@@ -757,13 +755,10 @@ export default function Orders() {
       };
     });
 
-    // Include images
-    const validImages = orderImages.filter(img => img.url.trim() !== "");
-
     createOrderMutation.mutate({ 
       order, 
       items,
-      images: validImages
+      images: []
     });
   };
 
@@ -1430,57 +1425,6 @@ export default function Orders() {
                     ))}
                   </div>
                 )}
-              </div>
-
-              {/* Order Images Upload */}
-              <div className="space-y-4">
-                <Label>Order Images (Optional - Up to 3 photos)</Label>
-                <div className="grid grid-cols-3 gap-4">
-                  {[0, 1, 2].map((index) => (
-                    <div key={index} className="space-y-2">
-                      <Label htmlFor={`image-url-${index}`}>Image {index + 1} URL</Label>
-                      <Input
-                        id={`image-url-${index}`}
-                        value={orderImages[index]?.url || ""}
-                        onChange={(e) => {
-                          const newImages = [...orderImages];
-                          newImages[index] = { 
-                            url: e.target.value, 
-                            altText: newImages[index]?.altText || `Order image ${index + 1}` 
-                          };
-                          setOrderImages(newImages);
-                        }}
-                        placeholder="https://..."
-                        data-testid={`input-image-url-${index}`}
-                      />
-                      {orderImages[index]?.url && (
-                        <div className="relative">
-                          <img 
-                            src={orderImages[index].url} 
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-32 object-cover rounded border"
-                            onError={(e) => {
-                              e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999'%3EInvalid%3C/text%3E%3C/svg%3E";
-                            }}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute top-1 right-1 bg-white/80 hover:bg-white"
-                            onClick={() => {
-                              const newImages = orderImages.filter((_, i) => i !== index);
-                              setOrderImages(newImages);
-                            }}
-                            data-testid={`button-remove-image-${index}`}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
               </div>
 
               {/* Shipping Configuration and Notes */}
