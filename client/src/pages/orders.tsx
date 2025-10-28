@@ -238,6 +238,31 @@ export default function Orders() {
     },
   });
 
+  const sendToDarbAssabilMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const response = await apiRequest("POST", `/api/orders/${orderId}/send-to-darb-assabil`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to send order to Darb Assabil');
+      }
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      toast({
+        title: t('success'),
+        description: `Order sent to Darb Assabil. Reference: ${data.reference || 'N/A'}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('error'),
+        description: error.message || 'Failed to send order to Darb Assabil',
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateOrderItemMutation = useMutation({
     mutationFn: async ({ id, ...data }: { id: string; quantity?: number; numberOfPieces?: number; originalPrice?: string; discountedPrice?: string; unitPrice?: string; productCode?: string }) => {
       const response = await apiRequest("PUT", `/api/order-items/${id}`, data);
@@ -1100,6 +1125,18 @@ export default function Orders() {
                             <Printer className="w-4 h-4 mr-1" />
                             {t('print')}
                           </Button>
+                          {!(order as any).darbAssabilReference && (
+                            <Button 
+                              variant="default" 
+                              size="sm" 
+                              onClick={() => sendToDarbAssabilMutation.mutate(order.id)}
+                              disabled={sendToDarbAssabilMutation.isPending}
+                              data-testid={`button-send-darb-${order.id}`}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              {sendToDarbAssabilMutation.isPending ? '...' : 'Ship'}
+                            </Button>
+                          )}
                           <Button 
                             variant="destructive" 
                             size="sm" 
