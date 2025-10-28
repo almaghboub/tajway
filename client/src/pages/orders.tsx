@@ -1124,7 +1124,10 @@ export default function Orders() {
                             <Printer className="w-4 h-4 mr-1" />
                             {t('print')}
                           </Button>
-                          {!(order as any).darbAssabilReference && (
+                          {!(order as any).darbAssabilReference && 
+                           order.status === 'delivered' && 
+                           order.shippingCity && 
+                           order.shippingCity.toLowerCase() !== 'tripoli' && (
                             <Button 
                               variant="default" 
                               size="sm" 
