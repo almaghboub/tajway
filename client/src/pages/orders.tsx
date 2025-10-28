@@ -171,7 +171,7 @@ export default function Orders() {
   });
 
   const updateOrderMutation = useMutation({
-    mutationFn: async ({ id, status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, totalAmount }: { 
+    mutationFn: async ({ id, status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, totalAmount, lydExchangeRate, trackingNumber, darbAssabilOrderId, darbAssabilReference }: { 
       id: string; 
       status: string; 
       notes: string; 
@@ -182,8 +182,12 @@ export default function Orders() {
       shippingCategory?: string;
       shippingCost?: string;
       totalAmount?: string;
+      lydExchangeRate?: string;
+      trackingNumber?: string;
+      darbAssabilOrderId?: string;
+      darbAssabilReference?: string;
     }) => {
-      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, totalAmount });
+      const response = await apiRequest("PUT", `/api/orders/${id}`, { status, notes, downPayment, remainingBalance, shippingWeight, shippingCountry, shippingCategory, shippingCost, totalAmount, lydExchangeRate, trackingNumber, darbAssabilOrderId, darbAssabilReference });
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || t('failedUpdateOrder'));

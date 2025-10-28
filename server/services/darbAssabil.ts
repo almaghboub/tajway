@@ -72,15 +72,30 @@ export class DarbAssabilService {
         payload
       );
 
+      // Check if the API response itself indicates success
+      // The API may return HTTP 200 but with success: false in the body
+      if (response.data && response.data.success === false) {
+        return {
+          success: false,
+          error: response.data.error || response.data.message || 'Order rejected by Darb Assabil',
+          message: response.data.message || 'Failed to create order in Darb Assabil system',
+        };
+      }
+
       return {
         success: true,
         data: response.data,
       };
     } catch (error: any) {
       console.error('Darb Assabil API Error:', error.response?.data || error.message);
+      
+      // Extract detailed error message from API response if available
+      const apiError = error.response?.data;
+      const errorMessage = apiError?.message || apiError?.error || error.message;
+      
       return {
         success: false,
-        error: error.response?.data?.message || error.message,
+        error: errorMessage,
         message: 'Failed to create order in Darb Assabil system',
       };
     }
@@ -96,15 +111,26 @@ export class DarbAssabilService {
         `/orders/${USERNAME}/${orderId}`
       );
 
+      // Check API response success flag
+      if (response.data && response.data.success === false) {
+        return {
+          success: false,
+          error: response.data.error || response.data.message || 'Failed to fetch order status',
+        };
+      }
+
       return {
         success: true,
         data: response.data,
       };
     } catch (error: any) {
       console.error('Darb Assabil API Error:', error.response?.data || error.message);
+      const apiError = error.response?.data;
+      const errorMessage = apiError?.message || apiError?.error || error.message;
+      
       return {
         success: false,
-        error: error.response?.data?.message || error.message,
+        error: errorMessage,
       };
     }
   }
@@ -119,15 +145,26 @@ export class DarbAssabilService {
         `/tracking/${reference}`
       );
 
+      // Check API response success flag
+      if (response.data && response.data.success === false) {
+        return {
+          success: false,
+          error: response.data.error || response.data.message || 'Failed to track order',
+        };
+      }
+
       return {
         success: true,
         data: response.data,
       };
     } catch (error: any) {
       console.error('Darb Assabil API Error:', error.response?.data || error.message);
+      const apiError = error.response?.data;
+      const errorMessage = apiError?.message || apiError?.error || error.message;
+      
       return {
         success: false,
-        error: error.response?.data?.message || error.message,
+        error: errorMessage,
       };
     }
   }
