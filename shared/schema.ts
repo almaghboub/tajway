@@ -53,6 +53,8 @@ export const orders = pgTable("orders", {
   totalProfit: decimal("total_profit", { precision: 10, scale: 2 }).notNull().default("0"),
   lydExchangeRate: decimal("lyd_exchange_rate", { precision: 10, scale: 4 }),
   trackingNumber: text("tracking_number"),
+  darbAssabilOrderId: text("darb_assabil_order_id"),
+  darbAssabilReference: text("darb_assabil_reference"),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
