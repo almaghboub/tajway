@@ -73,7 +73,10 @@ The system features:
   - E2E tested and verified working correctly
 - **Streamlined Workflows**: Simplified customer editing, product code workflows, flexible order creation without prior shipping calculation.
 - **Complete Arabic Translation Coverage**: All UI elements, including modals and reports, fully translated with proper RTL layout.
-  - **October 28, 2025**: Fixed all untranslated English text in Profit Reports page. Added 30+ translation keys including detailedMetrics, performanceSummary, revenueAndProfit, growthTrends, keyInsights, recommendations, numberOfDiscountedOrders, profitGeneratedPerOrder, averageUsdToLydRate, and more. E2E tested - all text correctly switches between English and Arabic.
+  - **October 28, 2025**: 
+    - Fixed all untranslated English text in Profit Reports page. Added 30+ translation keys including detailedMetrics, performanceSummary, revenueAndProfit, growthTrends, keyInsights, recommendations, numberOfDiscountedOrders, profitGeneratedPerOrder, averageUsdToLydRate, and more.
+    - Implemented fully functional Financial Breakdown section displaying real data: Revenue, Total Costs (red), Items Profit (green), Shipping Profit (green), Total Profit (bold green), Profit Margin % (blue), Average Order Value (purple), and Number of Orders. Previously was just a placeholder.
+    - E2E tested - all text correctly switches between English and Arabic with proper color coding and formatting.
 - **Responsive Design Implementation**: Fully responsive UI across phones, tablets, and desktops. Includes responsive sidebar navigation (hamburger menu on mobile), header, main layout, tables with horizontal scrolling, dashboard cards, and action buttons. Specific fixes for iOS Safari RTL initialization and mobile dialog opening. Dialogs are perfectly centered in both LTR and RTL.
 
 # External Dependencies

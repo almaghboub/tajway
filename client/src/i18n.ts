@@ -515,6 +515,8 @@ const resources = {
       analyzeTopProducts: "Analyze top-performing products and promote them",
       considerCostOptimization: "Consider cost optimization opportunities",
       noPerformanceData: "No performance data available",
+      totalCosts: "Total Costs",
+      profitBreakdown: "Profit Breakdown",
       
       // Users / User Management Page
       usersDescription: "Manage system users and their permissions",
@@ -1383,6 +1385,8 @@ const resources = {
       analyzeTopProducts: "تحليل المنتجات الأكثر أداءً والترويج لها",
       considerCostOptimization: "النظر في فرص تحسين التكاليف",
       noPerformanceData: "لا توجد بيانات أداء متاحة",
+      totalCosts: "إجمالي التكاليف",
+      profitBreakdown: "تفصيل الأرباح",
       
       // Users / User Management Page
       usersDescription: "إدارة مستخدمي النظام وصلاحياتهم",

@@ -769,15 +769,89 @@ export default function Profits() {
         {/* Financial Details */}
         <Card data-testid="card-financial-details">
           <CardHeader>
-            <CardTitle>{t('financialBreakdown')}</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5" />
+              {t('financialBreakdown')}
+            </CardTitle>
+            <CardDescription>{t('detailedFinancialAnalysis')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8">
-              <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">{t('detailedFinancialAnalysis')}</h3>
-              <p className="text-muted-foreground">
-                {t('comprehensiveFinancialDataDescription')}
-              </p>
+            <div className="space-y-6">
+              {/* Revenue Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b">
+                  <span className="text-sm font-semibold text-muted-foreground">{t('revenue')}</span>
+                  <span className="text-lg font-bold text-foreground">
+                    {metrics.totalRevenue.toFixed(2)} {currency}
+                  </span>
+                </div>
+              </div>
+
+              {/* Costs Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b">
+                  <span className="text-sm font-semibold text-muted-foreground">{t('totalCosts')}</span>
+                  <span className="text-lg font-bold text-red-600">
+                    {(metrics.totalRevenue - metrics.totalProfit).toFixed(2)} {currency}
+                  </span>
+                </div>
+              </div>
+
+              {/* Profit Breakdown */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-foreground">{t('profitBreakdown')}</h4>
+                
+                <div className="flex items-center justify-between pl-4">
+                  <span className="text-sm text-muted-foreground">{t('itemsProfit')}</span>
+                  <span className="font-semibold text-green-600">
+                    {metrics.totalItemsProfit.toFixed(2)} {currency}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between pl-4">
+                  <span className="text-sm text-muted-foreground">{t('profitFromShipping')}</span>
+                  <span className="font-semibold text-green-600">
+                    {metrics.totalShippingProfit.toFixed(2)} {currency}
+                  </span>
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between pt-2">
+                  <span className="text-sm font-semibold text-foreground">{t('totalProfit')}</span>
+                  <span className="text-xl font-bold text-green-600">
+                    {metrics.totalProfit.toFixed(2)} {currency}
+                  </span>
+                </div>
+              </div>
+
+              {/* Profit Margin */}
+              <div className="space-y-3 pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-muted-foreground">{t('profitMargin')}</span>
+                  <span className="text-lg font-bold text-blue-600">
+                    {metrics.profitMargin.toFixed(2)}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Average Order Value */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-muted-foreground">{t('averageOrderValue')}</span>
+                  <span className="text-lg font-bold text-purple-600">
+                    {metrics.averageOrderValue.toFixed(2)} {currency}
+                  </span>
+                </div>
+              </div>
+
+              {/* Total Orders */}
+              <div className="space-y-3 pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">{t('numberOfOrders')}</span>
+                  <span className="font-semibold">{metrics.orderCount}</span>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
