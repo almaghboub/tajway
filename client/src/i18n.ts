@@ -517,6 +517,16 @@ const resources = {
       noPerformanceData: "No performance data available",
       totalCosts: "Total Costs",
       profitBreakdown: "Profit Breakdown",
+      uploadImage: "Upload Image",
+      uploading: "Uploading",
+      orderImages: "Order Images",
+      optional: "Optional",
+      upTo3Photos: "Up to 3 photos",
+      image: "Image",
+      selectImageFile: "Please select an image file",
+      imageTooLarge: "Image size must be less than 5MB",
+      imageUploadedSuccessfully: "Image uploaded successfully",
+      imageUploadFailed: "Failed to upload image. Please try again.",
       
       // Users / User Management Page
       usersDescription: "Manage system users and their permissions",
@@ -1387,6 +1397,16 @@ const resources = {
       noPerformanceData: "لا توجد بيانات أداء متاحة",
       totalCosts: "إجمالي التكاليف",
       profitBreakdown: "تفصيل الأرباح",
+      uploadImage: "رفع صورة",
+      uploading: "جاري الرفع",
+      orderImages: "صور الطلب",
+      optional: "اختياري",
+      upTo3Photos: "حتى 3 صور",
+      image: "صورة",
+      selectImageFile: "الرجاء اختيار ملف صورة",
+      imageTooLarge: "يجب أن يكون حجم الصورة أقل من 5 ميجابايت",
+      imageUploadedSuccessfully: "تم رفع الصورة بنجاح",
+      imageUploadFailed: "فشل رفع الصورة. يرجى المحاولة مرة أخرى.",
       
       // Users / User Management Page
       usersDescription: "إدارة مستخدمي النظام وصلاحياتهم",

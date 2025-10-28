@@ -6,6 +6,8 @@ import session from "express-session";
 import { storage } from "./storage";
 import { hashPassword, verifyPassword } from "./auth";
 import { requireAuth, requireOwner, requireOperational, requireDeliveryManager, requireShippingStaff, requireDeliveryAccess } from "./middleware";
+import { ObjectStorageService } from "./objectStorage";
+import { ObjectPermission } from "./objectAcl";
 import {
   insertUserSchema,
   insertCustomerSchema,
@@ -1261,6 +1263,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Performance report error:", error);
       res.status(500).json({ message: "Failed to generate performance report" });
+    }
+  });
+
+  // Upload URL Generation endpoint
+  app.post("/api/upload-url", requireAuth, async (req, res) => {
+    try {
+      // Validate request body
+      const { contentType, fileSize } = req.body;
+      
+      // Validate content type (must be an image)
+      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!contentType || !validImageTypes.includes(contentType.toLowerCase())) {
+        return res.status(400).json({ message: "Invalid file type. Only JPG, PNG, GIF, and WEBP images are allowed." });
+      }
+      
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (!fileSize || fileSize > maxSize) {
+        return res.status(400).json({ message: "File size must be less than 5MB" });
+      }
+      
+      // Log upload request
+      console.log(`[Upload] URL requested by user ${req.user?.id}: ${contentType}, ${fileSize} bytes`);
+      
+      const objectStorage = new ObjectStorageService();
+      const uploadUrl = await objectStorage.getObjectEntityUploadURL();
+      
+      res.json({ uploadUrl });
+    } catch (error: any) {
+      console.error("Upload URL generation error:", error);
+      res.status(500).json({ message: error.message || "Failed to generate upload URL" });
+    }
+  });
+
+  // Confirm upload and set ACL to public
+  app.post("/api/upload-confirm", requireAuth, async (req, res) => {
+    try {
+      const { uploadUrl } = req.body;
+      
+      if (!uploadUrl) {
+        return res.status(400).json({ message: "Upload URL is required" });
+      }
+      
+      const objectStorage = new ObjectStorageService();
+      
+      // Normalize the path and set ACL to public
+      const normalizedPath = await objectStorage.trySetObjectEntityAclPolicy(
+        uploadUrl,
+        {
+          owner: req.user!.id,
+          visibility: "public",
+        }
+      );
+      
+      console.log(`[Upload] Confirmed by user ${req.user?.id}: ${normalizedPath}`);
+      
+      res.json({ path: normalizedPath });
+    } catch (error: any) {
+      console.error("Upload confirmation error:", error);
+      res.status(500).json({ message: error.message || "Failed to confirm upload" });
+    }
+  });
+
+  // Serve uploaded object
+  app.get("/objects/*", requireAuth, async (req, res) => {
+    try {
+      const objectPath = `/${req.params[0]}`;
+      const fullPath = `/objects/${objectPath}`;
+      
+      const objectStorage = new ObjectStorageService();
+      const objectFile = await objectStorage.getObjectEntityFile(fullPath);
+      
+      // Check access permissions
+      const canAccess = await objectStorage.canAccessObjectEntity({
+        userId: req.user?.id,
+        objectFile,
+        requestedPermission: ObjectPermission.READ,
+      });
+      
+      if (!canAccess) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      await objectStorage.downloadObject(objectFile, res);
+    } catch (error: any) {
+      if (error.name === "ObjectNotFoundError") {
+        return res.status(404).json({ message: "Object not found" });
+      }
+      console.error("Object download error:", error);
+      res.status(500).json({ message: "Failed to download object" });
     }
   });
 

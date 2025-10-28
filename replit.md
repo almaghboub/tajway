@@ -72,6 +72,15 @@ The system features:
   - All fields fully translated (English/Arabic) with proper RTL support
   - E2E tested and verified working correctly
 - **Streamlined Workflows**: Simplified customer editing, product code workflows, flexible order creation without prior shipping calculation.
+- **Order Image Upload System (October 28, 2025)**: 
+  - Direct device file selection for order images (phone/computer camera or gallery)
+  - Cloud-based object storage integration for scalable image hosting
+  - ImageUploader component with real-time upload progress and preview
+  - Support for up to 3 images per order with automatic file validation
+  - Accepted formats: JPG, PNG, GIF (max 5MB per image)
+  - Backend: POST `/api/upload-url` generates pre-signed URLs for secure uploads
+  - Frontend: `ImageUploader` component handles file selection, validation, upload, and preview
+  - Fully bilingual UI with proper RTL support
 - **Complete Arabic Translation Coverage**: All UI elements, including modals and reports, fully translated with proper RTL layout.
   - **October 28, 2025**: 
     - Fixed all untranslated English text in Profit Reports page. Added 30+ translation keys including detailedMetrics, performanceSummary, revenueAndProfit, growthTrends, keyInsights, recommendations, numberOfDiscountedOrders, profitGeneratedPerOrder, averageUsdToLydRate, and more.

@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { apiRequest } from "@/lib/queryClient";
 import { Invoice } from "@/components/invoice";
+import { ImageUploader } from "@/components/image-uploader";
 import type { OrderWithCustomer, Customer, InsertOrder, InsertOrderItem } from "@shared/schema";
 
 interface OrderItem {
@@ -1449,50 +1450,27 @@ export default function Orders() {
 
               {/* Order Images Upload */}
               <div className="space-y-4">
-                <Label>Order Images (Optional - Up to 3 photos)</Label>
+                <Label>{t('orderImages')} ({t('optional')} - {t('upTo3Photos')})</Label>
                 <div className="grid grid-cols-3 gap-4">
                   {[0, 1, 2].map((index) => (
                     <div key={index} className="space-y-2">
-                      <Label htmlFor={`image-url-${index}`}>Image {index + 1} URL</Label>
-                      <Input
-                        id={`image-url-${index}`}
-                        value={orderImages[index]?.url || ""}
-                        onChange={(e) => {
+                      <Label>{t('image')} {index + 1}</Label>
+                      <ImageUploader
+                        index={index}
+                        currentImageUrl={orderImages[index]?.url}
+                        onImageUploaded={(url) => {
                           const newImages = [...orderImages];
                           newImages[index] = { 
-                            url: e.target.value, 
-                            altText: newImages[index]?.altText || `Order image ${index + 1}` 
+                            url, 
+                            altText: `Order image ${index + 1}` 
                           };
                           setOrderImages(newImages);
                         }}
-                        placeholder="https://..."
-                        data-testid={`input-image-url-${index}`}
+                        onRemove={() => {
+                          const newImages = orderImages.filter((_, i) => i !== index);
+                          setOrderImages(newImages);
+                        }}
                       />
-                      {orderImages[index]?.url && (
-                        <div className="relative">
-                          <img 
-                            src={orderImages[index].url} 
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-32 object-cover rounded border"
-                            onError={(e) => {
-                              e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999'%3EInvalid%3C/text%3E%3C/svg%3E";
-                            }}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute top-1 right-1 bg-white/80 hover:bg-white"
-                            onClick={() => {
-                              const newImages = orderImages.filter((_, i) => i !== index);
-                              setOrderImages(newImages);
-                            }}
-                            data-testid={`button-remove-image-${index}`}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
