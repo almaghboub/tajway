@@ -224,7 +224,7 @@ export default function DarbAssabil() {
                         className="bg-green-600 hover:bg-green-700"
                       >
                         <Truck className="w-4 h-4 mr-2" />
-                        {sendToDarbAssabilMutation.isPending ? t('sending') || 'Sending...' : t('ship') || 'Ship'}
+                        {sendToDarbAssabilMutation.isPending ? t('sending') : t('ship')}
                       </Button>
                     </TableCell>
                   </TableRow>

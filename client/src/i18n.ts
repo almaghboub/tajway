@@ -16,6 +16,7 @@ const resources = {
       deliveryTasks: "Delivery Tasks",
       taskAssignment: "Task Assignment",
       taskHistory: "Task History",
+      darbAssabil: "Darb Assabil",
       settings: "Settings",
       logout: "Logout",
       
@@ -821,6 +822,19 @@ const resources = {
       completionRate: "Completion Rate",
       completedAt: "Completed At",
 
+      // Darb Assabil
+      darbAssabilDashboard: "Darb Assabil Dashboard",
+      darbAssabilDescription: "Orders ready for shipping outside Tripoli",
+      ordersReady: "Orders Ready",
+      readyForShipping: "Ready for shipping",
+      totalToCollect: "Total to Collect",
+      averageOrder: "Average Order",
+      readyOrders: "Ready Orders",
+      ordersReadyForDarbAssabil: "Orders delivered and ready to be sent to Darb Assabil",
+      noReadyOrders: "No orders ready for shipping",
+      noReadyOrdersDesc: "Orders with status \"delivered\" and city outside Tripoli will appear here",
+      ship: "Ship",
+
       // Expenses
       expensesDescription: "Track and manage all business expenses",
       addExpense: "Add Expense",
@@ -866,6 +880,7 @@ const resources = {
       deliveryTasks: "مهام التوصيل",
       taskAssignment: "تعيين المهام",
       taskHistory: "سجل المهام",
+      darbAssabil: "درب الصابيل",
       settings: "الإعدادات",
       logout: "تسجيل الخروج",
       
@@ -1670,6 +1685,19 @@ const resources = {
       performanceSummary: "ملخص الأداء:",
       completionRate: "معدل الإنجاز",
       completedAt: "اكتمل في",
+
+      // Darb Assabil
+      darbAssabilDashboard: "لوحة تحكم درب الصابيل",
+      darbAssabilDescription: "الطلبات الجاهزة للشحن خارج طرابلس",
+      ordersReady: "الطلبات الجاهزة",
+      readyForShipping: "جاهز للشحن",
+      totalToCollect: "إجمالي التحصيل",
+      averageOrder: "متوسط الطلب",
+      readyOrders: "الطلبات الجاهزة",
+      ordersReadyForDarbAssabil: "الطلبات المسلمة والجاهزة للإرسال إلى درب الصابيل",
+      noReadyOrders: "لا توجد طلبات جاهزة للشحن",
+      noReadyOrdersDesc: "الطلبات بحالة \"تم التسليم\" ومدينة خارج طرابلس ستظهر هنا",
+      ship: "شحن",
 
       // Expenses
       expensesDescription: "تتبع وإدارة جميع المصروفات التجارية",
