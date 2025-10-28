@@ -15,6 +15,7 @@ const navigationItems = [
   { key: "deliveryTasks", href: "/delivery-tasks", icon: ClipboardList, roles: ["shipping_staff"] },
   { key: "taskAssignment", href: "/task-assignment", icon: UserCog, roles: ["owner", "customer_service", "receptionist"] },
   { key: "taskHistory", href: "/task-history", icon: History, roles: ["owner", "customer_service", "receptionist"] },
+  { key: "darbAssabil", href: "/darb-assabil", icon: Truck, roles: ["owner", "customer_service", "receptionist"] },
   { key: "profitReports", href: "/profits", icon: TrendingUp, roles: ["owner"] },
   { key: "expenses", href: "/expenses", icon: DollarSign, roles: ["owner"] },
   { key: "userManagement", href: "/users", icon: Users2, roles: ["owner"] },

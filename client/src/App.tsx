@@ -19,6 +19,7 @@ import Settings from "@/pages/settings";
 import DeliveryTasks from "@/pages/delivery-tasks";
 import TaskAssignment from "@/pages/task-assignment";
 import TaskHistory from "@/pages/task-history";
+import DarbAssabil from "@/pages/darb-assabil";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -171,6 +172,12 @@ function Router() {
       <Route path="/task-history">
         <RoleProtectedRoute allowedRoles={["owner", "customer_service", "receptionist"]}>
           <TaskHistory />
+        </RoleProtectedRoute>
+      </Route>
+
+      <Route path="/darb-assabil">
+        <RoleProtectedRoute allowedRoles={["owner", "customer_service", "receptionist"]}>
+          <DarbAssabil />
         </RoleProtectedRoute>
       </Route>
 
