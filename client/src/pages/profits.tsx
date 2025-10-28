@@ -933,22 +933,22 @@ export default function Profits() {
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                               <BarChart3 className="w-5 h-5" />
-                              Detailed Metrics
+                              {t('detailedMetrics')}
                             </CardTitle>
                             <CardDescription>
-                              Performance indicators for {periodLabel[timeRange].toLowerCase()}
+                              {t('performanceIndicators')} {periodLabel[timeRange].toLowerCase()}
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-4">
                             <div className="space-y-2">
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Number of Discounted Orders</span>
+                                <span className="text-sm text-muted-foreground">{t('numberOfDiscountedOrders')}</span>
                                 <span className="font-semibold" data-testid="text-discounted-orders-en">
                                   {metrics.discountedOrders}
                                 </span>
                               </div>
                               <p className="text-xs text-muted-foreground">
-                                Orders with down payments made
+                                {t('ordersWithDownPayments')}
                               </p>
                             </div>
 
@@ -956,13 +956,13 @@ export default function Profits() {
 
                             <div className="space-y-2">
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Average Profit per Order</span>
+                                <span className="text-sm text-muted-foreground">{t('averageProfitPerOrder')}</span>
                                 <span className="font-semibold text-green-600" data-testid="text-avg-profit-en">
                                   {formatPerformanceCurrency(metrics.avgProfitPerOrder)}
                                 </span>
                               </div>
                               <p className="text-xs text-muted-foreground">
-                                Profit generated per order on average
+                                {t('profitGeneratedPerOrder')}
                               </p>
                             </div>
 
@@ -970,7 +970,7 @@ export default function Profits() {
 
                             <div className="space-y-2">
                               <div className="flex justify-between items-center">
-                                <span className="text-sm text-muted-foreground">Average Exchange Rate</span>
+                                <span className="text-sm text-muted-foreground">{t('averageExchangeRate')}</span>
                                 <span className="font-semibold" data-testid="text-avg-rate-en">
                                   {parseFloat(metrics.avgExchangeRate) > 0 
                                     ? `1 USD = ${parseFloat(metrics.avgExchangeRate).toFixed(4)} LYD`
@@ -978,7 +978,7 @@ export default function Profits() {
                                 </span>
                               </div>
                               <p className="text-xs text-muted-foreground">
-                                Average USD to LYD conversion rate
+                                {t('averageUsdToLydRate')}
                               </p>
                             </div>
                           </CardContent>
@@ -992,41 +992,39 @@ export default function Profits() {
                           <CardHeader className="bg-primary/5">
                             <CardTitle className="flex items-center gap-2">
                               <TrendingUp className="w-5 h-5 text-primary" />
-                              Performance Summary
+                              {t('performanceSummary')}
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="pt-6 space-y-4">
                             <div>
-                              <h4 className="font-semibold mb-2">Revenue & Profit</h4>
+                              <h4 className="font-semibold mb-2">{t('revenueAndProfit')}</h4>
                               <p className="text-sm text-muted-foreground">
-                                Generated <span className="font-semibold text-foreground">{formatPerformanceCurrency(metrics.totalSales)}</span> in
-                                revenue with <span className="font-semibold text-green-600">{formatPerformanceCurrency(metrics.totalProfit)}</span> profit
-                                from <span className="font-semibold text-foreground">{metrics.totalOrders}</span> orders.
+                                {t('generatedIn')} <span className="font-semibold text-foreground">{formatPerformanceCurrency(metrics.totalSales)}</span> {t('inRevenue')} <span className="font-semibold text-green-600">{formatPerformanceCurrency(metrics.totalProfit)}</span> profit {t('fromOrdersCount')} <span className="font-semibold text-foreground">{metrics.totalOrders}</span> {t('ordersLabel')}.
                               </p>
                             </div>
 
                             <Separator />
 
                             <div>
-                              <h4 className="font-semibold mb-2">Growth Trends</h4>
+                              <h4 className="font-semibold mb-2">{t('growthTrends')}</h4>
                               <ul className="text-sm text-muted-foreground space-y-1">
                                 <li className="flex items-center gap-2">
                                   <span className={orderGrowth.isPositive ? 'text-green-600' : 'text-red-600'}>
                                     {orderGrowth.isPositive ? '↑' : '↓'}
                                   </span>
-                                  Orders {orderGrowth.isPositive ? 'increased' : 'decreased'} by <span className="font-semibold">{orderGrowth.text}</span>
+                                  {t('ordersLabel')} {orderGrowth.isPositive ? t('ordersIncreased') : t('ordersDecreased')} {t('by')} <span className="font-semibold">{orderGrowth.text}</span>
                                 </li>
                                 <li className="flex items-center gap-2">
                                   <span className={salesGrowth.isPositive ? 'text-green-600' : 'text-red-600'}>
                                     {salesGrowth.isPositive ? '↑' : '↓'}
                                   </span>
-                                  Sales {salesGrowth.isPositive ? 'grew' : 'declined'} by <span className="font-semibold">{salesGrowth.text}</span>
+                                  Sales {salesGrowth.isPositive ? t('salesGrew') : t('salesDeclined')} {t('by')} <span className="font-semibold">{salesGrowth.text}</span>
                                 </li>
                                 <li className="flex items-center gap-2">
                                   <span className={profitGrowth.isPositive ? 'text-green-600' : 'text-red-600'}>
                                     {profitGrowth.isPositive ? '↑' : '↓'}
                                   </span>
-                                  Profit {profitGrowth.isPositive ? 'improved' : 'dropped'} by <span className="font-semibold">{profitGrowth.text}</span>
+                                  Profit {profitGrowth.isPositive ? t('profitImproved') : t('profitDropped')} {t('by')} <span className="font-semibold">{profitGrowth.text}</span>
                                 </li>
                               </ul>
                             </div>
@@ -1034,16 +1032,16 @@ export default function Profits() {
                             <Separator />
 
                             <div>
-                              <h4 className="font-semibold mb-2">Key Insights</h4>
+                              <h4 className="font-semibold mb-2">{t('keyInsights')}</h4>
                               <ul className="text-sm text-muted-foreground space-y-1">
                                 {profitGrowth.isPositive && profitGrowth.value > 10 && (
-                                  <li>✓ Strong profit growth indicates healthy business performance</li>
+                                  <li>✓ {t('strongProfitGrowth')}</li>
                                 )}
                                 {parseFloat(metrics.avgProfitPerOrder) > 0 && (
-                                  <li>✓ Average profit per order: {formatPerformanceCurrency(metrics.avgProfitPerOrder)}</li>
+                                  <li>✓ {t('averageProfitPerOrder')}: {formatPerformanceCurrency(metrics.avgProfitPerOrder)}</li>
                                 )}
                                 {metrics.discountedOrders > 0 && (
-                                  <li>✓ {((metrics.discountedOrders / metrics.totalOrders) * 100).toFixed(1)}% of orders included down payments</li>
+                                  <li>✓ {((metrics.discountedOrders / metrics.totalOrders) * 100).toFixed(1)}% {t('ofOrdersIncludedDownPayments')}</li>
                                 )}
                               </ul>
                             </div>
@@ -1052,11 +1050,11 @@ export default function Profits() {
                               <>
                                 <Separator />
                                 <div>
-                                  <h4 className="font-semibold mb-2 text-orange-600">Recommendations</h4>
+                                  <h4 className="font-semibold mb-2 text-orange-600">{t('recommendations')}</h4>
                                   <ul className="text-sm text-muted-foreground space-y-1">
-                                    <li>• Review pricing strategy to improve profit margins</li>
-                                    <li>• Analyze top-performing products and promote them</li>
-                                    <li>• Consider cost optimization opportunities</li>
+                                    <li>• {t('reviewPricingStrategy')}</li>
+                                    <li>• {t('analyzeTopProducts')}</li>
+                                    <li>• {t('considerCostOptimization')}</li>
                                   </ul>
                                 </div>
                               </>
@@ -1069,7 +1067,7 @@ export default function Profits() {
                 })()}
               </>
             ) : (
-              <div className="text-center py-8">No performance data available</div>
+              <div className="text-center py-8">{t('noPerformanceData')}</div>
             )}
 
         {/* Sales Report Modal */}
