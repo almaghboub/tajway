@@ -19,6 +19,7 @@ import {
   insertExpenseSchema,
   loginSchema,
 } from "@shared/schema";
+import { darbAssabilService } from "./services/darbAssabil";
 
 declare global {
   namespace Express {
@@ -510,6 +511,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Order deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete order" });
+    }
+  });
+
+  // Darb Assabil Integration Route
+  app.post("/api/orders/:id/send-to-darb-assabil", requireOperational, async (req, res) => {
+    try {
+      if (!darbAssabilService.isConfigured()) {
+        return res.status(400).json({ 
+          message: "Darb Assabil API is not configured. Please add API credentials." 
+        });
+      }
+
+      const order = await storage.getOrderWithCustomer(req.params.id);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      const customer = order.customer;
+      const items = await storage.getOrderItems(order.id);
+
+      // Prepare order data for Darb Assabil API
+      const darbAssabilPayload = {
+        receiverName: `${customer.firstName} ${customer.lastName}`,
+        receiverPhone: customer.phone,
+        receiverAddress: {
+          city: order.shippingCity || customer.city || 'Tripoli',
+          street: customer.address || '',
+          notes: order.notes || '',
+        },
+        items: items.map(item => ({
+          name: item.productName,
+          quantity: item.quantity,
+          price: parseFloat(item.unitPrice),
+          weight: item.quantity * 0.5, // Estimate 0.5kg per item
+        })),
+        totalAmount: parseFloat(order.totalAmount),
+        notes: order.notes || `Order #${order.orderNumber}`,
+        collectOnDelivery: parseFloat(order.remainingBalance) > 0,
+        codAmount: parseFloat(order.remainingBalance),
+      };
+
+      // Send to Darb Assabil
+      const result = await darbAssabilService.createOrder(darbAssabilPayload);
+
+      if (!result.success) {
+        return res.status(500).json({ 
+          message: result.message || "Failed to create order in Darb Assabil",
+          error: result.error
+        });
+      }
+
+      // Update order with Darb Assabil details
+      await storage.updateOrder(order.id, {
+        darbAssabilOrderId: result.data?.orderId,
+        darbAssabilReference: result.data?.reference,
+        trackingNumber: result.data?.trackingNumber || result.data?.reference,
+        status: "with_shipping_company",
+      });
+
+      res.json({
+        message: "Order sent to Darb Assabil successfully",
+        darbAssabilOrderId: result.data?.orderId,
+        reference: result.data?.reference,
+        trackingNumber: result.data?.trackingNumber || result.data?.reference,
+      });
+    } catch (error) {
+      console.error("Darb Assabil integration error:", error);
+      res.status(500).json({ message: "Failed to send order to Darb Assabil" });
     }
   });
 
