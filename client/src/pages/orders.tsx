@@ -423,6 +423,20 @@ export default function Orders() {
         )
       );
       
+      // Update the customer's shipping code if it changed
+      if (editingOrder.customer.shippingCode !== undefined) {
+        const updateCustomerResponse = await apiRequest("PUT", `/api/customers/${editingOrder.customerId}`, {
+          shippingCode: editingOrder.customer.shippingCode
+        });
+        
+        if (!updateCustomerResponse.ok) {
+          throw new Error('Failed to update customer shipping code');
+        }
+        
+        // Invalidate customers cache to reflect the updated shipping code
+        queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      }
+      
       // Update the order
       updateOrderMutation.mutate({
         id: editingOrder.id,
@@ -1902,6 +1916,31 @@ export default function Orders() {
                         data-testid="input-edit-lyd-rate"
                       />
                     </div>
+                  </div>
+
+                  {/* Shipping Code Field */}
+                  <div>
+                    <Label htmlFor="edit-shipping-code">{t('shippingCode')}</Label>
+                    <Input
+                      id="edit-shipping-code"
+                      type="text"
+                      value={editingOrder.customer.shippingCode || ''}
+                      onChange={(e) => {
+                        const newShippingCode = e.target.value;
+                        setEditingOrder(prev => {
+                          if (!prev) return null;
+                          return {
+                            ...prev,
+                            customer: {
+                              ...prev.customer,
+                              shippingCode: newShippingCode
+                            }
+                          };
+                        });
+                      }}
+                      placeholder={t('enterShippingCode')}
+                      data-testid="input-edit-shipping-code"
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
