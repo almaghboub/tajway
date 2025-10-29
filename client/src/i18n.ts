@@ -181,6 +181,7 @@ const resources = {
       
       enterFullName: "Enter full name",
       enterCity: "Enter city",
+      selectCity: "Select city",
       enterPhoneNumber: "Enter phone number",
       creating: "Creating...",
       createCustomer: "Create Customer",
@@ -1045,6 +1046,7 @@ const resources = {
       
       enterFullName: "أدخل الاسم الكامل",
       enterCity: "أدخل المدينة",
+      selectCity: "اختر المدينة",
       enterPhoneNumber: "أدخل رقم الهاتف",
       creating: "جارٍ الإنشاء...",
       createCustomer: "إنشاء عميل",

@@ -1450,14 +1450,33 @@ export default function Orders() {
                   </div>
                   <div>
                     <Label htmlFor="shipping-city">{t('shippingCity')}</Label>
-                    <Input
-                      id="shipping-city"
-                      type="text"
-                      value={shippingCity}
-                      onChange={(e) => setShippingCity(e.target.value)}
-                      placeholder={t('enterCity') || 'Enter city'}
-                      data-testid="input-shipping-city"
-                    />
+                    <Select value={shippingCity} onValueChange={setShippingCity}>
+                      <SelectTrigger id="shipping-city" data-testid="select-shipping-city">
+                        <SelectValue placeholder={t('selectCity') || 'Select city'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Tripoli">Tripoli - طرابلس</SelectItem>
+                        <SelectItem value="Benghazi">Benghazi - بنغازي</SelectItem>
+                        <SelectItem value="Misrata">Misrata - مصراتة</SelectItem>
+                        <SelectItem value="Zawiya">Zawiya - الزاوية</SelectItem>
+                        <SelectItem value="Bayda">Bayda - البيضاء</SelectItem>
+                        <SelectItem value="Gharyan">Gharyan - غريان</SelectItem>
+                        <SelectItem value="Tobruk">Tobruk - طبرق</SelectItem>
+                        <SelectItem value="Ajdabiya">Ajdabiya - أجدابيا</SelectItem>
+                        <SelectItem value="Sabha">Sabha - سبها</SelectItem>
+                        <SelectItem value="Derna">Derna - درنة</SelectItem>
+                        <SelectItem value="Zliten">Zliten - زليتن</SelectItem>
+                        <SelectItem value="Khoms">Khoms - الخمس</SelectItem>
+                        <SelectItem value="Sabratha">Sabratha - صبراتة</SelectItem>
+                        <SelectItem value="Marj">Marj - المرج</SelectItem>
+                        <SelectItem value="Tarhuna">Tarhuna - ترهونة</SelectItem>
+                        <SelectItem value="Sirte">Sirte - سرت</SelectItem>
+                        <SelectItem value="Ghat">Ghat - غات</SelectItem>
+                        <SelectItem value="Murzuq">Murzuq - مرزق</SelectItem>
+                        <SelectItem value="Bani Walid">Bani Walid - بني وليد</SelectItem>
+                        <SelectItem value="Nalut">Nalut - نالوت</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
