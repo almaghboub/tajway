@@ -1803,7 +1803,6 @@ export default function Orders() {
                                 <th className="px-3 py-2 text-center">{t('quantity')}</th>
                                 <th className="px-3 py-2 text-right">{t('originalPrice')}</th>
                                 <th className="px-3 py-2 text-right">{t('discountedPrice')}</th>
-                                <th className="px-3 py-2 text-right">{t('unitPrice')}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1848,16 +1847,6 @@ export default function Orders() {
                                       onChange={(e) => handleItemChange(index, 'discountedPrice', e.target.value)}
                                       className="w-24 text-right"
                                       data-testid={`input-edit-discounted-price-${index}`}
-                                    />
-                                  </td>
-                                  <td className="px-3 py-2">
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      value={item.unitPrice || ''}
-                                      onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
-                                      className="w-24 text-right"
-                                      data-testid={`input-edit-unit-price-${index}`}
                                     />
                                   </td>
                                 </tr>
