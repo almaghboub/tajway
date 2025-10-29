@@ -818,7 +818,7 @@ export default function Orders() {
     };
 
     const items: InsertOrderItem[] = orderItems.map(item => {
-      const markupProfit = ((item.originalPrice - item.unitPrice) * item.quantity).toFixed(2);
+      const markupProfit = ((item.originalPrice - item.discountedPrice) * item.quantity).toFixed(2);
       return {
         orderId: "", // Will be set by the backend
         productName: item.productName,
@@ -828,7 +828,7 @@ export default function Orders() {
         discountedPrice: item.discountedPrice.toFixed(2),
         markupProfit: markupProfit,
         quantity: item.quantity,
-        unitPrice: item.unitPrice.toFixed(2),
+        unitPrice: item.discountedPrice.toFixed(2),
         totalPrice: item.totalPrice.toFixed(2),
       };
     });
