@@ -1,32 +1,25 @@
-import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-
-interface Setting {
-  id: string;
-  key: string;
-  value: string;
-  type: string;
-}
+import { useEffect, useState } from "react";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Load settings from API using default queryFn
-  const { data: settings = [] } = useQuery<Setting[]>({
-    queryKey: ["/api/settings"],
-  });
+  const [mounted, setMounted] = useState(false);
 
-  // Apply dark mode on startup and whenever settings change
+  // Apply dark mode on startup from localStorage
   useEffect(() => {
-    // Find dark mode setting
-    const darkModeSetting = settings.find((s: Setting) => s.key === "darkMode");
-    const isDarkMode = darkModeSetting?.value === "true";
-
+    setMounted(true);
+    const isDarkMode = localStorage.getItem("darkMode") === "true";
+    
     // Apply or remove dark class
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
-  }, [settings]);
+  }, []);
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return <>{children}</>;
+  }
 
   return <>{children}</>;
 }
