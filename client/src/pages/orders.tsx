@@ -654,11 +654,14 @@ export default function Orders() {
     newItems[index] = { ...newItems[index], [field]: value };
     
     // Always recalculate total when any price-related field changes
-    // This ensures the total stays in sync with the unit price and quantity
-    if (field === "quantity" || field === "unitPrice" || field === "originalPrice" || field === "discountedPrice") {
-      const unitPrice = newItems[index].unitPrice || 0;
+    // This ensures the total stays in sync with the discounted price and quantity
+    if (field === "quantity" || field === "originalPrice" || field === "discountedPrice") {
+      const discountedPrice = newItems[index].discountedPrice || 0;
       const quantity = newItems[index].quantity || 0;
-      newItems[index].totalPrice = quantity * unitPrice;
+      newItems[index].totalPrice = quantity * discountedPrice;
+      
+      // Also update unitPrice to match discountedPrice for backward compatibility
+      newItems[index].unitPrice = discountedPrice;
     }
     
     setOrderItems(newItems);
@@ -673,7 +676,7 @@ export default function Orders() {
     
     // Calculate items profit (original price minus discounted price)
     const itemsProfit = orderItems.reduce((sum, item) => {
-      const markupProfit = (item.originalPrice - item.unitPrice) * item.quantity;
+      const markupProfit = (item.originalPrice - item.discountedPrice) * item.quantity;
       return sum + markupProfit;
     }, 0);
     
@@ -764,7 +767,7 @@ export default function Orders() {
     
     // Calculate items profit (original price minus discounted price)
     const itemsProfit = orderItems.reduce((sum, item) => {
-      const markupProfit = (item.originalPrice - item.unitPrice) * item.quantity;
+      const markupProfit = (item.originalPrice - item.discountedPrice) * item.quantity;
       return sum + markupProfit;
     }, 0);
     
@@ -1426,7 +1429,7 @@ export default function Orders() {
                           </div>
 
                           {/* Third row: Prices, Quantity, Total */}
-                          <div className="grid grid-cols-5 gap-4">
+                          <div className="grid grid-cols-4 gap-4">
                             <div>
                               <Label htmlFor={`original-price-${index}`}>Original Price ($)*</Label>
                               <Input
@@ -1453,20 +1456,6 @@ export default function Orders() {
                                 placeholder="0.00"
                                 required
                                 data-testid={`input-discounted-price-${index}`}
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor={`unit-price-${index}`}>Unit Price ($)*</Label>
-                              <Input
-                                id={`unit-price-${index}`}
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={item.unitPrice}
-                                onChange={(e) => updateOrderItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
-                                placeholder="0.00"
-                                required
-                                data-testid={`input-unit-price-${index}`}
                               />
                             </div>
                             <div>
