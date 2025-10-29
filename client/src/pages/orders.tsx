@@ -654,14 +654,17 @@ export default function Orders() {
     newItems[index] = { ...newItems[index], [field]: value };
     
     // Always recalculate total when any price-related field changes
-    // This ensures the total stays in sync with the discounted price and quantity
+    // Total Customer Pays = Original Price × Quantity (NOT discounted price!)
     if (field === "quantity" || field === "originalPrice" || field === "discountedPrice") {
+      const originalPrice = newItems[index].originalPrice || 0;
       const discountedPrice = newItems[index].discountedPrice || 0;
       const quantity = newItems[index].quantity || 0;
-      newItems[index].totalPrice = quantity * discountedPrice;
       
-      // Also update unitPrice to match discountedPrice for backward compatibility
-      newItems[index].unitPrice = discountedPrice;
+      // Customer pays the ORIGINAL price
+      newItems[index].totalPrice = quantity * originalPrice;
+      
+      // Update unitPrice to match originalPrice for backward compatibility
+      newItems[index].unitPrice = originalPrice;
     }
     
     setOrderItems(newItems);
@@ -828,7 +831,7 @@ export default function Orders() {
         discountedPrice: item.discountedPrice.toFixed(2),
         markupProfit: markupProfit,
         quantity: item.quantity,
-        unitPrice: item.discountedPrice.toFixed(2),
+        unitPrice: item.originalPrice.toFixed(2),
         totalPrice: item.totalPrice.toFixed(2),
       };
     });
