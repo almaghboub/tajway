@@ -1262,7 +1262,7 @@ export class PostgreSQLStorage implements IStorage {
     }
 
     const task = result[0];
-    const order = await this.getOrder(task.orderId);
+    const order = await this.getOrderWithCustomer(task.orderId);
     const assignedTo = await this.getUser(task.assignedToUserId);
     const assignedBy = await this.getUser(task.assignedByUserId);
     
@@ -1285,7 +1285,7 @@ export class PostgreSQLStorage implements IStorage {
       .orderBy(desc(deliveryTasks.createdAt));
 
     const tasksWithDetails = await Promise.all(tasks.map(async (task) => {
-      const order = await this.getOrder(task.orderId);
+      const order = await this.getOrderWithCustomer(task.orderId);
       const assignedTo = await this.getUser(task.assignedToUserId);
       const assignedBy = await this.getUser(task.assignedByUserId);
       
@@ -1310,7 +1310,7 @@ export class PostgreSQLStorage implements IStorage {
       .orderBy(desc(deliveryTasks.createdAt));
 
     const tasksWithDetails = await Promise.all(tasks.map(async (task) => {
-      const order = await this.getOrder(task.orderId);
+      const order = await this.getOrderWithCustomer(task.orderId);
       const assignedTo = await this.getUser(task.assignedToUserId);
       const assignedBy = await this.getUser(task.assignedByUserId);
       
