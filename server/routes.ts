@@ -1012,6 +1012,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const task = await storage.createDeliveryTask(result.data);
       res.status(201).json(task);
     } catch (error) {
+      console.error("Error creating delivery task:", error);
       res.status(500).json({ message: "Failed to create delivery task" });
     }
   });
@@ -1033,6 +1034,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tasks = await storage.getAllDeliveryTasks();
       res.json(tasks);
     } catch (error) {
+      console.error("Error fetching delivery tasks:", error);
       res.status(500).json({ message: "Failed to fetch delivery tasks" });
     }
   });
