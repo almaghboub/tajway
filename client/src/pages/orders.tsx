@@ -1798,7 +1798,7 @@ export default function Orders() {
                           <table className="w-full text-sm">
                             <thead className="bg-muted/50">
                               <tr>
-                                <th className="px-3 py-2 text-left">{t('shippingCodeLabel')}</th>
+                                <th className="px-3 py-2 text-left">{t('productName')}</th>
                                 <th className="px-3 py-2 text-left">{t('productCode')}</th>
                                 <th className="px-3 py-2 text-center">{t('quantity')}</th>
                                 <th className="px-3 py-2 text-right">{t('originalPrice')}</th>
