@@ -1643,7 +1643,7 @@ export default function Orders() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>{shippingCalculation ? t('commissionDynamic') : t('commissionFifteen')}</span>
+                      <span>{t('commission')}</span>
                       <span data-testid="text-commission">
                         {calculateTotals().currency} {calculateTotals().commission.toFixed(2)}
                       </span>
