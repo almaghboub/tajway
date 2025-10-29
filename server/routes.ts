@@ -1271,6 +1271,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload URL Generation endpoint
   app.post("/api/upload-url", requireAuth, async (req, res) => {
     try {
+      // Check if object storage is available (Replit only feature)
+      const isReplitEnv = process.env.REPL_ID !== undefined || process.env.PUBLIC_OBJECT_SEARCH_PATHS !== undefined;
+      
+      if (!isReplitEnv) {
+        return res.status(503).json({ 
+          message: "Image upload is only available in Replit environment. This feature is disabled on external deployments.",
+          feature: "replit-only"
+        });
+      }
+      
       // Validate request body
       const { contentType, fileSize } = req.body;
       

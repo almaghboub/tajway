@@ -54,6 +54,21 @@ export function ImageUploader({ onImageUploaded, currentImageUrl, onRemove, inde
       
       if (!response.ok) {
         const error = await response.json();
+        
+        // Handle Replit-only feature
+        if (response.status === 503 && error.feature === "replit-only") {
+          toast({
+            title: t('error'),
+            description: "Image upload is only available in Replit environment. Order can be created without images.",
+            variant: "destructive",
+          });
+          setUploading(false);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+          return;
+        }
+        
         throw new Error(error.message || 'Failed to get upload URL');
       }
       
