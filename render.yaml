@@ -2,7 +2,7 @@ services:
   - type: web
     name: tajway-logistics
     env: node
-    buildCommand: npm install && cd client && npx vite build --outDir ../dist/public && cd .. && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
