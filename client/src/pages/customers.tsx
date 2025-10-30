@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Users, Search, Filter, X, Trash2 } from "lucide-react";
+import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -414,8 +415,8 @@ export default function Customers() {
             </Popover>
           </div>
           <Button onClick={() => setIsModalOpen(true)} data-testid="button-new-customer">
-            <Plus className="w-4 h-4 mr-2" />
-            {t("addCustomer")}
+            <Plus className="w-4 h-4 sm:ltr:mr-2 sm:rtl:ml-2" />
+            <span className="hidden sm:inline">{t("addCustomer")}</span>
           </Button>
         </div>
 
@@ -448,19 +449,20 @@ export default function Customers() {
                 )}
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("name")}</TableHead>
-                    <TableHead>{t('shippingCodeLabel')}</TableHead>
-                    <TableHead>{t('totalAmountLabel')}</TableHead>
-                    <TableHead>{t('downPaymentLabel')}</TableHead>
-                    <TableHead>{t("phone")}</TableHead>
-                    <TableHead>{t("country")}</TableHead>
-                    <TableHead>{t("customerCreated")}</TableHead>
-                    <TableHead>{t("actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("name")}</TableHead>
+                      <TableHead>{t('shippingCodeLabel')}</TableHead>
+                      <TableHead>{t('totalAmountLabel')}</TableHead>
+                      <TableHead>{t('downPaymentLabel')}</TableHead>
+                      <TableHead>{t("phone")}</TableHead>
+                      <TableHead>{t("country")}</TableHead>
+                      <TableHead>{t("customerCreated")}</TableHead>
+                      <TableHead>{t("actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
                 <TableBody>
                   {filteredCustomers.map((customer) => {
                     const customerOrders = orders.filter(order => order.customerId === customer.id);
@@ -540,6 +542,7 @@ export default function Customers() {
                   })}
                 </TableBody>
               </Table>
+            </div>
             )}
           </CardContent>
         </Card>
@@ -551,27 +554,36 @@ export default function Customers() {
               <DialogTitle>{t("addNewCustomer")}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="fullName">{t('fullNameRequired')}</Label>
-                <Input
-                  id="fullName"
-                  value={formData.firstName + (formData.lastName ? ' ' + formData.lastName : '')}
-                  onChange={(e) => {
-                    const nameParts = e.target.value.trim().split(/\s+/);
-                    const firstName = nameParts[0] || "";
-                    const lastName = nameParts.slice(1).join(" ") || "";
-                    setFormData(prev => ({ ...prev, firstName, lastName }));
-                  }}
-                  placeholder={t('enterFullName')}
-                  required
-                  data-testid="input-full-name"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="firstName">{t('firstNameRequired')}</Label>
+                  <Input
+                    id="firstName"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                    placeholder={t('firstNamePlaceholder')}
+                    required
+                    data-testid="input-first-name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="lastName">{t('lastNameRequired')}</Label>
+                  <Input
+                    id="lastName"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                    placeholder={t('lastNamePlaceholder')}
+                    required
+                    data-testid="input-last-name"
+                  />
+                </div>
               </div>
 
               <div>
                 <Label htmlFor="phone">{t('phoneRequired')}</Label>
                 <Input
                   id="phone"
+                  type="tel"
                   value={formData.phone || ""}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                   placeholder={t('enterPhoneNumber')}
@@ -589,6 +601,17 @@ export default function Customers() {
                   placeholder={t('enterCity')}
                   required
                   data-testid="input-city"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="customerCode">{t('customerCode')}</Label>
+                <Input
+                  id="customerCode"
+                  value={formData.shippingCode || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, shippingCode: e.target.value }))}
+                  placeholder={t('enterCustomerCode')}
+                  data-testid="input-customer-code"
                 />
               </div>
 

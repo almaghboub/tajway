@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Sidebar } from "@/components/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
@@ -23,6 +24,7 @@ import DarbAssabil from "@/pages/darb-assabil";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const isMobile = useIsMobile();
 
   if (isLoading) {
     return (
@@ -37,9 +39,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar />
-      <main className="flex-1">
+    <div className="min-h-screen flex bg-background">
+      {/* Desktop sidebar - hidden on mobile */}
+      {!isMobile && <Sidebar />}
+      
+      {/* Mobile sidebar (hamburger menu) - rendered by Sidebar component itself */}
+      {isMobile && <Sidebar />}
+      
+      {/* Main content */}
+      <main className="flex-1 overflow-x-hidden">
         {children}
       </main>
     </div>
@@ -48,6 +56,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function RoleProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: string[] }) {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const isMobile = useIsMobile();
 
   if (isLoading) {
     return (
@@ -66,9 +75,15 @@ function RoleProtectedRoute({ children, allowedRoles }: { children: React.ReactN
   }
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar />
-      <main className="flex-1">
+    <div className="min-h-screen flex bg-background">
+      {/* Desktop sidebar - hidden on mobile */}
+      {!isMobile && <Sidebar />}
+      
+      {/* Mobile sidebar (hamburger menu) - rendered by Sidebar component itself */}
+      {isMobile && <Sidebar />}
+      
+      {/* Main content */}
+      <main className="flex-1 overflow-x-hidden">
         {children}
       </main>
     </div>

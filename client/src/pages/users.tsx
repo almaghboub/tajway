@@ -388,18 +388,19 @@ export default function Users() {
                 )}
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('name')}</TableHead>
-                    <TableHead>{t('username')}</TableHead>
-                    <TableHead>{t('email')}</TableHead>
-                    <TableHead>{t('role')}</TableHead>
-                    <TableHead>{t('status')}</TableHead>
-                    <TableHead>{t('created')}</TableHead>
-                    <TableHead>{t('actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('name')}</TableHead>
+                      <TableHead>{t('username')}</TableHead>
+                      <TableHead>{t('email')}</TableHead>
+                      <TableHead>{t('role')}</TableHead>
+                      <TableHead>{t('status')}</TableHead>
+                      <TableHead>{t('created')}</TableHead>
+                      <TableHead>{t('actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
                 <TableBody>
                   {filteredUsers.map((user) => (
                     <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
@@ -452,6 +453,7 @@ export default function Users() {
                   ))}
                 </TableBody>
               </Table>
+            </div>
             )}
           </CardContent>
         </Card>

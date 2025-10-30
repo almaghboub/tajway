@@ -6,6 +6,7 @@ import { z } from "zod";
 export const userRoleEnum = pgEnum("user_role", ["owner", "customer_service", "receptionist", "sorter", "stock_manager", "shipping_staff"]);
 export const orderStatusEnum = pgEnum("order_status", ["pending", "processing", "shipped", "delivered", "cancelled", "partially_arrived", "ready_to_collect", "with_shipping_company"]);
 export const taskStatusEnum = pgEnum("task_status", ["pending", "completed", "to_collect"]);
+export const taskTypeEnum = pgEnum("task_type", ["task", "delivery", "pickup"]);
 export const expenseCategoryEnum = pgEnum("expense_category", ["employee_salaries", "supplier_expenses", "marketing_commission", "rent", "cleaning_salaries", "other"]);
 
 export const users = pgTable("users", {
@@ -126,14 +127,18 @@ export const messages = pgTable("messages", {
 
 export const deliveryTasks = pgTable("delivery_tasks", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  orderId: varchar("order_id").notNull().references(() => orders.id),
+  taskType: taskTypeEnum("task_type").notNull().default("task"),
+  orderId: varchar("order_id").references(() => orders.id),
   assignedToUserId: varchar("assigned_to_user_id").notNull().references(() => users.id),
   assignedByUserId: varchar("assigned_by_user_id").notNull().references(() => users.id),
-  pickupLocation: text("pickup_location").notNull(),
-  deliveryLocation: text("delivery_location").notNull(),
+  pickupLocation: text("pickup_location"),
+  deliveryLocation: text("delivery_location"),
   customerCode: text("customer_code"),
   paymentType: text("payment_type"), // "collect" or "delivered"
   paymentAmount: decimal("payment_amount", { precision: 10, scale: 2 }),
+  address: text("address"),
+  value: decimal("value", { precision: 10, scale: 2 }),
+  weight: decimal("weight", { precision: 10, scale: 2 }),
   status: taskStatusEnum("status").notNull().default("pending"),
   completedAt: timestamp("completed_at"),
   notes: text("notes"),
@@ -210,6 +215,8 @@ export const insertDeliveryTaskSchema = createInsertSchema(deliveryTasks).omit({
   completedAt: true,
 }).extend({
   paymentAmount: z.union([z.string(), z.number()]).optional().transform(val => val?.toString()),
+  value: z.union([z.string(), z.number()]).optional().transform(val => val?.toString()),
+  weight: z.union([z.string(), z.number()]).optional().transform(val => val?.toString()),
 });
 
 export const insertExpenseSchema = createInsertSchema(expenses).omit({
@@ -271,7 +278,7 @@ export type CustomerWithOrders = Customer & {
 };
 
 export type DeliveryTaskWithDetails = DeliveryTask & {
-  order: OrderWithCustomer;
+  order?: OrderWithCustomer;
   assignedTo: User;
   assignedBy: User;
 };

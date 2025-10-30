@@ -6,6 +6,8 @@ import session from "express-session";
 import { storage } from "./storage";
 import { hashPassword, verifyPassword } from "./auth";
 import { requireAuth, requireOwner, requireOperational, requireDeliveryManager, requireShippingStaff, requireDeliveryAccess } from "./middleware";
+import { ObjectStorageService } from "./objectStorage";
+import { ObjectPermission } from "./objectAcl";
 import {
   insertUserSchema,
   insertCustomerSchema,
@@ -689,9 +691,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const itemsProfit = allItems.reduce((sum, i) => {
           const originalPrice = parseFloat(i.originalPrice || '0');
-          const discountedPrice = parseFloat(i.discountedPrice || '0');
+          const unitPrice = parseFloat(i.unitPrice || '0');
           const quantity = i.quantity;
-          return sum + ((originalPrice - discountedPrice) * quantity);
+          return sum + ((originalPrice - unitPrice) * quantity);
         }, 0);
 
         const shippingCost = parseFloat(order.shippingCost || '0');
@@ -1155,6 +1157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const task = await storage.createDeliveryTask(result.data);
       res.status(201).json(task);
     } catch (error) {
+      console.error("Error creating delivery task:", error);
       res.status(500).json({ message: "Failed to create delivery task" });
     }
   });
@@ -1176,6 +1179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tasks = await storage.getAllDeliveryTasks();
       res.json(tasks);
     } catch (error) {
+      console.error("Error fetching delivery tasks:", error);
       res.status(500).json({ message: "Failed to fetch delivery tasks" });
     }
   });

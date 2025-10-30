@@ -629,6 +629,7 @@ type PasswordForm = z.infer<typeof passwordSchema>;
 
 export default function Settings() {
   const [settingsState, setSettingsState] = useState(DEFAULT_SETTINGS);
+  const [lydExchangeRate, setLydExchangeRate] = useState<string>("");
   const { toast } = useToast();
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -668,6 +669,10 @@ export default function Settings() {
       settings.forEach((setting: Setting) => {
         if (setting.type === "boolean") {
           settingsObj[setting.key as keyof typeof DEFAULT_SETTINGS] = setting.value === "true";
+        }
+        // Handle LYD exchange rate
+        if (setting.key === "lyd_exchange_rate") {
+          setLydExchangeRate(setting.value);
         }
       });
       setSettingsState(settingsObj);
@@ -721,6 +726,51 @@ export default function Settings() {
     updateSettingMutation.mutate({ key, value: checked.toString() });
   };
 
+  // Update LYD exchange rate mutation
+  const updateExchangeRateMutation = useMutation({
+    mutationFn: async (rate: string) => {
+      const existingSetting = settings.find(s => s.key === "lyd_exchange_rate");
+      if (existingSetting) {
+        const response = await apiRequest("PUT", `/api/settings/lyd_exchange_rate`, { value: rate, type: "number" });
+        return response.json();
+      } else {
+        const response = await apiRequest("POST", "/api/settings", {
+          key: "lyd_exchange_rate",
+          value: rate,
+          type: "number",
+          description: "LYD to USD exchange rate"
+        });
+        return response.json();
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      toast({
+        title: t('success'),
+        description: t('exchangeRateUpdated'),
+      });
+    },
+    onError: () => {
+      toast({
+        title: t('error'),
+        description: t('failedUpdateExchangeRate'),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleExchangeRateSave = () => {
+    if (lydExchangeRate && parseFloat(lydExchangeRate) > 0) {
+      updateExchangeRateMutation.mutate(lydExchangeRate);
+    } else {
+      toast({
+        title: t('error'),
+        description: t('enterValidExchangeRate'),
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDatabaseBackup = () => {
     toast({
       title: t('backupInitiated'),
@@ -752,6 +802,14 @@ export default function Settings() {
 
   const handleLanguageChange = (language: string) => {
     i18n.changeLanguage(language);
+    
+    // Manually save to localStorage since we removed LanguageDetector
+    try {
+      localStorage.setItem('i18nextLng', language);
+    } catch (error) {
+      console.warn('Failed to save language preference');
+    }
+    
     toast({
       title: t('languageUpdated'),
       description: language === 'en' ? t('languageChangedToEnglish') : t('languageChangedToArabic'),
@@ -1265,6 +1323,44 @@ export default function Settings() {
                   <SelectItem value="ar">{t('arabicWithName')}</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="lyd-rate">{t('lydExchangeRateSetting')}</Label>
+                <p className="text-sm text-muted-foreground">
+                  {t('lydExchangeRateDesc')}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Input 
+                  id="lyd-rate"
+                  type="number"
+                  step="0.01"
+                  placeholder={t('enterExchangeRate')}
+                  value={lydExchangeRate}
+                  onChange={(e) => setLydExchangeRate(e.target.value)}
+                  className="flex-1"
+                  data-testid="input-lyd-exchange-rate"
+                />
+                <Button 
+                  onClick={handleExchangeRateSave}
+                  disabled={updateExchangeRateMutation.isPending}
+                  data-testid="button-save-exchange-rate"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {t('save')}
+                </Button>
+              </div>
+              {lydExchangeRate && parseFloat(lydExchangeRate) > 0 && (
+                <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <p className="text-sm text-green-800 dark:text-green-200">
+                    {t('currentExchangeRate')}: 1 USD = {parseFloat(lydExchangeRate).toFixed(4)} LYD
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="p-4 bg-muted/20 rounded-lg">

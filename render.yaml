@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: lynx-logistics
+    name: tajway-logistics
     env: node
     buildCommand: npm install && cd client && npx vite build --outDir ../dist/public && cd .. && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
     startCommand: npm start
@@ -11,3 +11,7 @@ services:
         sync: false
       - key: SESSION_SECRET
         generateValue: true
+      - key: DARB_ASSABIL_API_TOKEN
+        sync: false
+      - key: DARB_ASSABIL_USERNAME
+        sync: false

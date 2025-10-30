@@ -1,13 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Package, Search, Filter, Trash2, X, Printer } from "lucide-react";
+import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,8 +18,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Header } from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { apiRequest } from "@/lib/queryClient";
 import { Invoice } from "@/components/invoice";
+import { ImageUploader } from "@/components/image-uploader";
 import type { OrderWithCustomer, Customer, InsertOrder, InsertOrderItem } from "@shared/schema";
 
 interface OrderItem {
@@ -40,6 +44,7 @@ interface OrderImage {
 
 export default function Orders() {
   const { t, i18n } = useTranslation();
+  const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -77,7 +82,9 @@ export default function Orders() {
   const [searchedCustomer, setSearchedCustomer] = useState<Customer | null>(null);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
-    fullName: "",
+    firstName: "",
+    lastName: "",
+    customerCode: "",
     city: "",
     phone: ""
   });
@@ -93,7 +100,7 @@ export default function Orders() {
   const [shippingCountry, setShippingCountry] = useState("");
   const [shippingCity, setShippingCity] = useState("");
   const [shippingCategory, setShippingCategory] = useState("normal");
-  const [shippingWeight, setShippingWeight] = useState(1);
+  const [shippingWeight, setShippingWeight] = useState(0);
   const [clothingSize, setClothingSize] = useState("");
   const [hasDownPayment, setHasDownPayment] = useState(false);
   const [downPayment, setDownPayment] = useState(0);
@@ -108,6 +115,7 @@ export default function Orders() {
   } | null>(null);
   const [calculatingShipping, setCalculatingShipping] = useState(false);
   const [notes, setNotes] = useState("");
+  const [orderLydRate, setOrderLydRate] = useState<number>(0);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -119,6 +127,26 @@ export default function Orders() {
       return response.json() as Promise<OrderWithCustomer[]>;
     },
   });
+
+  // Use shared LYD exchange rate hook
+  const { exchangeRate, convertToLYD } = useLydExchangeRate();
+  
+  // Helper to convert using order-specific rate or fall back to global rate
+  const convertOrderToLYD = (amount: number, orderRate?: string) => {
+    const rate = orderRate ? parseFloat(orderRate) : exchangeRate;
+    return rate > 0 ? (amount * rate).toFixed(2) : amount.toFixed(2);
+  };
+
+  // Pre-fill order LYD rate when modal first opens
+  useEffect(() => {
+    if (isModalOpen && exchangeRate > 0) {
+      // Only set if orderLydRate hasn't been set (is 0 or undefined)
+      // This allows user edits to persist within the same modal session
+      if (orderLydRate === 0 || !orderLydRate) {
+        setOrderLydRate(exchangeRate);
+      }
+    }
+  }, [isModalOpen, exchangeRate]);
 
   const { data: customers = [] } = useQuery({
     queryKey: ["/api/customers"],
@@ -274,20 +302,27 @@ export default function Orders() {
       }
       return response.json();
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/dashboard"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('error'),
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const createCustomerMutation = useMutation({
     mutationFn: async (customerData: typeof newCustomer) => {
-      // Split fullName into firstName and lastName
-      const nameParts = customerData.fullName.trim().split(/\s+/);
-      const firstName = nameParts[0] || "";
-      const lastName = nameParts.slice(1).join(" ") || firstName;
-      
       const payload = {
-        firstName,
-        lastName,
+        firstName: customerData.firstName,
+        lastName: customerData.lastName,
         phone: customerData.phone,
         city: customerData.city,
+        shippingCode: customerData.customerCode || undefined,
         email: "",
         country: "",
         address: "",
@@ -307,7 +342,9 @@ export default function Orders() {
       setShippingCountry(customer.country || "");
       setShowCustomerForm(false);
       setNewCustomer({
-        fullName: "",
+        firstName: "",
+        lastName: "",
+        customerCode: "",
         city: "",
         phone: ""
       });
@@ -414,6 +451,20 @@ export default function Orders() {
           })
         )
       );
+      
+      // Update the customer's shipping code if it changed
+      if (editingOrder.customer.shippingCode !== undefined) {
+        const updateCustomerResponse = await apiRequest("PUT", `/api/customers/${editingOrder.customerId}`, {
+          shippingCode: editingOrder.customer.shippingCode
+        });
+        
+        if (!updateCustomerResponse.ok) {
+          throw new Error('Failed to update customer shipping code');
+        }
+        
+        // Invalidate customers cache to reflect the updated shipping code
+        queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      }
       
       // Update the order
       updateOrderMutation.mutate({
@@ -526,7 +577,7 @@ export default function Orders() {
     setShippingCountry("");
     setShippingCity("");
     setShippingCategory("normal");
-    setShippingWeight(1);
+    setShippingWeight(0);
     setClothingSize("");
     setDownPayment(0);
     setLydExchangeRate(0);
@@ -534,8 +585,11 @@ export default function Orders() {
     setShippingCalculation(null);
     setNotes("");
     setCustomOrderCode("");
+    setOrderLydRate(0);
     setNewCustomer({
-      fullName: "",
+      firstName: "",
+      lastName: "",
+      customerCode: "",
       city: "",
       phone: ""
     });
@@ -631,10 +685,18 @@ export default function Orders() {
     const newItems = [...orderItems];
     newItems[index] = { ...newItems[index], [field]: value };
     
-    // Calculate based on ORIGINAL price (what customer pays)
+    // Always recalculate total when any price-related field changes
+    // Total Customer Pays = Original Price × Quantity (NOT discounted price!)
     if (field === "quantity" || field === "originalPrice" || field === "discountedPrice") {
-      newItems[index].unitPrice = newItems[index].originalPrice;
-      newItems[index].totalPrice = newItems[index].quantity * newItems[index].originalPrice;
+      const originalPrice = newItems[index].originalPrice || 0;
+      const discountedPrice = newItems[index].discountedPrice || 0;
+      const quantity = newItems[index].quantity || 0;
+      
+      // Customer pays the ORIGINAL price
+      newItems[index].totalPrice = quantity * originalPrice;
+      
+      // Update unitPrice to match originalPrice for backward compatibility
+      newItems[index].unitPrice = originalPrice;
     }
     
     setOrderItems(newItems);
@@ -647,7 +709,7 @@ export default function Orders() {
   const calculateTotals = () => {
     const subtotal = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
     
-    // Calculate items profit (markup profit)
+    // Calculate items profit (original price minus discounted price)
     const itemsProfit = orderItems.reduce((sum, item) => {
       const markupProfit = (item.originalPrice - item.discountedPrice) * item.quantity;
       return sum + markupProfit;
@@ -704,7 +766,7 @@ export default function Orders() {
 
     const totals = calculateTotals();
     
-    // Calculate items profit (difference between original and discounted price)
+    // Calculate items profit (original price minus discounted price)
     const itemsProfit = orderItems.reduce((sum, item) => {
       const markupProfit = (item.originalPrice - item.discountedPrice) * item.quantity;
       return sum + markupProfit;
@@ -712,8 +774,22 @@ export default function Orders() {
     
     const totalProfit = itemsProfit;
     
+    // Convert down payment from LYD to USD
+    const rate = orderLydRate > 0 ? orderLydRate : exchangeRate;
+    const downPaymentUSD = rate > 0 ? downPayment / rate : downPayment;
+    
+    // Validate down payment doesn't exceed total
+    if (downPaymentUSD > totals.total) {
+      toast({
+        title: t('validationError'),
+        description: "Down payment cannot exceed order total",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Calculate remaining balance
-    const remainingBalance = totals.total - downPayment;
+    const remainingBalance = totals.total - downPaymentUSD;
     
     // Add clothing size to notes if provided
     let finalNotes = notes;
@@ -725,7 +801,7 @@ export default function Orders() {
       customerId: selectedCustomerId,
       status: "pending",
       totalAmount: totals.total.toFixed(2),
-      downPayment: downPayment.toFixed(2),
+      downPayment: downPaymentUSD.toFixed(2),
       remainingBalance: remainingBalance.toFixed(2),
       shippingCost: totals.shippingCost.toFixed(2),
       shippingWeight: shippingWeight.toFixed(2),
@@ -734,7 +810,7 @@ export default function Orders() {
       shippingCategory: shippingCategory || undefined,
       itemsProfit: itemsProfit.toFixed(2),
       totalProfit: totalProfit.toFixed(2),
-      lydExchangeRate: lydExchangeRate > 0 ? lydExchangeRate.toFixed(4) : undefined,
+      lydExchangeRate: (orderLydRate > 0 ? orderLydRate : exchangeRate > 0 ? exchangeRate : undefined)?.toFixed(4),
       notes: finalNotes || undefined,
       orderNumber: customOrderCode || undefined,
     };
@@ -750,7 +826,7 @@ export default function Orders() {
         discountedPrice: item.discountedPrice.toFixed(2),
         markupProfit: markupProfit,
         quantity: item.quantity,
-        unitPrice: item.unitPrice.toFixed(2),
+        unitPrice: item.originalPrice.toFixed(2),
         totalPrice: item.totalPrice.toFixed(2),
       };
     });
@@ -972,8 +1048,8 @@ export default function Orders() {
             </Popover>
           </div>
           <Button onClick={() => setIsModalOpen(true)} data-testid="button-new-order">
-            <Plus className="w-4 h-4 mr-2" />
-            {t('newOrder')}
+            <Plus className="w-4 h-4 sm:ltr:mr-2 sm:rtl:ml-2" />
+            <span className="hidden sm:inline">{t('newOrder')}</span>
           </Button>
         </div>
 
@@ -1006,23 +1082,24 @@ export default function Orders() {
                 )}
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('customer')}</TableHead>
-                    <TableHead>{t('shippingCodeLabel')}</TableHead>
-                    <TableHead>{t('trackingNumber')}</TableHead>
-                    <TableHead>{t('status')}</TableHead>
-                    <TableHead>{t('total')}</TableHead>
-                    <TableHead>{t('downPaymentLabel')}</TableHead>
-                    <TableHead>{t('remainingLabel')}</TableHead>
-                    <TableHead>{t('profit')}</TableHead>
-                    <TableHead>{t('createdAt')}</TableHead>
-                    <TableHead>{t('actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.map((order) => (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('customer')}</TableHead>
+                      <TableHead>{t('shippingCodeLabel')}</TableHead>
+                      <TableHead>{t('trackingNumber')}</TableHead>
+                      <TableHead>{t('status')}</TableHead>
+                      <TableHead>{t('total')}</TableHead>
+                      <TableHead>{t('downPaymentLabel')}</TableHead>
+                      <TableHead>{t('remainingLabel')}</TableHead>
+                      <TableHead>{t('profit')}</TableHead>
+                      <TableHead>{t('createdAt')}</TableHead>
+                      <TableHead>{t('actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredOrders.map((order) => (
                     <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
                       <TableCell data-testid={`text-customer-${order.id}`}>
                         {order.customer.firstName} {order.customer.lastName}
@@ -1153,13 +1230,14 @@ export default function Orders() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             )}
           </CardContent>
         </Card>
 
         {/* Order Creation Modal */}
         <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="modal-create-order">
+          <DialogContent className="max-w-4xl max-h-[90dvh] overflow-y-auto" data-testid="modal-create-order">
             <DialogHeader>
               <DialogTitle>{t('createNewOrder')}</DialogTitle>
             </DialogHeader>
@@ -1237,15 +1315,50 @@ export default function Orders() {
                       </Button>
                     </div>
                     <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="firstName">First Name*</Label>
+                          <Input
+                            id="firstName"
+                            value={newCustomer.firstName}
+                            onChange={(e) => setNewCustomer({...newCustomer, firstName: e.target.value})}
+                            required
+                            placeholder="Enter first name"
+                            data-testid="input-first-name"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="lastName">Last Name*</Label>
+                          <Input
+                            id="lastName"
+                            value={newCustomer.lastName}
+                            onChange={(e) => setNewCustomer({...newCustomer, lastName: e.target.value})}
+                            required
+                            placeholder="Enter last name"
+                            data-testid="input-last-name"
+                          />
+                        </div>
+                      </div>
                       <div>
-                        <Label htmlFor="fullName">Name*</Label>
+                        <Label htmlFor="customerCode">Customer Code*</Label>
                         <Input
-                          id="fullName"
-                          value={newCustomer.fullName}
-                          onChange={(e) => setNewCustomer({...newCustomer, fullName: e.target.value})}
+                          id="customerCode"
+                          value={newCustomer.customerCode}
+                          onChange={(e) => setNewCustomer({...newCustomer, customerCode: e.target.value})}
                           required
-                          placeholder={t('enterFullName')}
-                          data-testid="input-full-name"
+                          placeholder="Enter customer code"
+                          data-testid="input-customer-code"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="phone">Phone*</Label>
+                        <Input
+                          id="phone"
+                          value={newCustomer.phone}
+                          onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
+                          required
+                          placeholder={t('enterPhone')}
+                          data-testid="input-phone"
                         />
                       </div>
                       <div>
@@ -1263,7 +1376,7 @@ export default function Orders() {
                     <Button
                       type="button"
                       onClick={handleCreateCustomer}
-                      disabled={createCustomerMutation.isPending || !newCustomer.fullName || !newCustomer.city}
+                      disabled={createCustomerMutation.isPending || !newCustomer.firstName || !newCustomer.lastName || !newCustomer.customerCode || !newCustomer.city || !newCustomer.phone}
                       data-testid="button-create-customer"
                     >
                       {createCustomerMutation.isPending ? t('creating') : t('createCustomer')}
@@ -1325,13 +1438,12 @@ export default function Orders() {
                           {/* First row: Shipping Code, Product Code */}
                           <div className="grid grid-cols-12 gap-4">
                             <div className="col-span-11">
-                              <Label htmlFor={`product-name-${index}`}>{t('shippingCodeRequired')}</Label>
+                              <Label htmlFor={`product-name-${index}`}>Shipping Code (Optional)</Label>
                               <Input
                                 id={`product-name-${index}`}
                                 value={item.productName}
                                 onChange={(e) => updateOrderItem(index, "productName", e.target.value)}
                                 placeholder={t('enterShippingCode')}
-                                required
                                 data-testid={`input-product-name-${index}`}
                               />
                             </div>
@@ -1499,8 +1611,9 @@ export default function Orders() {
                     <Input
                       id="shipping-weight"
                       type="number"
+                      inputMode="decimal"
                       step="0.1"
-                      min="0.1"
+                      min="0"
                       value={shippingWeight}
                       onChange={(e) => {
                         setShippingWeight(parseFloat(e.target.value) || 1);
@@ -1823,13 +1936,12 @@ export default function Orders() {
                           <table className="w-full text-sm">
                             <thead className="bg-muted/50">
                               <tr>
-                                <th className="px-3 py-2 text-left">{t('shippingCodeLabel')}</th>
+                                <th className="px-3 py-2 text-left">{t('productName')}</th>
                                 <th className="px-3 py-2 text-left">{t('productCode')}</th>
                                 <th className="px-3 py-2 text-center">{t('quantity')}</th>
                                 <th className="px-3 py-2 text-center">No. of Pieces</th>
                                 <th className="px-3 py-2 text-right">{t('originalPrice')}</th>
                                 <th className="px-3 py-2 text-right">{t('discountedPrice')}</th>
-                                <th className="px-3 py-2 text-right">{t('unitPrice')}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1886,16 +1998,6 @@ export default function Orders() {
                                       data-testid={`input-edit-discounted-price-${index}`}
                                     />
                                   </td>
-                                  <td className="px-3 py-2">
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      value={item.unitPrice || ''}
-                                      onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
-                                      className="w-24 text-right"
-                                      data-testid={`input-edit-unit-price-${index}`}
-                                    />
-                                  </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -1911,7 +2013,7 @@ export default function Orders() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="edit-status">{t('orderStatus')}</Label>
                       <Select value={editOrderStatus} onValueChange={setEditOrderStatus}>
@@ -1930,6 +2032,56 @@ export default function Orders() {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div>
+                      <Label htmlFor="edit-lyd-rate">{t('lydExchangeRate')}</Label>
+                      <Input
+                        id="edit-lyd-rate"
+                        type="number"
+                        step="0.0001"
+                        min="0"
+                        value={editingOrder.lydExchangeRate || ''}
+                        onChange={(e) => {
+                          const newRate = e.target.value;
+                          setEditingOrder(prev => {
+                            if (!prev) return null;
+                            return {
+                              ...prev,
+                              lydExchangeRate: newRate
+                            };
+                          });
+                        }}
+                        placeholder={t('enterExchangeRate')}
+                        data-testid="input-edit-lyd-rate"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Shipping Code Field */}
+                  <div>
+                    <Label htmlFor="edit-shipping-code">{t('shippingCode')}</Label>
+                    <Input
+                      id="edit-shipping-code"
+                      type="text"
+                      value={editingOrder.customer.shippingCode || ''}
+                      onChange={(e) => {
+                        const newShippingCode = e.target.value;
+                        setEditingOrder(prev => {
+                          if (!prev) return null;
+                          return {
+                            ...prev,
+                            customer: {
+                              ...prev.customer,
+                              shippingCode: newShippingCode
+                            }
+                          };
+                        });
+                      }}
+                      placeholder={t('enterShippingCode')}
+                      data-testid="input-edit-shipping-code"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="edit-down-payment">{t('downPaymentDollar')}</Label>
                       <Input
@@ -1960,10 +2112,10 @@ export default function Orders() {
                         id="edit-shipping-weight"
                         type="number"
                         step="0.1"
-                        min="0.1"
-                        value={editingOrder.shippingWeight || 1}
+                        min="0"
+                        value={editingOrder.shippingWeight || 0}
                         onChange={async (e) => {
-                          const newWeight = parseFloat(e.target.value) || 1;
+                          const newWeight = parseFloat(e.target.value) || 0;
 
                           // Always update the weight first
                           setEditingOrder(prev => {
@@ -2405,27 +2557,57 @@ export default function Orders() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t('subtotalLabel')}</span>
-                      <span data-testid="text-view-subtotal">${(parseFloat(viewingOrder.totalAmount) - parseFloat(viewingOrder.shippingCost)).toFixed(2)}</span>
+                      <div className="text-right">
+                        <div data-testid="text-view-subtotal">${(parseFloat(viewingOrder.totalAmount) - parseFloat(viewingOrder.shippingCost)).toFixed(2)}</div>
+                        {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-xs text-green-600">{convertOrderToLYD(parseFloat(viewingOrder.totalAmount) - parseFloat(viewingOrder.shippingCost), viewingOrder.lydExchangeRate || undefined)} LYD</div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t('shippingCostLabel')}</span>
-                      <span data-testid="text-view-shipping">${parseFloat(viewingOrder.shippingCost).toFixed(2)}</span>
+                      <div className="text-right">
+                        <div data-testid="text-view-shipping">${parseFloat(viewingOrder.shippingCost).toFixed(2)}</div>
+                        {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-xs text-green-600">{convertOrderToLYD(parseFloat(viewingOrder.shippingCost), viewingOrder.lydExchangeRate || undefined)} LYD</div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between pt-2 border-t font-semibold text-base">
                       <span>{t('totalAmountLabelColon')}</span>
-                      <span data-testid="text-view-total">${parseFloat(viewingOrder.totalAmount).toFixed(2)}</span>
+                      <div className="text-right">
+                        <div data-testid="text-view-total">${parseFloat(viewingOrder.totalAmount).toFixed(2)}</div>
+                        {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-sm text-green-600 font-semibold">{convertOrderToLYD(parseFloat(viewingOrder.totalAmount), viewingOrder.lydExchangeRate || undefined)} LYD</div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between text-green-600">
                       <span>{t('downPaymentLabel')}:</span>
-                      <span data-testid="text-view-down-payment">${parseFloat(viewingOrder.downPayment || "0").toFixed(2)}</span>
+                      <div className="text-right">
+                        <div data-testid="text-view-down-payment">${parseFloat(viewingOrder.downPayment || "0").toFixed(2)}</div>
+                        {(viewingOrder.lydExchangeRate || exchangeRate > 0) && parseFloat(viewingOrder.downPayment || "0") > 0 && (
+                          <div className="text-sm text-blue-600">{convertOrderToLYD(parseFloat(viewingOrder.downPayment || "0"), viewingOrder.lydExchangeRate || undefined)} LYD</div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between font-semibold text-orange-600">
                       <span>{t('remainingBalance')}:</span>
-                      <span data-testid="text-view-remaining-balance">${parseFloat(viewingOrder.remainingBalance || "0").toFixed(2)}</span>
+                      <div className="text-right">
+                        <div data-testid="text-view-remaining-balance">${parseFloat(viewingOrder.remainingBalance || "0").toFixed(2)}</div>
+                        {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-sm">{convertOrderToLYD(parseFloat(viewingOrder.remainingBalance || "0"), viewingOrder.lydExchangeRate || undefined)} LYD</div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between text-muted-foreground border-t pt-2">
                       <span>{t('estimatedProfitLabel')}</span>
-                      <span data-testid="text-view-profit">${parseFloat(viewingOrder.totalProfit).toFixed(2)}</span>
+                      <div className="text-right">
+                        <div data-testid="text-view-profit">${parseFloat(viewingOrder.totalProfit).toFixed(2)}</div>
+                        {(viewingOrder.lydExchangeRate || exchangeRate > 0) && (
+                          <div className="text-sm text-purple-600">{convertOrderToLYD(parseFloat(viewingOrder.totalProfit), viewingOrder.lydExchangeRate || undefined)} LYD</div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -30,8 +30,12 @@ export default function TaskAssignment() {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState("");
   const [assignedToUserId, setAssignedToUserId] = useState("");
+  const [taskType, setTaskType] = useState<"task" | "receive_payment" | "receive_shipments">("task");
   const [pickupLocation, setPickupLocation] = useState("");
   const [deliveryLocation, setDeliveryLocation] = useState("");
+  const [taskAddress, setTaskAddress] = useState("");
+  const [taskValue, setTaskValue] = useState("");
+  const [taskWeight, setTaskWeight] = useState("");
   const [customerCode, setCustomerCode] = useState("");
   const [paymentType, setPaymentType] = useState<"collect" | "delivered">("delivered");
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -97,7 +101,7 @@ export default function TaskAssignment() {
   };
 
   const handleAssignTask = () => {
-    if (!selectedOrderId || !assignedToUserId || !pickupLocation || !deliveryLocation) {
+    if (!assignedToUserId) {
       toast({
         variant: "destructive",
         title: t('error'),
@@ -106,18 +110,36 @@ export default function TaskAssignment() {
       return;
     }
 
-    const taskData = {
-      orderId: selectedOrderId,
+    if (taskType === "task" && (!selectedOrderId || !pickupLocation || !deliveryLocation)) {
+      toast({
+        variant: "destructive",
+        title: t('error'),
+        description: "Please fill in all required fields",
+      });
+      return;
+    }
+
+    const taskData: any = {
       assignedToUserId,
       assignedByUserId: user?.id,
-      pickupLocation,
-      deliveryLocation,
-      customerCode: customerCode || undefined,
-      paymentType: paymentType || undefined,
-      paymentAmount: paymentAmount ? parseFloat(paymentAmount) : undefined,
-      notes: taskNotes || undefined,
+      taskType,
       status: "pending",
     };
+
+    if (taskType === "task") {
+      taskData.orderId = selectedOrderId;
+      taskData.pickupLocation = pickupLocation;
+      taskData.deliveryLocation = deliveryLocation;
+      taskData.customerCode = customerCode || undefined;
+      taskData.paymentType = paymentType || undefined;
+      taskData.paymentAmount = paymentAmount ? parseFloat(paymentAmount) : undefined;
+    } else {
+      taskData.address = taskAddress || undefined;
+      taskData.value = taskValue ? parseFloat(taskValue) : undefined;
+      taskData.weight = taskWeight ? parseFloat(taskWeight) : undefined;
+    }
+
+    taskData.notes = taskNotes || undefined;
 
     assignTaskMutation.mutate(taskData);
   };
@@ -125,8 +147,12 @@ export default function TaskAssignment() {
   const resetForm = () => {
     setSelectedOrderId("");
     setAssignedToUserId("");
+    setTaskType("task");
     setPickupLocation("");
     setDeliveryLocation("");
+    setTaskAddress("");
+    setTaskValue("");
+    setTaskWeight("");
     setCustomerCode("");
     setPaymentType("delivered");
     setPaymentAmount("");
@@ -148,12 +174,8 @@ export default function TaskAssignment() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header title={t('taskAssignment')} description={t('assignDeliveryTasksStaff')} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">{t('taskAssignment')}</h1>
-          <p className="mt-2 text-gray-600">{t('assignDeliveryTasksStaff')}</p>
-        </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -178,6 +200,14 @@ export default function TaskAssignment() {
               <p className="text-xs text-muted-foreground">{t('availableStaffMembers')}</p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Create Task Button */}
+        <div className="mb-6">
+          <Button onClick={() => setIsAssignModalOpen(true)} data-testid="button-create-task">
+            <Plus className="w-4 h-4 ltr:mr-2 rtl:ml-2" />
+            {t('assignTask')}
+          </Button>
         </div>
 
         {/* Orders Available for Assignment */}
@@ -257,9 +287,9 @@ export default function TaskAssignment() {
             <DialogHeader>
               <DialogTitle>{t('assignDeliveryTask')}</DialogTitle>
             </DialogHeader>
-            {selectedOrder && (
-              <div className="space-y-4">
-                {/* Order Info */}
+            <div className="space-y-4">
+              {/* Order Info - Only show if task type is "task" and order is selected */}
+              {taskType === "task" && selectedOrder && (
                 <div className="bg-muted/50 p-4 rounded-lg">
                   <h4 className="font-medium mb-2">{t('orderDetails')}</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
@@ -274,120 +304,182 @@ export default function TaskAssignment() {
                     </div>
                   </div>
                 </div>
+              )}
 
-                {/* Assignment Form */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <Label htmlFor="assign-to">{t('assignToShippingStaff')}</Label>
-                    <Select value={assignedToUserId} onValueChange={setAssignedToUserId}>
-                      <SelectTrigger id="assign-to" data-testid="select-shipping-staff">
-                        <SelectValue placeholder={t('selectShippingStaff')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {shippingStaff.map((staff) => (
-                          <SelectItem key={staff.id} value={staff.id}>
-                            {staff.firstName} {staff.lastName} ({staff.username})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="pickup-location">{t('pickupLocationRequired')}</Label>
-                    <Input
-                      id="pickup-location"
-                      value={pickupLocation}
-                      onChange={(e) => setPickupLocation(e.target.value)}
-                      placeholder={t('enterPickupLocation')}
-                      data-testid="input-pickup-location"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="delivery-location">{t('deliveryLocationRequired')}</Label>
-                    <Input
-                      id="delivery-location"
-                      value={deliveryLocation}
-                      onChange={(e) => setDeliveryLocation(e.target.value)}
-                      placeholder={t('enterDeliveryLocation')}
-                      data-testid="input-delivery-location"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="payment-type">{t('paymentType')}</Label>
-                    <Select value={paymentType} onValueChange={(value: any) => setPaymentType(value)}>
-                      <SelectTrigger id="payment-type" data-testid="select-payment-type">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="delivered">{t('deliveredNoCollection')}</SelectItem>
-                        <SelectItem value="collect">{t('collectPayment')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {paymentType === "collect" && (
-                    <>
-                      <div>
-                        <Label htmlFor="customer-code">{t('customerCode')}</Label>
-                        <Input
-                          id="customer-code"
-                          value={customerCode}
-                          onChange={(e) => setCustomerCode(e.target.value)}
-                          placeholder={t('enterCustomerCode')}
-                          data-testid="input-customer-code"
-                        />
-                      </div>
-
-                      <div className="col-span-2">
-                        <Label htmlFor="payment-amount">{t('paymentAmountDollar')}</Label>
-                        <Input
-                          id="payment-amount"
-                          type="number"
-                          step="0.01"
-                          value={paymentAmount}
-                          onChange={(e) => setPaymentAmount(e.target.value)}
-                          placeholder={t('enterPaymentAmount')}
-                          data-testid="input-payment-amount"
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  <div className="col-span-2">
-                    <Label htmlFor="task-notes">{t('notes')}</Label>
-                    <textarea
-                      id="task-notes"
-                      value={taskNotes}
-                      onChange={(e) => setTaskNotes(e.target.value)}
-                      className="w-full min-h-[100px] p-3 border rounded-md resize-none"
-                      placeholder={t('addAdditionalNotes')}
-                      data-testid="textarea-task-notes"
-                    />
-                  </div>
+              {/* Assignment Form */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Task Type Selector */}
+                <div className="col-span-2">
+                  <Label htmlFor="task-type">{t('taskType')} *</Label>
+                  <Select value={taskType} onValueChange={(value: any) => setTaskType(value)}>
+                    <SelectTrigger id="task-type" data-testid="select-task-type">
+                      <SelectValue placeholder={t('selectTaskType')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="task">{t('taskTypeTask')}</SelectItem>
+                      <SelectItem value="receive_payment">{t('taskTypeReceivePayment')}</SelectItem>
+                      <SelectItem value="receive_shipments">{t('taskTypeReceiveShipments')}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4 border-t">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsAssignModalOpen(false)}
-                    data-testid="button-cancel"
-                  >
-                    {t('cancel')}
-                  </Button>
-                  <Button
-                    onClick={handleAssignTask}
-                    disabled={assignTaskMutation.isPending}
-                    data-testid="button-assign"
-                  >
-                    {assignTaskMutation.isPending ? t('creating') : t('assignTask')}
-                  </Button>
+                {/* Assign To Staff */}
+                <div className="col-span-2">
+                  <Label htmlFor="assign-to">{t('assignToShippingStaff')}</Label>
+                  <Select value={assignedToUserId} onValueChange={setAssignedToUserId}>
+                    <SelectTrigger id="assign-to" data-testid="select-shipping-staff">
+                      <SelectValue placeholder={t('selectShippingStaff')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {shippingStaff.map((staff) => (
+                        <SelectItem key={staff.id} value={staff.id}>
+                          {staff.firstName} {staff.lastName} ({staff.username})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Conditional Fields based on Task Type */}
+                {taskType === "task" ? (
+                  <>
+                    <div>
+                      <Label htmlFor="pickup-location">{t('pickupLocationRequired')}</Label>
+                      <Input
+                        id="pickup-location"
+                        value={pickupLocation}
+                        onChange={(e) => setPickupLocation(e.target.value)}
+                        placeholder={t('enterPickupLocation')}
+                        data-testid="input-pickup-location"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="delivery-location">{t('deliveryLocationRequired')}</Label>
+                      <Input
+                        id="delivery-location"
+                        value={deliveryLocation}
+                        onChange={(e) => setDeliveryLocation(e.target.value)}
+                        placeholder={t('enterDeliveryLocation')}
+                        data-testid="input-delivery-location"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="payment-type">{t('paymentType')}</Label>
+                      <Select value={paymentType} onValueChange={(value: any) => setPaymentType(value)}>
+                        <SelectTrigger id="payment-type" data-testid="select-payment-type">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="delivered">{t('deliveredNoCollection')}</SelectItem>
+                          <SelectItem value="collect">{t('collectPayment')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {paymentType === "collect" && (
+                      <>
+                        <div>
+                          <Label htmlFor="customer-code">{t('customerCode')}</Label>
+                          <Input
+                            id="customer-code"
+                            value={customerCode}
+                            onChange={(e) => setCustomerCode(e.target.value)}
+                            placeholder={t('enterCustomerCode')}
+                            data-testid="input-customer-code"
+                          />
+                        </div>
+
+                        <div className="col-span-2">
+                          <Label htmlFor="payment-amount">{t('paymentAmountDollar')}</Label>
+                          <Input
+                            id="payment-amount"
+                            type="number"
+                            step="0.01"
+                            value={paymentAmount}
+                            onChange={(e) => setPaymentAmount(e.target.value)}
+                            placeholder={t('enterPaymentAmount')}
+                            data-testid="input-payment-amount"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Fields for receive_payment and receive_shipments */}
+                    <div className="col-span-2">
+                      <Label htmlFor="task-address">{t('taskAddress')}</Label>
+                      <Input
+                        id="task-address"
+                        value={taskAddress}
+                        onChange={(e) => setTaskAddress(e.target.value)}
+                        placeholder={t('enterTaskAddress')}
+                        data-testid="input-task-address"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="task-value">{t('taskValue')}</Label>
+                      <Input
+                        id="task-value"
+                        type="number"
+                        step="0.01"
+                        value={taskValue}
+                        onChange={(e) => setTaskValue(e.target.value)}
+                        placeholder={t('enterTaskValue')}
+                        data-testid="input-task-value"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="task-weight">{t('taskWeight')}</Label>
+                      <Input
+                        id="task-weight"
+                        type="number"
+                        step="0.01"
+                        value={taskWeight}
+                        onChange={(e) => setTaskWeight(e.target.value)}
+                        placeholder={t('enterTaskWeight')}
+                        data-testid="input-task-weight"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Notes field - always shown */}
+                <div className="col-span-2">
+                  <Label htmlFor="task-notes">{t('notes')}</Label>
+                  <textarea
+                    id="task-notes"
+                    value={taskNotes}
+                    onChange={(e) => setTaskNotes(e.target.value)}
+                    className="w-full min-h-[100px] p-3 border rounded-md resize-none"
+                    placeholder={t('addAdditionalNotes')}
+                    data-testid="textarea-task-notes"
+                  />
                 </div>
               </div>
-            )}
+
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAssignModalOpen(false)}
+                  data-testid="button-cancel"
+                >
+                  {t('cancel')}
+                </Button>
+                <Button
+                  onClick={handleAssignTask}
+                  disabled={assignTaskMutation.isPending}
+                  data-testid="button-assign"
+                >
+                  {assignTaskMutation.isPending ? t('creating') : t('assignTask')}
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </main>

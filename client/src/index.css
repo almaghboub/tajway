@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  --vh: 1vh;
   --background: hsl(0 0% 100%);
   --foreground: hsl(210 25% 7.8431%);
   --card: hsl(180 6.6667% 97.0588%);
@@ -119,4 +120,5 @@
   button {
     touch-action: manipulation;
   }
+  
 }

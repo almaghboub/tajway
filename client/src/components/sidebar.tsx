@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { Truck, LayoutDashboard, Package, Users, Box, TrendingUp, DollarSign, Users2, Settings, LogOut, MessageSquare, ClipboardList, UserCog, History } from "lucide-react";
+import { Truck, LayoutDashboard, Package, Users, Box, TrendingUp, DollarSign, Users2, Settings, LogOut, MessageSquare, ClipboardList, UserCog, History, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/components/auth-provider";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useIsMobile } from "@/hooks/use-mobile";
 import logoPath from "@assets/tajway_logo_1_-removebg-preview_1760403020566.png";
 
 const navigationItems = [
@@ -23,7 +26,11 @@ const navigationItems = [
   { key: "settings", href: "/settings", icon: Settings, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager", "shipping_staff"] },
 ];
 
-export function Sidebar() {
+interface SidebarContentProps {
+  onNavigate?: () => void;
+}
+
+function SidebarContent({ onNavigate }: SidebarContentProps) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const { t } = useTranslation();
@@ -35,7 +42,7 @@ export function Sidebar() {
       return response.json() as Promise<{ count: number }>;
     },
     enabled: !!user,
-    refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
+    refetchInterval: 30000,
   });
 
   const unreadCount = unreadCountData?.count || 0;
@@ -43,6 +50,7 @@ export function Sidebar() {
   const handleLogout = async () => {
     try {
       await logout();
+      onNavigate?.();
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -52,8 +60,12 @@ export function Sidebar() {
     user?.role && item.roles.includes(user.role)
   );
 
+  const handleNavClick = () => {
+    onNavigate?.();
+  };
+
   return (
-    <aside className="w-64 bg-card border-r border-border flex flex-col">
+    <>
       {/* Logo and branding */}
       <div className="p-6 border-b border-border">
         <div className="flex items-center justify-center">
@@ -62,7 +74,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 p-4 overflow-y-auto">
         <ul className="space-y-2">
           {filteredNavigation.map((item) => {
             const Icon = item.icon;
@@ -70,9 +82,9 @@ export function Sidebar() {
             
             return (
               <li key={item.key}>
-                <Link href={item.href}>
+                <Link href={item.href} onClick={handleNavClick}>
                   <span
-                    className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors cursor-pointer ${
+                    className={`flex items-center space-x-3 rtl:space-x-reverse px-3 py-2 rounded-md transition-colors cursor-pointer ${
                       isActive
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -84,7 +96,7 @@ export function Sidebar() {
                     {item.showBadge && unreadCount > 0 && (
                       <Badge 
                         variant="destructive" 
-                        className="ml-auto"
+                        className="ltr:ml-auto rtl:mr-auto"
                         data-testid="badge-unread-messages"
                       >
                         {unreadCount}
@@ -100,7 +112,7 @@ export function Sidebar() {
 
       {/* User profile */}
       <div className="p-4 border-t border-border">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 rtl:space-x-reverse">
           <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
             <span className="text-sm font-medium text-primary-foreground">
               {user?.firstName?.[0]}{user?.lastName?.[0]}
@@ -125,6 +137,39 @@ export function Sidebar() {
           </Button>
         </div>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export function Sidebar() {
+  const isMobile = useIsMobile();
+  const [isOpen, setIsOpen] = useState(false);
+
+  // On desktop, render as fixed sidebar
+  if (!isMobile) {
+    return (
+      <aside className="w-64 bg-card border-r border-border flex flex-col min-h-screen">
+        <SidebarContent />
+      </aside>
+    );
+  }
+
+  // On mobile, render as hamburger menu with sheet
+  return (
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="fixed top-4 start-4 z-50 bg-card border border-border md:hidden"
+          data-testid="button-hamburger-menu"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-64 p-0 flex flex-col">
+        <SidebarContent onNavigate={() => setIsOpen(false)} />
+      </SheetContent>
+    </Sheet>
   );
 }

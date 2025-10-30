@@ -10,6 +10,7 @@ import { Header } from "@/components/header";
 import { analyticsApi } from "@/lib/api";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/components/auth-provider";
+import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
 import type { OrderWithCustomer } from "@shared/schema";
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, Legend } from "recharts";
@@ -22,6 +23,9 @@ export default function Dashboard() {
     queryKey: ["/api/analytics/dashboard"],
     queryFn: analyticsApi.getDashboardMetrics,
   });
+
+  // Use shared LYD exchange rate hook
+  const { exchangeRate, convertToLYD } = useLydExchangeRate();
 
   const translateStatus = (status: string) => {
     const statusNormalized = status.toLowerCase().replace(/[\s_-]+/g, '');
@@ -227,7 +231,7 @@ export default function Dashboard() {
             <Card className="animate-fade-in" data-testid="card-month-sales">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm text-muted-foreground">{t('currentMonthSales')}</p>
                     {lydExchangeRate > 0 ? (
                       <>
@@ -258,7 +262,7 @@ export default function Dashboard() {
               <Card className="animate-fade-in" data-testid="card-total-profit">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <p className="text-sm text-muted-foreground">{t('totalProfit')}</p>
                       {isLoading ? (
                         <Skeleton className="h-8 w-24 mt-1" />
@@ -272,9 +276,16 @@ export default function Dashboard() {
                           </p>
                         </>
                       ) : (
-                        <p className="text-2xl font-bold text-green-600" data-testid="text-total-profit">
-                          ${metrics?.totalProfit?.toFixed(2) || "0.00"}
-                        </p>
+                        <>
+                          <p className="text-2xl font-bold text-green-600" data-testid="text-total-profit">
+                            ${metrics?.totalProfit?.toFixed(2) || "0.00"}
+                          </p>
+                          {exchangeRate > 0 && metrics?.totalProfit !== undefined && (
+                            <p className="text-lg font-semibold text-primary mt-1" data-testid="text-total-profit-lyd">
+                              {convertToLYD(metrics.totalProfit)} LYD
+                            </p>
+                          )}
+                        </>
                       )}
                       <p className="text-xs text-muted-foreground mt-1">
                         {t('allTime')} • {metrics?.profitMargin?.toFixed(1) || "0.0"}% {t('margin')}

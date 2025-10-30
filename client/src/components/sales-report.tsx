@@ -14,6 +14,15 @@ interface OrderSummary {
   createdAt: string;
 }
 
+interface CommissionRule {
+  id: string;
+  country: string;
+  minValue: string;
+  maxValue: string | null;
+  percentage: string;
+  fixedFee: string;
+}
+
 interface ReportData {
   totalRevenue: number;
   totalProfit: number;
@@ -33,6 +42,16 @@ interface SalesReportProps {
 export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
   const { t, i18n } = useTranslation();
   const currentDate = new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US');
+  const currency = data.currency || "USD";
+  const exchangeRate = data.exchangeRate || 0;
+  
+  // Helper function to convert USD to LYD if exchange rate is set
+  const convertToLYD = (usdAmount: number): number => {
+    if (exchangeRate > 0) {
+      return parseFloat((usdAmount * exchangeRate).toFixed(2));
+    }
+    return usdAmount;
+  };
   
   const getReportTitle = () => {
     switch (reportType) {
@@ -86,11 +105,11 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div className="bg-blue-50 p-4 rounded">
             <p className="text-sm text-gray-600 mb-1">{t('totalRevenue')}</p>
-            <p className="text-2xl font-bold text-blue-600">${data.totalRevenue.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-blue-600">{currency} {convertToLYD(data.totalRevenue).toFixed(2)}</p>
           </div>
           <div className="bg-green-50 p-4 rounded">
             <p className="text-sm text-gray-600 mb-1">{t('totalProfit')}</p>
-            <p className="text-2xl font-bold text-green-600">${data.totalProfit.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-green-600">{currency} {convertToLYD(data.totalProfit).toFixed(2)}</p>
           </div>
           <div className="bg-purple-50 p-4 rounded">
             <p className="text-sm text-gray-600 mb-1">{t('profitMargin')}</p>
@@ -128,10 +147,10 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
                   <tr key={order.id}>
                     <td className="border border-gray-300 px-4 py-2">{order.shippingCode || order.orderNumber}</td>
                     <td className="border border-gray-300 px-4 py-2">{order.customerName}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">${parseFloat(order.totalAmount).toFixed(2)}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">${parseFloat(order.itemsProfit || "0").toFixed(2)}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">${parseFloat(order.shippingProfit || "0").toFixed(2)}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">${parseFloat(order.profit).toFixed(2)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertToLYD(parseFloat(order.totalAmount)).toFixed(2)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertToLYD(parseFloat(order.itemsProfit || "0")).toFixed(2)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertToLYD(parseFloat(order.shippingProfit || "0")).toFixed(2)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertToLYD(parseFloat(order.profit)).toFixed(2)}</td>
                     <td className="border border-gray-300 px-4 py-2 text-right">{margin.toFixed(1)}%</td>
                     <td className="border border-gray-300 px-4 py-2 text-center">{new Date(order.createdAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US')}</td>
                   </tr>
@@ -152,11 +171,11 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>{t('grossRevenue')}:</span>
-                  <span className="font-medium">${data.totalRevenue.toFixed(2)}</span>
+                  <span className="font-medium">{currency} {convertToLYD(data.totalRevenue).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between border-t pt-2">
                   <span>{t('netProfit')}:</span>
-                  <span className="font-bold text-green-600">${data.totalProfit.toFixed(2)}</span>
+                  <span className="font-bold text-green-600">{currency} {convertToLYD(data.totalProfit).toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -169,11 +188,11 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
                 </div>
                 <div className="flex justify-between">
                   <span>{t('averageOrderValue')}:</span>
-                  <span className="font-medium">${(data.totalRevenue / data.orderCount).toFixed(2)}</span>
+                  <span className="font-medium">{currency} {convertToLYD(data.totalRevenue / data.orderCount).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>{t('averageProfitPerOrder')}:</span>
-                  <span className="font-medium">${(data.totalProfit / data.orderCount).toFixed(2)}</span>
+                  <span className="font-medium">{currency} {convertToLYD(data.totalProfit / data.orderCount).toFixed(2)}</span>
                 </div>
               </div>
             </div>

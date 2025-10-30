@@ -1,6 +1,6 @@
 # Overview
 
-This project is a comprehensive logistics and order management system built with React, Express, and PostgreSQL. It provides role-based access control for owners, customer service, receptionists, sorters, stock managers, and shipping staff, enabling them to manage orders, customers, inventory, profits, delivery tasks, and system administration. Key capabilities include modern authentication, real-time data management, bilingual support (English/Arabic), a responsive UI, streamlined data entry, and a complete shipping/delivery staff task management system. The system aims to optimize logistics operations, enhance profit tracking, and improve delivery coordination.
+This project is a comprehensive logistics and order management system built with React, Express, and PostgreSQL. It offers role-based access for various staff (owner, customer service, receptionist, sorter, stock manager, shipping), enabling management of orders, customers, inventory, profits, and delivery tasks. Key features include modern authentication, real-time data, bilingual support (English/Arabic), a responsive UI, streamlined data entry, and a complete shipping/delivery task management system. The system aims to optimize logistics, enhance profit tracking, and improve delivery coordination. It includes advanced features like an owner-only performance report system with key KPIs and a comprehensive LYD currency conversion system tracking per-order exchange rates.
 
 # User Preferences
 
@@ -10,74 +10,100 @@ Preferred communication style: Simple, everyday language.
 
 ## Frontend Architecture
 
-The frontend is a React 18 single-page application using TypeScript. It employs Wouter for routing, TanStack Query for server state management, and Tailwind CSS with shadcn/ui for styling. Form handling is managed with React Hook Form and Zod for validation, and Vite is used for building. The architecture is component-based with global state managed via React Context.
+The frontend is a React 18 TypeScript SPA using Wouter for routing, TanStack Query for server state, and Tailwind CSS with shadcn/ui for styling. React Hook Form with Zod handles forms, and Vite is used for building. Global state is managed via React Context. The UI/UX emphasizes responsiveness, bilingual support, and streamlined data entry across desktop and mobile.
 
 ## Backend Architecture
 
-The backend is an Express.js application with TypeScript, serving as a REST API. It uses Passport.js for authentication and role-based access control. PostgreSQL, accessed via Drizzle ORM, handles data persistence. Session management is also PostgreSQL-based. API endpoints are organized by feature with Zod for request validation.
+The backend is an Express.js TypeScript REST API. It uses Passport.js for authentication and role-based access control. PostgreSQL with Drizzle ORM handles data persistence and session management. API endpoints are feature-organized with Zod for request validation.
 
 ## Data Storage Solutions
 
-PostgreSQL is the primary database, utilizing Drizzle ORM for type-safe operations. Neon serverless PostgreSQL provides cloud deployment with connection pooling. The schema is relational with foreign key constraints across users, customers, orders, inventory, and shipping rates, employing enums for roles and statuses and numeric types for currency.
+PostgreSQL is the primary database, accessed via Drizzle ORM. Neon serverless PostgreSQL provides cloud deployment. The schema is relational, with foreign keys across users, customers, orders, inventory, and shipping rates, utilizing enums for roles/statuses and numeric types for currency.
 
 ## Authentication and Authorization Mechanisms
 
-Security is multi-layered, featuring session-based authentication with Passport.js and bcrypt-hashed passwords. Role-based middleware enforces authorization. Sessions are persistent and stored in PostgreSQL. Both frontend and backend implement route guards to verify authentication and authorization, granting different access levels to various user roles.
+Security involves session-based authentication with Passport.js and bcrypt-hashed passwords. Role-based middleware enforces authorization. Sessions are persistent and stored in PostgreSQL. Both frontend and backend implement route guards for authentication and authorization.
 
-## UI/UX Decisions
+## UI/UX Decisions & Feature Specifications
 
-The UI/UX design emphasizes a responsive interface, bilingual support (English/Arabic), and streamlined data entry. Recent enhancements include:
-- A complete shipping/delivery staff task management system with full bilingual support:
-  - New "shipping_staff" user role with dedicated dashboard
-  - Task assignment interface for managers to assign delivery tasks to staff
-  - Shipping staff can view assigned tasks, pickup/delivery locations, and payment information
-  - Staff can mark tasks as completed or "to collect" with customer code tracking
-  - Payment collection workflow with amount and customer code entry
-  - Task history and performance tracking for managers
-  - Staff-specific dashboard showing pending, completed, and payment collection tasks
-  - All delivery pages (delivery-tasks, task-assignment, task-history) fully translated in English/Arabic with proper RTL layout
-  - Customer code display in all delivery tables (with fallback to order number if no shipping code exists)
-  - Smart search supporting customer code, name, phone, and order number across all fields
-- A complete internal messaging system with conversation threading, real-time notifications, and chat-style UI for viewing full message history between users.
-- User profile management allowing all users (including admin) to edit their own username, name, and password with secure validation.
-- Enhanced profit page with detailed metrics, average order value, and country-specific filtering.
-- Comprehensive profit report showing customer shipping codes and detailed profit breakdown (items profit, shipping profit, total profit).
-- New order statuses: "Partially Arrived," "Ready to Collect," "With Shipping Company."
-- Dynamic country filtering across dashboards and profit reports.
-- Integrated LYD exchange rate and calendar date range filters for orders and customers.
-- Down payment management moved to customer-level with proportional distribution across orders.
-- Improved customer search supporting multiple fields (phone, name, code).
-- Enhanced visibility of customer codes in invoices and order/customer tables.
-- Simplified customer editing and product code workflows for faster data entry.
-- Flexible order creation allowing orders without prior shipping calculation.
-- **Complete Arabic Translation Coverage (October 2025)**:
-  - All edit order modal fields now fully translated (Original Price → السعر الأصلي, Discounted Price → السعر المخفض, Shipping Country → دولة الشحن, Shipping Category → فئة الشحن)
-  - All sales report types (Profit Analysis, Financial Summary) completely translated with Arabic table headers, metrics, and date formatting
-  - Invoice and order details modals with locale-aware date formatting
-  - Persistent dark mode functionality via ThemeProvider
-- **Commission Functionality Removed (October 2025)**:
-  - Complete removal of commission calculations and displays from all pages (orders, profits, invoices, sales reports)
-  - Commission-related database fields remain in schema but are no longer calculated or displayed in UI
-  - Simplified profit tracking focuses on items profit, shipping profit, and total profit without commission deductions
-- **Number of Pieces Field Added (October 2025)**:
-  - New "numberOfPieces" field added to order items schema (integer, default: 1)
-  - Field appears in both new order creation form and edit order modal
-  - Located beside quantity field for easy data entry when items have multiple pieces per unit
-- **Mobile RTL (Arabic) Fixes (October 2025)**:
-  - Fixed dialog/modal positioning in RTL mode - changed from `translate-x-[-50%]` to `-translate-x-1/2` for proper Tailwind RTL support
-  - Added RTL-aware close button positioning in dialogs (`rtl:right-auto rtl:left-4`)
-  - Fixed text alignment in dialog headers with RTL support (`rtl:sm:text-right`)
-  - Added touch-action: none to dialog overlays to prevent mobile scroll issues
-  - Fixed Select component padding and checkmark positioning for RTL (`rtl:pl-2 rtl:pr-8`, `rtl:left-auto rtl:right-2`)
-  - Resolved freezing issues when using Arabic language with mobile zoom on touch devices
-- **Dual Currency Display System (October 2025)**:
-  - Comprehensive implementation of USD and LYD dual currency display across entire application
+The system features comprehensive functionality with responsive interface, bilingual support (English/Arabic), and streamlined data entry:
+
+- **Comprehensive Shipping/Delivery Task Management**: Dedicated "shipping_staff" role with dashboard, task assignment interface, status updates (completed, to collect with customer code), payment collection workflow, and performance tracking. Full bilingual support with RTL layout and smart search across all fields.
+
+- **Internal Messaging System**: Conversation threading, real-time notifications, and chat-style UI for viewing full message history between users.
+
+- **User Profile Management**: All users can edit their own username, name, and password with secure validation.
+
+- **Enhanced Profit Page**: Detailed metrics, average order value, country-specific filtering, and customer shipping code reporting with comprehensive profit breakdown (items profit, shipping profit, total profit).
+
+- **Unified Profit Reports Page (Owner-Only)**: 
+  - Single-page unified view with all profit metrics and performance analytics in one scrollable page
+  - Profit Metrics Section with profit trend analysis and country filtering
+  - Report generation buttons (Profit, Financial)
+  - Performance analytics with 10 KPIs (Total Orders, Sales, Profit, Discounted Orders, Average Order Value/Profit, Exchange Rate, Growth %)
+  - Advanced filtering: time range (Daily, Weekly, Monthly), multi-select country filtering, custom date range with "from" and "to" date pickers
+  - Visual growth indicators (TrendingUp/TrendingDown icons) with color-coded trends
+  - Backend: GET `/api/reports/performance?range=daily|weekly|monthly&country[]=...&dateFrom=...&dateTo=...`
+  - Bilingual display (English/Arabic) with proper RTL layout
+
+- **LYD Currency Conversion System**: 
+  - `useLydExchangeRate` hook for centralized management
+  - Dual-currency display (USD/LYD) across dashboards, orders, customers, invoices, and profit reports
   - Global LYD exchange rate stored in settings table (key: 'lyd_exchange_rate', default: 4.85)
-  - All pages updated to display amounts in both currencies: Expenses, Dashboard, Customers, Profits, Orders
-  - Consistent visual formatting: Bold blue LYD amount displayed prominently with USD shown below in smaller muted text
-  - Exchange rate fetched from global settings and applied consistently across all monetary displays
-  - Fallback to USD-only display when no exchange rate is configured
-  - Expenses page: New page added for tracking business expenses (Employee Salaries, Supplier Expenses, Marketing Commission, Rent, Cleaning Salaries, Other) with dual currency support
+  - Per-order LYD exchange rate tracking (stored in `orders.lyd_exchange_rate`)
+  - Color-coded LYD amounts with bold blue formatting
+  - Locale-aware invoice numbering (Dinar/دينار)
+  - Expenses page with dual currency support
+
+- **Order Management**:
+  - New order statuses: "Partially Arrived," "Ready to Collect," "With Shipping Company"
+  - Dynamic country filtering and LYD exchange rate filters
+  - Calendar date range filters
+  - Flexible order creation without prior shipping calculation
+  - Number of pieces field (integer, default: 1) in order items
+
+- **Customer Management**: 
+  - Customer-level down payment management with proportional distribution
+  - Multi-field customer search (phone, name, code)
+  - Enhanced visibility of customer codes in invoices and tables
+  - Customer creation form with 5 essential fields (First Name, Last Name, Phone Number, City, Customer Code)
+  - Form layout with side-by-side name fields in 2-column grid
+
+- **Order Image Upload System (October 28, 2025)**: 
+  - Direct device file selection for order images
+  - Cloud-based object storage integration
+  - Support for up to 3 images per order with validation
+  - Accepted formats: JPG, PNG, GIF (max 5MB)
+  - Backend: POST `/api/upload-url` generates pre-signed URLs
+
+- **Complete Arabic Translation Coverage**: 
+  - All UI elements, modals, and reports fully translated
+  - All edit order modal fields translated
+  - All sales report types translated with Arabic table headers
+  - Invoice and order details modals with locale-aware date formatting
+  - Proper RTL layout throughout
+
+- **Commission Functionality Removed (October 2025)**:
+  - Complete removal of commission calculations and displays from all pages
+  - Commission database fields remain but are not calculated or displayed
+  - Simplified profit tracking focuses on items profit, shipping profit, and total profit
+
+- **Mobile RTL (Arabic) Fixes (October 2025)**:
+  - Fixed dialog/modal positioning in RTL mode with proper Tailwind RTL support
+  - RTL-aware close button positioning in dialogs
+  - Fixed text alignment in dialog headers with RTL support
+  - Touch-action: none on dialog overlays to prevent mobile scroll issues
+  - Fixed Select component padding and checkmark positioning for RTL
+  - Resolved freezing issues with Arabic language and mobile zoom
+
+- **Responsive Design Implementation**: 
+  - Fully responsive UI across phones, tablets, and desktops
+  - Responsive sidebar navigation with hamburger menu on mobile
+  - Tables with horizontal scrolling
+  - Specific fixes for iOS Safari RTL initialization
+  - Dialogs perfectly centered in both LTR and RTL
+
+- **Persistent Dark Mode**: ThemeProvider with localStorage sync for dark mode preferences
 
 # External Dependencies
 

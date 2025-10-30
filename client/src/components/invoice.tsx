@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import logoPath from "@assets/tajway_logo_1_-removebg-preview_1760403020566.png";
+import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
 
 interface OrderWithItems {
   id: string;
@@ -47,7 +48,7 @@ function numberToWords(num: number, language: string = 'en'): string {
     const tens = ['', '', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
     const hundreds = ['', 'مائة', 'مئتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة', 'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'];
     
-    if (num === 0) return 'صفر دولار';
+    if (num === 0) return 'صفر دينار';
     
     const convert = (n: number): string => {
       if (n === 0) return '';
@@ -109,7 +110,7 @@ function numberToWords(num: number, language: string = 'en'): string {
     const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
     const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
     
-    if (num === 0) return 'Zero Dollars';
+    if (num === 0) return 'Zero Dinars';
     
     const convert = (n: number): string => {
       if (n === 0) return '';
@@ -143,13 +144,24 @@ function numberToWords(num: number, language: string = 'en'): string {
 
 export function Invoice({ order, lydExchangeRate = 0, onPrint }: InvoiceProps) {
   const { t, i18n } = useTranslation();
-  const rate = lydExchangeRate || 1;
-  const subtotal = (order.items?.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) || 0) * rate;
-  const shipping = parseFloat(order.shippingCost || "0") * rate;
-  const total = parseFloat(order.totalAmount || "0") * rate;
-  const downPayment = parseFloat(order.downPayment || "0") * rate;
-  const remainingBalance = parseFloat(order.remainingBalance || "0") * rate;
+  const { exchangeRate, convertToLYD } = useLydExchangeRate();
+  
+  // Calculate USD amounts
+  const subtotalUSD = order.items?.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0) || 0;
+  const shippingUSD = parseFloat(order.shippingCost || "0");
+  const totalUSD = parseFloat(order.totalAmount || "0");
+  const downPaymentUSD = parseFloat(order.downPayment || "0");
+  const remainingBalanceUSD = parseFloat(order.remainingBalance || "0");
+  
+  // Convert to LYD
+  const subtotal = exchangeRate > 0 ? parseFloat(convertToLYD(subtotalUSD)) : subtotalUSD;
+  const shipping = exchangeRate > 0 ? parseFloat(convertToLYD(shippingUSD)) : shippingUSD;
+  const total = exchangeRate > 0 ? parseFloat(convertToLYD(totalUSD)) : totalUSD;
+  const downPayment = exchangeRate > 0 ? parseFloat(convertToLYD(downPaymentUSD)) : downPaymentUSD;
+  const remainingBalance = exchangeRate > 0 ? parseFloat(convertToLYD(remainingBalanceUSD)) : remainingBalanceUSD;
+  
   const totalInWords = numberToWords(total, i18n.language);
+  const currency = exchangeRate > 0 ? "LYD" : "USD";
 
   return (
     <div className="invoice-container max-w-4xl mx-auto p-8 bg-white text-black">
@@ -224,8 +236,8 @@ export function Invoice({ order, lydExchangeRate = 0, onPrint }: InvoiceProps) {
                 <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                   <td className="px-4 py-3 font-medium">{item.productName}</td>
                   <td className="px-4 py-3 text-center">{item.quantity}</td>
-                  <td className="px-4 py-3 text-right">{(parseFloat(item.unitPrice) * rate).toFixed(2)} LYD</td>
-                  <td className="px-4 py-3 text-right font-semibold">{(parseFloat(item.totalPrice) * rate).toFixed(2)} LYD</td>
+                  <td className="px-4 py-3 text-right">{(parseFloat(item.unitPrice) * (exchangeRate || 1)).toFixed(2)} {currency}</td>
+                  <td className="px-4 py-3 text-right font-semibold">{(parseFloat(item.totalPrice) * (exchangeRate || 1)).toFixed(2)} {currency}</td>
                 </tr>
               )) || (
                 <tr>

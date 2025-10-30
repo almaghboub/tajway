@@ -1260,89 +1260,52 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async getDeliveryTask(id: string): Promise<DeliveryTaskWithDetails | undefined> {
-    const result = await db.select({
-      task: deliveryTasks,
-      order: orders,
-      customer: customers,
-      assignedTo: users,
-      assignedBy: {
-        id: sql<string>`assigned_by.id`,
-        username: sql<string>`assigned_by.username`,
-        firstName: sql<string>`assigned_by.first_name`,
-        lastName: sql<string>`assigned_by.last_name`,
-        email: sql<string>`assigned_by.email`,
-        role: sql<string>`assigned_by.role`,
-        isActive: sql<boolean>`assigned_by.is_active`,
-        createdAt: sql<Date>`assigned_by.created_at`,
-        password: sql<string>`assigned_by.password`,
-      },
-    })
+    const result = await db.select()
       .from(deliveryTasks)
-      .innerJoin(orders, eq(deliveryTasks.orderId, orders.id))
-      .innerJoin(customers, eq(orders.customerId, customers.id))
-      .innerJoin(users, eq(deliveryTasks.assignedToUserId, users.id))
-      .innerJoin(sql`users AS assigned_by`, sql`${deliveryTasks.assignedByUserId} = assigned_by.id`)
       .where(eq(deliveryTasks.id, id))
       .limit(1);
 
-    if (!result[0]) return undefined;
+    if (result.length === 0) {
+      return undefined;
+    }
 
-    const orderItems = await this.getOrderItems(result[0].order.id);
-    const orderImages = await this.getOrderImages(result[0].order.id);
+    const task = result[0];
+    const order = await this.getOrderWithCustomer(task.orderId);
+    const assignedTo = await this.getUser(task.assignedToUserId);
+    const assignedBy = await this.getUser(task.assignedByUserId);
+    
+    if (!order || !assignedTo || !assignedBy) {
+      return undefined;
+    }
 
     return {
-      ...result[0].task,
-      order: {
-        ...result[0].order,
-        customer: result[0].customer,
-        items: orderItems,
-        images: orderImages,
-      },
-      assignedTo: result[0].assignedTo,
-      assignedBy: result[0].assignedBy,
+      ...task,
+      order,
+      assignedTo,
+      assignedBy,
     };
   }
 
   async getDeliveryTasksByUserId(userId: string): Promise<DeliveryTaskWithDetails[]> {
-    const results = await db.select({
-      task: deliveryTasks,
-      order: orders,
-      customer: customers,
-      assignedTo: users,
-      assignedBy: {
-        id: sql<string>`assigned_by.id`,
-        username: sql<string>`assigned_by.username`,
-        firstName: sql<string>`assigned_by.first_name`,
-        lastName: sql<string>`assigned_by.last_name`,
-        email: sql<string>`assigned_by.email`,
-        role: sql<string>`assigned_by.role`,
-        isActive: sql<boolean>`assigned_by.is_active`,
-        createdAt: sql<Date>`assigned_by.created_at`,
-        password: sql<string>`assigned_by.password`,
-      },
-    })
+    const tasks = await db.select()
       .from(deliveryTasks)
-      .innerJoin(orders, eq(deliveryTasks.orderId, orders.id))
-      .innerJoin(customers, eq(orders.customerId, customers.id))
-      .innerJoin(users, eq(deliveryTasks.assignedToUserId, users.id))
-      .innerJoin(sql`users AS assigned_by`, sql`${deliveryTasks.assignedByUserId} = assigned_by.id`)
       .where(eq(deliveryTasks.assignedToUserId, userId))
       .orderBy(desc(deliveryTasks.createdAt));
 
-    const tasksWithDetails = await Promise.all(results.map(async (result) => {
-      const orderItems = await this.getOrderItems(result.order.id);
-      const orderImages = await this.getOrderImages(result.order.id);
+    const tasksWithDetails = await Promise.all(tasks.map(async (task) => {
+      const order = await this.getOrderWithCustomer(task.orderId);
+      const assignedTo = await this.getUser(task.assignedToUserId);
+      const assignedBy = await this.getUser(task.assignedByUserId);
+      
+      if (!order || !assignedTo || !assignedBy) {
+        throw new Error("Task data incomplete");
+      }
 
       return {
-        ...result.task,
-        order: {
-          ...result.order,
-          customer: result.customer,
-          items: orderItems,
-          images: orderImages,
-        },
-        assignedTo: result.assignedTo,
-        assignedBy: result.assignedBy,
+        ...task,
+        order,
+        assignedTo,
+        assignedBy,
       };
     }));
 
@@ -1350,44 +1313,24 @@ export class PostgreSQLStorage implements IStorage {
   }
 
   async getAllDeliveryTasks(): Promise<DeliveryTaskWithDetails[]> {
-    const results = await db.select({
-      task: deliveryTasks,
-      order: orders,
-      customer: customers,
-      assignedTo: users,
-      assignedBy: {
-        id: sql<string>`assigned_by.id`,
-        username: sql<string>`assigned_by.username`,
-        firstName: sql<string>`assigned_by.first_name`,
-        lastName: sql<string>`assigned_by.last_name`,
-        email: sql<string>`assigned_by.email`,
-        role: sql<string>`assigned_by.role`,
-        isActive: sql<boolean>`assigned_by.is_active`,
-        createdAt: sql<Date>`assigned_by.created_at`,
-        password: sql<string>`assigned_by.password`,
-      },
-    })
+    const tasks = await db.select()
       .from(deliveryTasks)
-      .innerJoin(orders, eq(deliveryTasks.orderId, orders.id))
-      .innerJoin(customers, eq(orders.customerId, customers.id))
-      .innerJoin(users, eq(deliveryTasks.assignedToUserId, users.id))
-      .innerJoin(sql`users AS assigned_by`, sql`${deliveryTasks.assignedByUserId} = assigned_by.id`)
       .orderBy(desc(deliveryTasks.createdAt));
 
-    const tasksWithDetails = await Promise.all(results.map(async (result) => {
-      const orderItems = await this.getOrderItems(result.order.id);
-      const orderImages = await this.getOrderImages(result.order.id);
+    const tasksWithDetails = await Promise.all(tasks.map(async (task) => {
+      const order = await this.getOrderWithCustomer(task.orderId);
+      const assignedTo = await this.getUser(task.assignedToUserId);
+      const assignedBy = await this.getUser(task.assignedByUserId);
+      
+      if (!order || !assignedTo || !assignedBy) {
+        throw new Error("Task data incomplete");
+      }
 
       return {
-        ...result.task,
-        order: {
-          ...result.order,
-          customer: result.customer,
-          items: orderItems,
-          images: orderImages,
-        },
-        assignedTo: result.assignedTo,
-        assignedBy: result.assignedBy,
+        ...task,
+        order,
+        assignedTo,
+        assignedBy,
       };
     }));
 
