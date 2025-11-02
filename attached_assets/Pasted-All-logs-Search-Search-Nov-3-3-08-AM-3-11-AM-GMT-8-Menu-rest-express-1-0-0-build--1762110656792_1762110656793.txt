@@ -1,0 +1,49 @@
+All logs
+Search
+Search
+
+Nov 3, 3:08 AM - 3:11 AM
+GMT+8
+
+Menu
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+vite v5.4.21 building for production...
+transforming...
+✓ 3510 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/public/index.html                                                             1.97 kB │ gzip:   0.76 kB
+../dist/public/assets/tajway_logo_1_-removebg-preview_1760403020566-Djkp5gJ4.png     95.63 kB
+../dist/public/assets/index-B5O3_aJ0.css                                             80.33 kB │ gzip:  13.54 kB
+../dist/public/assets/index-7J207mpH.js                                           1,320.80 kB │ gzip: 362.30 kB
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 7.11s
+  dist/index.js  77.9kb
+⚡ Done in 8ms
+==> Uploading build...
+==> Uploaded in 5.3s. Compression took 2.8s
+==> Build successful 🎉
+==> Deploying...
+==> Running 'npm run start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1526
+ has not been set?");let l;try{l=yr(r)}catch{throw new Error("Database connectio\
+                                                   ^
+Error: Database connection string provided to `neon()` is not a valid URL. Connection string: DATABASE_URL="postgresql://neondb_owner:npg_LjTUwQIcqO86@ep-super-union-ago88shl.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require" npm run db:push
+    at neon (file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1526:52)
+    at file:///opt/render/project/src/dist/index.js:243:14
+    at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+Node.js v22.16.0
+==> Exited with status 1
+==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
+==> Running 'npm run start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
