@@ -769,6 +769,19 @@ export default function Orders() {
       return;
     }
 
+    // Validate required numeric fields are not zero
+    const invalidItems = orderItems.filter(item => 
+      item.originalPrice <= 0 || item.discountedPrice < 0 || item.quantity <= 0
+    );
+    if (invalidItems.length > 0) {
+      toast({
+        title: t('validationError'),
+        description: 'All items must have valid prices and quantities greater than 0',
+        variant: "destructive",
+      });
+      return;
+    }
+
     console.log("Calculating totals...");
     const totals = calculateTotals();
     console.log("Totals:", totals);
@@ -1488,11 +1501,18 @@ export default function Orders() {
                               <Label htmlFor={`original-price-${index}`}>Original Price ($)*</Label>
                               <Input
                                 id={`original-price-${index}`}
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={item.originalPrice}
-                                onChange={(e) => updateOrderItem(index, "originalPrice", parseFloat(e.target.value) || 0)}
+                                type="text"
+                                inputMode="decimal"
+                                value={item.originalPrice === 0 ? '' : item.originalPrice.toString()}
+                                onChange={(e) => {
+                                  let value = e.target.value.replace(/[^0-9.]/g, '');
+                                  const parts = value.split('.');
+                                  if (parts.length > 2) {
+                                    value = parts[0] + '.' + parts.slice(1).join('');
+                                  }
+                                  const numValue = value === '' ? 0 : parseFloat(value);
+                                  updateOrderItem(index, "originalPrice", isNaN(numValue) ? 0 : numValue);
+                                }}
                                 placeholder="0.00"
                                 required
                                 data-testid={`input-original-price-${index}`}
@@ -1502,11 +1522,18 @@ export default function Orders() {
                               <Label htmlFor={`discounted-price-${index}`}>After Discount ($)*</Label>
                               <Input
                                 id={`discounted-price-${index}`}
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={item.discountedPrice}
-                                onChange={(e) => updateOrderItem(index, "discountedPrice", parseFloat(e.target.value) || 0)}
+                                type="text"
+                                inputMode="decimal"
+                                value={item.discountedPrice === 0 ? '' : item.discountedPrice.toString()}
+                                onChange={(e) => {
+                                  let value = e.target.value.replace(/[^0-9.]/g, '');
+                                  const parts = value.split('.');
+                                  if (parts.length > 2) {
+                                    value = parts[0] + '.' + parts.slice(1).join('');
+                                  }
+                                  const numValue = value === '' ? 0 : parseFloat(value);
+                                  updateOrderItem(index, "discountedPrice", isNaN(numValue) ? 0 : numValue);
+                                }}
                                 placeholder="0.00"
                                 required
                                 data-testid={`input-discounted-price-${index}`}
@@ -1516,10 +1543,13 @@ export default function Orders() {
                               <Label htmlFor={`quantity-${index}`}>Quantity*</Label>
                               <Input
                                 id={`quantity-${index}`}
-                                type="number"
-                                min="1"
-                                value={item.quantity}
-                                onChange={(e) => updateOrderItem(index, "quantity", parseInt(e.target.value) || 1)}
+                                type="text"
+                                inputMode="numeric"
+                                value={item.quantity.toString()}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/[^0-9]/g, '');
+                                  updateOrderItem(index, "quantity", parseInt(value) || 1);
+                                }}
                                 required
                                 data-testid={`input-quantity-${index}`}
                               />
@@ -1528,10 +1558,13 @@ export default function Orders() {
                               <Label htmlFor={`number-of-pieces-${index}`}>No. of Pieces*</Label>
                               <Input
                                 id={`number-of-pieces-${index}`}
-                                type="number"
-                                min="1"
-                                value={item.numberOfPieces}
-                                onChange={(e) => updateOrderItem(index, "numberOfPieces", parseInt(e.target.value) || 1)}
+                                type="text"
+                                inputMode="numeric"
+                                value={item.numberOfPieces.toString()}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/[^0-9]/g, '');
+                                  updateOrderItem(index, "numberOfPieces", parseInt(value) || 1);
+                                }}
                                 required
                                 data-testid={`input-number-of-pieces-${index}`}
                               />
@@ -1618,13 +1651,17 @@ export default function Orders() {
                     <Label htmlFor="shipping-weight">{t('weightKg')}</Label>
                     <Input
                       id="shipping-weight"
-                      type="number"
+                      type="text"
                       inputMode="decimal"
-                      step="0.1"
-                      min="0"
-                      value={shippingWeight}
+                      value={shippingWeight === 0 || shippingWeight === 1 ? '' : shippingWeight.toString()}
                       onChange={(e) => {
-                        setShippingWeight(parseFloat(e.target.value) || 1);
+                        let value = e.target.value.replace(/[^0-9.]/g, '');
+                        const parts = value.split('.');
+                        if (parts.length > 2) {
+                          value = parts[0] + '.' + parts.slice(1).join('');
+                        }
+                        const numValue = value === '' ? 1 : parseFloat(value);
+                        setShippingWeight(isNaN(numValue) ? 1 : numValue);
                         // Prompt for LYD exchange rate if not set (only once)
                         if (lydExchangeRate === 0 && !hasPromptedForLydRate) {
                           toast({
@@ -1635,6 +1672,7 @@ export default function Orders() {
                           setHasPromptedForLydRate(true);
                         }
                       }}
+                      placeholder="1.0"
                       data-testid="input-shipping-weight"
                     />
                   </div>
@@ -1691,18 +1729,23 @@ export default function Orders() {
                   </Label>
                   <Input
                     id="lyd-exchange-rate"
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    value={lydExchangeRate || ""}
+                    type="text"
+                    inputMode="decimal"
+                    value={lydExchangeRate === 0 ? "" : lydExchangeRate.toString()}
                     onChange={(e) => {
-                      const rate = parseFloat(e.target.value) || 0;
-                      setLydExchangeRate(rate);
+                      let value = e.target.value.replace(/[^0-9.]/g, '');
+                      const parts = value.split('.');
+                      if (parts.length > 2) {
+                        value = parts[0] + '.' + parts.slice(1).join('');
+                      }
+                      const rate = value === '' ? 0 : parseFloat(value);
+                      const safeRate = isNaN(rate) ? 0 : rate;
+                      setLydExchangeRate(safeRate);
                       // Trigger recalculation if shipping was already calculated
-                      if (rate > 0 && shippingCalculation) {
+                      if (safeRate > 0 && shippingCalculation) {
                         toast({
                           title: "LYD Calculation Updated",
-                          description: `Shipping: ${(calculateTotals().shippingCost * rate).toFixed(2)} LYD | Total: ${(calculateTotals().total * rate).toFixed(2)} LYD`,
+                          description: `Shipping: ${(calculateTotals().shippingCost * safeRate).toFixed(2)} LYD | Total: ${(calculateTotals().total * safeRate).toFixed(2)} LYD`,
                           duration: 3000,
                         });
                       }
@@ -1808,12 +1851,18 @@ export default function Orders() {
                           <Label htmlFor="down-payment" className="text-sm">{t('downPaymentAmount') || 'Down Payment Amount'}</Label>
                           <Input
                             id="down-payment"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max={calculateTotals().total}
-                            value={downPayment}
-                            onChange={(e) => setDownPayment(parseFloat(e.target.value) || 0)}
+                            type="text"
+                            inputMode="decimal"
+                            value={downPayment === 0 ? '' : downPayment.toString()}
+                            onChange={(e) => {
+                              let value = e.target.value.replace(/[^0-9.]/g, '');
+                              const parts = value.split('.');
+                              if (parts.length > 2) {
+                                value = parts[0] + '.' + parts.slice(1).join('');
+                              }
+                              const numValue = value === '' ? 0 : parseFloat(value);
+                              setDownPayment(isNaN(numValue) ? 0 : numValue);
+                            }}
                             placeholder="0.00"
                             className="mt-1"
                             data-testid="input-down-payment"
@@ -1968,40 +2017,60 @@ export default function Orders() {
                                   </td>
                                   <td className="px-3 py-2">
                                     <Input
-                                      type="number"
-                                      min="1"
-                                      value={item.quantity}
-                                      onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value))}
+                                      type="text"
+                                      inputMode="numeric"
+                                      value={(item.quantity || 0).toString()}
+                                      onChange={(e) => {
+                                        const value = e.target.value.replace(/[^0-9]/g, '');
+                                        handleItemChange(index, 'quantity', parseInt(value) || 1);
+                                      }}
                                       className="w-20 text-center"
                                       data-testid={`input-edit-quantity-${index}`}
                                     />
                                   </td>
                                   <td className="px-3 py-2">
                                     <Input
-                                      type="number"
-                                      min="1"
-                                      value={item.numberOfPieces || 1}
-                                      onChange={(e) => handleItemChange(index, 'numberOfPieces', parseInt(e.target.value))}
+                                      type="text"
+                                      inputMode="numeric"
+                                      value={(item.numberOfPieces || 0).toString()}
+                                      onChange={(e) => {
+                                        const value = e.target.value.replace(/[^0-9]/g, '');
+                                        handleItemChange(index, 'numberOfPieces', parseInt(value) || 1);
+                                      }}
                                       className="w-20 text-center"
                                       data-testid={`input-edit-number-of-pieces-${index}`}
                                     />
                                   </td>
                                   <td className="px-3 py-2">
                                     <Input
-                                      type="number"
-                                      step="0.01"
-                                      value={item.originalPrice || ''}
-                                      onChange={(e) => handleItemChange(index, 'originalPrice', e.target.value)}
+                                      type="text"
+                                      inputMode="decimal"
+                                      value={(item.originalPrice || 0).toString()}
+                                      onChange={(e) => {
+                                        let value = e.target.value.replace(/[^0-9.]/g, '');
+                                        const parts = value.split('.');
+                                        if (parts.length > 2) {
+                                          value = parts[0] + '.' + parts.slice(1).join('');
+                                        }
+                                        handleItemChange(index, 'originalPrice', value);
+                                      }}
                                       className="w-24 text-right"
                                       data-testid={`input-edit-original-price-${index}`}
                                     />
                                   </td>
                                   <td className="px-3 py-2">
                                     <Input
-                                      type="number"
-                                      step="0.01"
-                                      value={item.discountedPrice || ''}
-                                      onChange={(e) => handleItemChange(index, 'discountedPrice', e.target.value)}
+                                      type="text"
+                                      inputMode="decimal"
+                                      value={(item.discountedPrice || 0).toString()}
+                                      onChange={(e) => {
+                                        let value = e.target.value.replace(/[^0-9.]/g, '');
+                                        const parts = value.split('.');
+                                        if (parts.length > 2) {
+                                          value = parts[0] + '.' + parts.slice(1).join('');
+                                        }
+                                        handleItemChange(index, 'discountedPrice', value);
+                                      }}
                                       className="w-24 text-right"
                                       data-testid={`input-edit-discounted-price-${index}`}
                                     />
@@ -2044,17 +2113,20 @@ export default function Orders() {
                       <Label htmlFor="edit-lyd-rate">{t('lydExchangeRate')}</Label>
                       <Input
                         id="edit-lyd-rate"
-                        type="number"
-                        step="0.0001"
-                        min="0"
-                        value={editingOrder.lydExchangeRate || ''}
+                        type="text"
+                        inputMode="decimal"
+                        value={editingOrder.lydExchangeRate === "0" || !editingOrder.lydExchangeRate ? '' : editingOrder.lydExchangeRate}
                         onChange={(e) => {
-                          const newRate = e.target.value;
+                          let value = e.target.value.replace(/[^0-9.]/g, '');
+                          const parts = value.split('.');
+                          if (parts.length > 2) {
+                            value = parts[0] + '.' + parts.slice(1).join('');
+                          }
                           setEditingOrder(prev => {
                             if (!prev) return null;
                             return {
                               ...prev,
-                              lydExchangeRate: newRate
+                              lydExchangeRate: value
                             };
                           });
                         }}
@@ -2094,12 +2166,16 @@ export default function Orders() {
                       <Label htmlFor="edit-down-payment">{t('downPaymentDollar')}</Label>
                       <Input
                         id="edit-down-payment"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={editingOrder.downPayment || 0}
+                        type="text"
+                        inputMode="decimal"
+                        value={editingOrder.downPayment === "0" || !editingOrder.downPayment ? '' : editingOrder.downPayment}
                         onChange={(e) => {
-                          const newDownPayment = parseFloat(e.target.value) || 0;
+                          let value = e.target.value.replace(/[^0-9.]/g, '');
+                          const parts = value.split('.');
+                          if (parts.length > 2) {
+                            value = parts[0] + '.' + parts.slice(1).join('');
+                          }
+                          const newDownPayment = parseFloat(value) || 0;
                           const total = parseFloat(editingOrder.totalAmount || "0");
                           const newRemaining = total - newDownPayment;
                           setEditingOrder(prev => {
@@ -2118,12 +2194,16 @@ export default function Orders() {
                       <Label htmlFor="edit-shipping-weight">{t('shippingWeightKg')}</Label>
                       <Input
                         id="edit-shipping-weight"
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        value={editingOrder.shippingWeight || 0}
+                        type="text"
+                        inputMode="decimal"
+                        value={(editingOrder.shippingWeight || 0).toString()}
                         onChange={async (e) => {
-                          const newWeight = parseFloat(e.target.value) || 0;
+                          let value = e.target.value.replace(/[^0-9.]/g, '');
+                          const parts = value.split('.');
+                          if (parts.length > 2) {
+                            value = parts[0] + '.' + parts.slice(1).join('');
+                          }
+                          const newWeight = parseFloat(value) || 0;
 
                           // Always update the weight first
                           setEditingOrder(prev => {
@@ -2192,14 +2272,18 @@ export default function Orders() {
                     <Label htmlFor="edit-lyd-exchange-rate">{t('lydExchangeRate')}</Label>
                     <Input
                       id="edit-lyd-exchange-rate"
-                      type="number"
-                      step="0.0001"
-                      min="0"
-                      value={editingOrder.lydExchangeRate || ""}
+                      type="text"
+                      inputMode="decimal"
+                      value={editingOrder.lydExchangeRate === "0" || !editingOrder.lydExchangeRate ? "" : editingOrder.lydExchangeRate}
                       onChange={(e) => {
+                        let value = e.target.value.replace(/[^0-9.]/g, '');
+                        const parts = value.split('.');
+                        if (parts.length > 2) {
+                          value = parts[0] + '.' + parts.slice(1).join('');
+                        }
                         setEditingOrder(prev => {
                           if (!prev) return null;
-                          return { ...prev, lydExchangeRate: e.target.value };
+                          return { ...prev, lydExchangeRate: value };
                         });
                       }}
                       placeholder={t('enterLydRate')}
