@@ -402,12 +402,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/orders", requireOperational, async (req, res) => {
     try {
+      console.log("=== CREATE ORDER REQUEST ===");
+      console.log("Body keys:", Object.keys(req.body));
+      console.log("Has order:", !!req.body.order);
+      console.log("Has items:", !!req.body.items);
+      
       // Check if request contains order and items data (new format)
       if (req.body.order && req.body.items) {
+        console.log("Order data:", JSON.stringify(req.body.order, null, 2));
+        console.log("Items count:", req.body.items.length);
+        
         const orderResult = insertOrderSchema.safeParse(req.body.order);
         if (!orderResult.success) {
+          console.error("Order validation failed:", orderResult.error.errors);
           return res.status(400).json({ message: "Invalid order data", errors: orderResult.error.errors });
         }
+        console.log("Order validation passed");
 
         const itemsResult = req.body.items.map((item: any) => 
           insertOrderItemSchema.omit({ orderId: true }).safeParse(item)
