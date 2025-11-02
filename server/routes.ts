@@ -483,7 +483,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error("Order creation error:", error);
-      res.status(500).json({ message: "Failed to create order" });
+      console.error("Error details:", {
+        name: (error as Error).name,
+        message: (error as Error).message,
+        stack: (error as Error).stack,
+      });
+      res.status(500).json({ 
+        message: "Failed to create order",
+        error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+      });
     }
   });
 
