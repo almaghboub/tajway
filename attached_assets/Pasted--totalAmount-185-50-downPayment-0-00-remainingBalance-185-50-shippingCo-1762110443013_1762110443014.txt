@@ -1,0 +1,50 @@
+  "totalAmount": "185.50",
+  "downPayment": "0.00",
+  "remainingBalance": "185.50",
+  "shippingCost": "5.50",
+  "shippingWeight": "1.00",
+  "shippingCountry": "الامارات",
+  "shippingCity": "Sabratha",
+  "shippingCategory": "normal",
+  "itemsProfit": "30.00",
+  "totalProfit": "30.00",
+  "lydExchangeRate": "7.5000"
+}
+Items count: 1
+Order validation passed
+Order creation error: NeonDbError: column "shipping_city" of relation "orders" does not exist
+    at execute (file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonHttpPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-http/session.js:40:20)
+    at async PostgreSQLStorage.createOrder (file:///opt/render/project/src/dist/index.js:434:20)
+    at async file:///opt/render/project/src/dist/index.js:1211:23 {
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '179',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets',
+  sourceError: undefined
+}
+Error details: {
+  name: 'NeonDbError',
+  message: 'column "shipping_city" of relation "orders" does not exist',
+  stack: 'NeonDbError: column "shipping_city" of relation "orders" does not exist\n' +
+    '    at execute (file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1556:55)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async NeonHttpPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-http/session.js:40:20)\n' +
+    '    at async PostgreSQLStorage.createOrder (file:///opt/render/project/src/dist/index.js:434:20)\n' +
+    '    at async file:///opt/render/project/src/dist/index.js:1211:23'
+}
+6:58:01 PM [express] POST /api/orders 500 in 723ms :: {"message":"Failed to create order"}
+6:58:03 PM [express] GET /api/messages/unread-count 304 in 4894ms :: {"count":0}
