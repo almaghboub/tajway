@@ -755,7 +755,12 @@ export default function Orders() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log("=== FORM SUBMIT ===");
+    console.log("Selected Customer ID:", selectedCustomerId);
+    console.log("Order Items Count:", orderItems.length);
+    
     if (!selectedCustomerId || orderItems.length === 0) {
+      console.log("Validation failed: missing customer or items");
       toast({
         title: t('validationError'),
         description: t('selectCustomerAndItem'),
@@ -764,7 +769,9 @@ export default function Orders() {
       return;
     }
 
+    console.log("Calculating totals...");
     const totals = calculateTotals();
+    console.log("Totals:", totals);
     
     // Calculate items profit (original price minus discounted price)
     const itemsProfit = orderItems.reduce((sum, item) => {
@@ -831,6 +838,7 @@ export default function Orders() {
       };
     });
 
+    console.log("Calling createOrderMutation with:", { order, items, images: [] });
     createOrderMutation.mutate({ 
       order, 
       items,
