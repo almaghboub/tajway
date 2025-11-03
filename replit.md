@@ -56,11 +56,23 @@ The system features comprehensive functionality with responsive interface, bilin
   - Expenses page with dual currency support
 
 - **Order Management**:
-  - New order statuses: "Partially Arrived," "Ready to Collect," "With Shipping Company"
+  - New order statuses: "Partially Arrived," "Ready to Collect," "With Shipping Company," "Ready to Buy"
   - Dynamic country filtering and LYD exchange rate filters
   - Calendar date range filters
   - Flexible order creation without prior shipping calculation
   - Number of pieces field (integer, default: 1) in order items
+  - Automatic order status routing: orders without down payment automatically set to "ready_to_buy" status
+
+- **Ready to Buy Dashboard (November 2025)**:
+  - Dedicated dashboard for orders ready for purchasing
+  - Automatic routing logic: orders WITHOUT down payment → automatically sent to "Ready to Buy" dashboard
+  - Orders WITH down payment → remain in "pending" status until down payment collected
+  - Full search functionality across order number, customer name, phone, and shipping code
+  - Displays order details with dual currency (USD/LYD) support
+  - View order details modal with customer and order information
+  - Role-based access (owner, customer_service, receptionist)
+  - Complete bilingual support (English/Arabic) with proper RTL layout
+  - Orange status badge for visual identification
 
 - **Customer Management**: 
   - Customer-level down payment management with proportional distribution
