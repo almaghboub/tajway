@@ -31,6 +31,13 @@ export default function DarbAssabil() {
     !order.darbAssabilReference
   );
 
+  // Filter orders: with_shipping_company (sent to Darb Assabil), with down payment
+  const sentOrders = orders.filter(order => 
+    order.status === 'with_shipping_company' && 
+    order.darbAssabilReference &&
+    parseFloat(order.downPayment) > 0
+  );
+
   // Calculate total money to collect
   const totalToCollect = readyOrders.reduce((sum, order) => 
     sum + parseFloat(order.remainingBalance || "0"), 0
@@ -56,6 +63,32 @@ export default function DarbAssabil() {
       toast({
         title: t('error'),
         description: error.message || 'Failed to send order to Darb Assabil',
+        variant: "destructive",
+      });
+    },
+  });
+
+  const markPaymentCollectedMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const response = await apiRequest("PATCH", `/api/orders/${orderId}`, {
+        status: "ready_to_buy",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to update order status");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      toast({
+        title: t('success'),
+        description: t('downPaymentCollected'),
+      });
+    },
+    onError: () => {
+      toast({
+        title: t('error'),
+        description: t('failedToUpdateOrderStatus'),
         variant: "destructive",
       });
     },
@@ -234,6 +267,79 @@ export default function DarbAssabil() {
           )}
         </CardContent>
       </Card>
+
+      {/* Sent Orders - Awaiting Down Payment Collection */}
+      {sentOrders.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('sentOrdersAwaitingPayment') || 'Sent Orders - Awaiting Down Payment Collection'}</CardTitle>
+            <CardDescription>
+              {t('ordersWithDownPayment') || 'Orders sent to Darb Assabil that have down payment to collect'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('orderNumber')}</TableHead>
+                  <TableHead>{t('customer')}</TableHead>
+                  <TableHead>{t('city')}</TableHead>
+                  <TableHead>{t('reference')}</TableHead>
+                  <TableHead className="text-right">{t('downPayment')}</TableHead>
+                  <TableHead className="text-right">{t('actions')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sentOrders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">
+                      {order.orderNumber}
+                    </TableCell>
+                    <TableCell>
+                      {order.customer.firstName} {order.customer.lastName}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{order.shippingCity}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">
+                        {order.darbAssabilReference}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {globalLydExchangeRate > 0 ? (
+                        <div>
+                          <div className="font-bold text-blue-600">
+                            {(parseFloat(order.downPayment) * globalLydExchangeRate).toFixed(2)} LYD
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            ${parseFloat(order.downPayment).toFixed(2)}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="font-semibold">
+                          ${parseFloat(order.downPayment).toFixed(2)}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        onClick={() => markPaymentCollectedMutation.mutate(order.id)}
+                        disabled={markPaymentCollectedMutation.isPending}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <DollarSign className="w-4 h-4 mr-2" />
+                        {markPaymentCollectedMutation.isPending ? t('processing') : t('paymentCollected')}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

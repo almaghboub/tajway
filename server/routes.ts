@@ -1251,6 +1251,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!task) {
         return res.status(404).json({ message: "Task not found" });
       }
+      
+      // When down payment is collected (status changed to "to_collect" or "completed")
+      // Update the order status to "ready_to_buy" if it has a down payment
+      if ((status === "to_collect" || status === "completed") && existingTask.orderId) {
+        const order = await storage.getOrder(existingTask.orderId);
+        if (order && parseFloat(order.downPayment) > 0) {
+          await storage.updateOrder(existingTask.orderId, { status: "ready_to_buy" });
+        }
+      }
+      
       res.json(task);
     } catch (error) {
       console.error("Error updating delivery task:", error);
