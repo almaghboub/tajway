@@ -2309,6 +2309,7 @@ export default function Orders() {
                         </SelectTrigger>
                         <SelectContent className="z-[9999]" position="popper" sideOffset={5}>
                           <SelectItem value="pending">{t('pending')}</SelectItem>
+                          <SelectItem value="ready_to_buy">{t('readyToBuy')}</SelectItem>
                           <SelectItem value="processing">{t('processing')}</SelectItem>
                           <SelectItem value="shipped">{t('shipped')}</SelectItem>
                           <SelectItem value="delivered">{t('delivered')}</SelectItem>
