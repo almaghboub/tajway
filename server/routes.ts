@@ -517,8 +517,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Order not found" });
       }
 
-      // Auto-send to Darb Assabil when status changes to "delivered" (non-Tripoli orders)
-      if (result.data.status === "delivered" && darbAssabilService.isConfigured()) {
+      // Auto-send to Darb Assabil when status changes to "partially_arrived" (non-Tripoli orders)
+      if (result.data.status === "partially_arrived" && darbAssabilService.isConfigured()) {
         const fullOrder = await storage.getOrderWithCustomer(req.params.id);
         
         if (fullOrder && 

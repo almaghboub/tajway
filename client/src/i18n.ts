@@ -911,9 +911,9 @@ const resources = {
       totalToCollect: "Total to Collect",
       averageOrder: "Average Order",
       readyOrders: "Ready Orders",
-      ordersReadyForDarbAssabil: "Orders delivered and ready to be sent to Darb Assabil",
+      ordersReadyForDarbAssabil: "Orders partially arrived and ready to be sent to Darb Assabil",
       noReadyOrders: "No orders ready for shipping",
-      noReadyOrdersDesc: "Orders with status \"delivered\" and city outside Tripoli will appear here",
+      noReadyOrdersDesc: "Orders with status \"partially arrived\" and city outside Tripoli will appear here",
       ship: "Ship",
 
       // Expenses
@@ -1855,9 +1855,9 @@ const resources = {
       totalToCollect: "إجمالي التحصيل",
       averageOrder: "متوسط الطلب",
       readyOrders: "الطلبات الجاهزة",
-      ordersReadyForDarbAssabil: "الطلبات المسلمة والجاهزة للإرسال إلى درب الصابيل",
+      ordersReadyForDarbAssabil: "الطلبات الواصلة جزئياً والجاهزة للإرسال إلى درب الصابيل",
       noReadyOrders: "لا توجد طلبات جاهزة للشحن",
-      noReadyOrdersDesc: "الطلبات بحالة \"تم التسليم\" ومدينة خارج طرابلس ستظهر هنا",
+      noReadyOrdersDesc: "الطلبات بحالة \"وصلت جزئياً\" ومدينة خارج طرابلس ستظهر هنا",
       ship: "شحن",
 
       // Expenses

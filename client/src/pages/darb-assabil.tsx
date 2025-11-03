@@ -23,9 +23,9 @@ export default function DarbAssabil() {
 
   const globalLydExchangeRate = parseFloat(settings.find(s => s.key === 'lyd_exchange_rate')?.value || '0');
 
-  // Filter orders: delivered, not Tripoli, not yet sent to Darb Assabil
+  // Filter orders: partially_arrived, not Tripoli, not yet sent to Darb Assabil
   const readyOrders = orders.filter(order => 
-    order.status === 'delivered' && 
+    order.status === 'partially_arrived' && 
     order.shippingCity && 
     order.shippingCity.toLowerCase() !== 'tripoli' &&
     !order.darbAssabilReference
