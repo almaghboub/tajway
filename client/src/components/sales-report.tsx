@@ -150,7 +150,8 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
             </thead>
             <tbody>
               {data.orders.map((order) => {
-                const margin = (parseFloat(order.profit) / parseFloat(order.totalAmount)) * 100;
+                const totalAmount = parseFloat(order.totalAmount);
+                const margin = totalAmount > 0 ? (parseFloat(order.profit) / totalAmount) * 100 : 0;
                 
                 return (
                   <tr key={order.id}>

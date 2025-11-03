@@ -472,16 +472,9 @@ export default function Profits() {
                   <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t('totalRevenue')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
-                  ) : lydExchangeRate > 0 ? (
-                    <>
-                      <p className="text-3xl font-bold text-blue-600" data-testid="text-total-revenue">
-                        {(metrics.totalRevenue * lydExchangeRate).toFixed(2)} LYD
-                      </p>
-                      <p className="text-xs text-muted-foreground">${metrics.totalRevenue.toFixed(2)}</p>
-                    </>
                   ) : (
-                    <p className="text-4xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-2" data-testid="text-total-revenue">
-                      {currency} {metrics.totalRevenue.toFixed(2)}
+                    <p className="text-3xl font-bold text-blue-600" data-testid="text-total-revenue">
+                      {metrics.totalRevenue.toFixed(2)} {currency}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-2">{t('fromAllOrders')}</p>
@@ -503,16 +496,9 @@ export default function Profits() {
                   <p className="text-sm text-muted-foreground">{t('profitFromOrders')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
-                  ) : lydExchangeRate > 0 ? (
-                    <>
-                      <p className="text-3xl font-bold text-blue-600" data-testid="text-items-profit">
-                        {(metrics.totalItemsProfit * lydExchangeRate).toFixed(2)} LYD
-                      </p>
-                      <p className="text-xs text-muted-foreground">${metrics.totalItemsProfit.toFixed(2)}</p>
-                    </>
                   ) : (
                     <p className="text-3xl font-bold text-blue-600" data-testid="text-items-profit">
-                      ${metrics.totalItemsProfit.toFixed(2)}
+                      {metrics.totalItemsProfit.toFixed(2)} {currency}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">{t('orderValueMinusCost')}</p>
@@ -528,16 +514,9 @@ export default function Profits() {
                   <p className="text-sm text-muted-foreground">{t('profitFromShipping')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
-                  ) : lydExchangeRate > 0 ? (
-                    <>
-                      <p className="text-3xl font-bold text-blue-600" data-testid="text-shipping-profit">
-                        {(metrics.totalShippingProfit * lydExchangeRate).toFixed(2)} LYD
-                      </p>
-                      <p className="text-xs text-muted-foreground">${metrics.totalShippingProfit.toFixed(2)}</p>
-                    </>
                   ) : (
-                    <p className="text-3xl font-bold text-orange-600" data-testid="text-shipping-profit">
-                      ${metrics.totalShippingProfit.toFixed(2)}
+                    <p className="text-3xl font-bold text-blue-600" data-testid="text-shipping-profit">
+                      {metrics.totalShippingProfit.toFixed(2)} {currency}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">{t('shippingFeeMinusCost')}</p>
@@ -553,16 +532,9 @@ export default function Profits() {
                   <p className="text-sm text-muted-foreground">{t('totalProfit')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
-                  ) : lydExchangeRate > 0 ? (
-                    <>
-                      <p className="text-3xl font-bold text-blue-600" data-testid="text-total-profit">
-                        {(metrics.totalProfit * lydExchangeRate).toFixed(2)} LYD
-                      </p>
-                      <p className="text-xs text-muted-foreground">${metrics.totalProfit.toFixed(2)}</p>
-                    </>
                   ) : (
                     <p className="text-3xl font-bold text-green-600" data-testid="text-total-profit">
-                      ${metrics.totalProfit.toFixed(2)}
+                      {metrics.totalProfit.toFixed(2)} {currency}
                     </p>
                   )}
                 </div>
