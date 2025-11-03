@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "wouter";
 import { Plus, Package, Search, Filter, Trash2, X, Printer } from "lucide-react";
 import { useLydExchangeRate } from "@/hooks/use-lyd-exchange-rate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Header } from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/components/auth-provider";
 import { apiRequest } from "@/lib/queryClient";
 import { Invoice } from "@/components/invoice";
 import { ImageUploader } from "@/components/image-uploader";
@@ -45,8 +47,12 @@ interface OrderImage {
 export default function Orders() {
   const { t, i18n } = useTranslation();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [assignAfterCreate, setAssignAfterCreate] = useState(false);
+  const [selectedShippingStaffId, setSelectedShippingStaffId] = useState("");
 
   const translateStatus = (status: string) => {
     const statusNormalized = status.toLowerCase().replace(/[\s_-]+/g, '');
@@ -171,6 +177,14 @@ export default function Orders() {
 
   const globalLydExchangeRate = parseFloat(settings.find(s => s.key === 'lyd_exchange_rate')?.value || '0');
 
+  const { data: shippingStaff = [] } = useQuery({
+    queryKey: ["/api/shipping-staff"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/shipping-staff");
+      return response.json() as Promise<any[]>;
+    },
+  });
+
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: { order: InsertOrder; items: InsertOrderItem[]; images?: OrderImage[] }) => {
       const response = await apiRequest("POST", "/api/orders", orderData);
@@ -193,6 +207,94 @@ export default function Orders() {
       toast({
         title: t('error'),
         description: t('failedCreateOrder'),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createOrderAndAssignMutation = useMutation({
+    mutationFn: async (data: { 
+      orderData: { order: InsertOrder; items: InsertOrderItem[]; images?: OrderImage[] };
+      shippingCity: string;
+      shippingStaffId?: string;
+      userId: string;
+    }) => {
+      const orderResponse = await apiRequest("POST", "/api/orders", data.orderData);
+      if (!orderResponse.ok) {
+        throw new Error(t('failedCreateOrder'));
+      }
+      const createdOrder = await orderResponse.json();
+      
+      const isTripoli = data.shippingCity?.toLowerCase() === 'tripoli';
+      
+      try {
+        if (isTripoli) {
+          const taskData = {
+            orderId: createdOrder.id,
+            assignedToUserId: data.shippingStaffId!,
+            assignedByUserId: data.userId,
+            taskType: 'task',
+            status: 'pending',
+            pickupLocation: 'Warehouse',
+            deliveryLocation: createdOrder.customer?.address || createdOrder.customer?.city || 'Tripoli',
+            customerCode: createdOrder.customer?.shippingCode || createdOrder.orderNumber,
+            paymentType: 'delivered',
+            paymentAmount: parseFloat(createdOrder.remainingBalance || '0'),
+          };
+          
+          const taskResponse = await apiRequest("POST", "/api/delivery-tasks", taskData);
+          if (!taskResponse.ok) {
+            throw new Error('Failed to create delivery task');
+          }
+        } else {
+          const updateResponse = await apiRequest("PATCH", `/api/orders/${createdOrder.id}`, {
+            status: 'delivered',
+          });
+          if (!updateResponse.ok) {
+            throw new Error('Failed to update order status');
+          }
+        }
+      } catch (error) {
+        try {
+          const deleteResponse = await apiRequest("DELETE", `/api/orders/${createdOrder.id}`);
+          if (!deleteResponse.ok) {
+            const errorMessage = `Order created but assignment failed. Manual cleanup required for order ID: ${createdOrder.id}`;
+            throw new Error(errorMessage);
+          }
+        } catch (cleanupError) {
+          const errorMessage = `Order created but assignment failed. Manual cleanup required for order ID: ${createdOrder.id}`;
+          throw new Error(errorMessage);
+        }
+        throw error;
+      }
+      
+      return { order: createdOrder, isTripoli };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-tasks"] });
+      
+      toast({
+        title: t('success'),
+        description: data.isTripoli 
+          ? t('orderCreatedAndAssigned') || 'Order created and assigned to delivery staff'
+          : t('orderCreatedAndReady') || 'Order created and ready for Darb Assabil',
+      });
+      
+      setIsModalOpen(false);
+      resetForm();
+      
+      if (data.isTripoli) {
+        setLocation('/task-assignment');
+      } else {
+        setLocation('/darb-assabil');
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('error'),
+        description: error.message || t('failedCreateOrder'),
         variant: "destructive",
       });
     },
@@ -583,6 +685,8 @@ export default function Orders() {
     setDownPayment("");
     setDownPaymentCurrency("USD");
     setLydExchangeRate("");
+    setAssignAfterCreate(false);
+    setSelectedShippingStaffId("");
     setHasPromptedForLydRate(false);
     setShippingCalculation(null);
     setNotes("");
@@ -857,12 +961,41 @@ export default function Orders() {
       };
     });
 
-    console.log("Calling createOrderMutation with:", { order, items, images: [] });
-    createOrderMutation.mutate({ 
-      order, 
-      items,
-      images: []
-    });
+    if (assignAfterCreate) {
+      const isTripoli = shippingCity?.toLowerCase() === 'tripoli';
+      if (isTripoli && !selectedShippingStaffId) {
+        toast({
+          title: t('validationError'),
+          description: 'Please select a shipping staff member for Tripoli orders',
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!isTripoli && !shippingCity) {
+        toast({
+          title: t('validationError'),
+          description: 'Please select a shipping city',
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log("Calling createOrderAndAssignMutation with:", { order, items, shippingCity, shippingStaffId: selectedShippingStaffId });
+      createOrderAndAssignMutation.mutate({
+        orderData: { order, items, images: [] },
+        shippingCity: shippingCity || '',
+        shippingStaffId: selectedShippingStaffId,
+        userId: user?.id || '',
+      });
+    } else {
+      console.log("Calling createOrderMutation with:", { order, items, images: [] });
+      createOrderMutation.mutate({ 
+        order, 
+        items,
+        images: []
+      });
+    }
   };
 
   const toggleStatusFilter = (status: string) => {
@@ -1928,6 +2061,56 @@ export default function Orders() {
                 </div>
               )}
 
+              {/* Assignment Section */}
+              {parseFloat(downPayment || "0") > 0 && shippingCity && (
+                <div className="border-t pt-4 space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="assign-after-create"
+                      checked={assignAfterCreate}
+                      onChange={(e) => {
+                        setAssignAfterCreate(e.target.checked);
+                        if (!e.target.checked) {
+                          setSelectedShippingStaffId("");
+                        }
+                      }}
+                      className="w-4 h-4 rounded border-gray-300"
+                      data-testid="checkbox-assign-after-create"
+                    />
+                    <Label htmlFor="assign-after-create" className="text-sm font-medium cursor-pointer">
+                      {shippingCity?.toLowerCase() === 'tripoli' 
+                        ? t('assignToDeliveryStaff') || 'Assign to delivery staff after creating order'
+                        : t('sendToDarbAssabil') || 'Send to Darb Assabil after creating order'}
+                    </Label>
+                  </div>
+                  
+                  {assignAfterCreate && shippingCity?.toLowerCase() === 'tripoli' && (
+                    <div className="pl-6 space-y-2">
+                      <Label htmlFor="shipping-staff" className="text-sm">{t('selectShippingStaff') || 'Select Shipping Staff'} *</Label>
+                      <Select value={selectedShippingStaffId} onValueChange={setSelectedShippingStaffId}>
+                        <SelectTrigger id="shipping-staff" data-testid="select-assign-shipping-staff">
+                          <SelectValue placeholder={t('selectStaff') || 'Select staff member'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {shippingStaff.map((staff: any) => (
+                            <SelectItem key={staff.id} value={staff.id}>
+                              {staff.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {assignAfterCreate && shippingCity?.toLowerCase() !== 'tripoli' && (
+                    <div className="pl-6 text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950 p-3 rounded">
+                      {t('willSendToDarbAssabil') || `Order will be marked as "delivered" and ready to send to Darb Assabil shipping company for ${shippingCity}.`}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Form Actions */}
               <div className="space-y-2">
                 {!shippingCalculation && orderItems.length > 0 && (
@@ -1952,13 +2135,17 @@ export default function Orders() {
                   <Button 
                     type="submit" 
                     disabled={
-                      createOrderMutation.isPending || 
+                      (createOrderMutation.isPending || createOrderAndAssignMutation.isPending) || 
                       !selectedCustomerId || 
                       orderItems.length === 0
                     }
                     data-testid="button-create-order"
                   >
-                    {createOrderMutation.isPending ? t('creating') : t('createOrder')}
+                    {(createOrderMutation.isPending || createOrderAndAssignMutation.isPending) 
+                      ? t('creating') 
+                      : assignAfterCreate 
+                        ? (shippingCity?.toLowerCase() === 'tripoli' ? t('createAndAssign') || 'Create & Assign' : t('createAndSend') || 'Create & Send to Darb Assabil')
+                        : t('createOrder')}
                   </Button>
                 </div>
               </div>
