@@ -1293,11 +1293,11 @@ export class PostgreSQLStorage implements IStorage {
       .orderBy(desc(deliveryTasks.createdAt));
 
     const tasksWithDetails = await Promise.all(tasks.map(async (task) => {
-      const order = await this.getOrderWithCustomer(task.orderId);
+      const order = task.orderId ? await this.getOrderWithCustomer(task.orderId) : undefined;
       const assignedTo = await this.getUser(task.assignedToUserId);
       const assignedBy = await this.getUser(task.assignedByUserId);
       
-      if (!order || !assignedTo || !assignedBy) {
+      if (!assignedTo || !assignedBy) {
         throw new Error("Task data incomplete");
       }
 
@@ -1318,11 +1318,11 @@ export class PostgreSQLStorage implements IStorage {
       .orderBy(desc(deliveryTasks.createdAt));
 
     const tasksWithDetails = await Promise.all(tasks.map(async (task) => {
-      const order = await this.getOrderWithCustomer(task.orderId);
+      const order = task.orderId ? await this.getOrderWithCustomer(task.orderId) : undefined;
       const assignedTo = await this.getUser(task.assignedToUserId);
       const assignedBy = await this.getUser(task.assignedByUserId);
       
-      if (!order || !assignedTo || !assignedBy) {
+      if (!assignedTo || !assignedBy) {
         throw new Error("Task data incomplete");
       }
 
