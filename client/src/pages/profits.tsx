@@ -132,20 +132,22 @@ export default function Profits() {
     const totalProfitUSD = filteredOrders.reduce((sum, order) => sum + parseFloat(order.totalProfit || "0"), 0);
     const averageOrderValueUSD = orderCount > 0 ? totalRevenueUSD / orderCount : 0;
     
-    // Calculate exchange rate profit (if both rates are set)
+    // Calculate exchange rate profit in LYD (only if both rates are set)
     const exchangeRateProfitLYD = (lydExchangeRate > 0 && lydPurchaseExchangeRate > 0)
       ? (lydExchangeRate - lydPurchaseExchangeRate) * totalRevenueUSD
       : 0;
     
-    // Convert to LYD if exchange rate is set
+    // Convert to display currency
     const totalRevenue = exchangeRate > 0 ? parseFloat(convertToLYD(totalRevenueUSD)) : totalRevenueUSD;
     const totalItemsProfit = exchangeRate > 0 ? parseFloat(convertToLYD(totalItemsProfitUSD)) : totalItemsProfitUSD;
     const totalShippingProfit = exchangeRate > 0 ? parseFloat(convertToLYD(totalShippingProfitUSD)) : totalShippingProfitUSD;
-    const exchangeRateProfit = exchangeRateProfitLYD; // Already in LYD
-    const totalProfitWithExchange = exchangeRate > 0 
-      ? parseFloat(convertToLYD(totalProfitUSD)) + exchangeRateProfit
-      : totalProfitUSD;
     const totalProfit = exchangeRate > 0 ? parseFloat(convertToLYD(totalProfitUSD)) : totalProfitUSD;
+    
+    // Exchange rate profit is ONLY added when viewing in LYD (since it's calculated in LYD)
+    // When viewing in USD, exchangeRateProfit is not applicable
+    const exchangeRateProfit = (exchangeRate > 0) ? exchangeRateProfitLYD : 0;
+    const totalProfitWithExchange = totalProfit + exchangeRateProfit; // Both in same currency now (LYD or USD=0)
+    
     const averageOrderValue = exchangeRate > 0 ? parseFloat(convertToLYD(averageOrderValueUSD)) : averageOrderValueUSD;
     const profitMargin = totalRevenue > 0 ? (totalProfitWithExchange / totalRevenue) * 100 : 0;
 
@@ -203,21 +205,45 @@ export default function Profits() {
         };
       });
       
-      // Calculate totals
-      const totalRevenue = orders.reduce((sum: number, order: any) => sum + parseFloat(order.totalAmount), 0);
-      const totalProfit = orders.reduce((sum: number, order: any) => sum + parseFloat(order.totalProfit || order.profit || "0"), 0);
-      const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+      // Calculate totals in USD
+      const totalRevenueUSD = orders.reduce((sum: number, order: any) => sum + parseFloat(order.totalAmount), 0);
+      const totalProfitUSD = orders.reduce((sum: number, order: any) => sum + parseFloat(order.totalProfit || order.profit || "0"), 0);
+      const totalItemsProfitUSD = orders.reduce((sum: number, order: any) => sum + parseFloat(order.itemsProfit || "0"), 0);
+      const totalShippingProfitUSD = orders.reduce((sum: number, order: any) => sum + parseFloat(order.shippingProfit || "0"), 0);
+      
+      // Calculate exchange rate profit in LYD (only if both rates are set)
+      const exchangeRateProfitLYD = (lydExchangeRate > 0 && lydPurchaseExchangeRate > 0)
+        ? (lydExchangeRate - lydPurchaseExchangeRate) * totalRevenueUSD
+        : 0;
+      
+      // Convert to display currency (LYD or USD)
+      const totalRevenue = exchangeRate > 0 ? totalRevenueUSD * exchangeRate : totalRevenueUSD;
+      const totalProfit = exchangeRate > 0 ? totalProfitUSD * exchangeRate : totalProfitUSD;
+      const totalItemsProfit = exchangeRate > 0 ? totalItemsProfitUSD * exchangeRate : totalItemsProfitUSD;
+      const totalShippingProfit = exchangeRate > 0 ? totalShippingProfitUSD * exchangeRate : totalShippingProfitUSD;
+      
+      // Exchange rate profit is ONLY added when viewing in LYD (since it's calculated in LYD)
+      const exchangeRateProfit = (exchangeRate > 0) ? exchangeRateProfitLYD : 0;
+      const totalProfitWithExchange = totalProfit + exchangeRateProfit; // Both in same currency now
+      
+      const profitMargin = totalRevenue > 0 ? (totalProfitWithExchange / totalRevenue) * 100 : 0;
       
       const reportData = {
         totalRevenue,
         totalProfit,
+        totalItemsProfit,
+        totalShippingProfit,
+        exchangeRateProfit,
+        totalProfitWithExchange,
         profitMargin,
         orderCount: orders.length,
         orders: reportType === "profit" ? orderSummaries : undefined,
         periodStart: orders.length > 0 ? orders[orders.length - 1].createdAt : undefined,
         periodEnd: orders.length > 0 ? orders[0].createdAt : undefined,
         exchangeRate,
-        currency
+        currency,
+        saleExchangeRate: lydExchangeRate,
+        purchaseExchangeRate: lydPurchaseExchangeRate
       };
       
       setReportData(reportData);
@@ -425,16 +451,9 @@ export default function Profits() {
                   <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t('averageOrderValue')}</p>
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
-                  ) : lydExchangeRate > 0 ? (
-                    <>
-                      <p className="text-3xl font-bold text-blue-600" data-testid="text-average-order-value">
-                        {(metrics.averageOrderValue * lydExchangeRate).toFixed(2)} LYD
-                      </p>
-                      <p className="text-xs text-muted-foreground">${metrics.averageOrderValue.toFixed(2)}</p>
-                    </>
                   ) : (
-                    <p className="text-4xl font-extrabold text-purple-600 dark:text-purple-400 mt-2" data-testid="text-average-order-value">
-                      {currency} {metrics.averageOrderValue.toFixed(2)}
+                    <p className="text-3xl font-bold text-blue-600" data-testid="text-average-order-value">
+                      {metrics.averageOrderValue.toFixed(2)} {currency}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-2">{t('perOrder')}</p>

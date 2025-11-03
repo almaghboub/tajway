@@ -26,11 +26,19 @@ interface CommissionRule {
 interface ReportData {
   totalRevenue: number;
   totalProfit: number;
+  totalItemsProfit?: number;
+  totalShippingProfit?: number;
+  exchangeRateProfit?: number;
+  totalProfitWithExchange?: number;
   profitMargin: number;
   orderCount: number;
   orders?: OrderSummary[];
   periodStart?: string;
   periodEnd?: string;
+  currency?: string;
+  exchangeRate?: number;
+  saleExchangeRate?: number;
+  purchaseExchangeRate?: number;
 }
 
 interface SalesReportProps {
@@ -45,8 +53,9 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
   const currency = data.currency || "USD";
   const exchangeRate = data.exchangeRate || 0;
   
-  // Helper function to convert USD to LYD if exchange rate is set
-  const convertToLYD = (usdAmount: number): number => {
+  // Note: Aggregated data (totalRevenue, totalProfit, etc.) is already in the correct currency
+  // But individual order data is still in USD and needs conversion
+  const convertOrderAmount = (usdAmount: number): number => {
     if (exchangeRate > 0) {
       return parseFloat((usdAmount * exchangeRate).toFixed(2));
     }
@@ -105,11 +114,11 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div className="bg-blue-50 p-4 rounded">
             <p className="text-sm text-gray-600 mb-1">{t('totalRevenue')}</p>
-            <p className="text-2xl font-bold text-blue-600">{currency} {convertToLYD(data.totalRevenue).toFixed(2)}</p>
+            <p className="text-2xl font-bold text-blue-600">{currency} {data.totalRevenue.toFixed(2)}</p>
           </div>
           <div className="bg-green-50 p-4 rounded">
             <p className="text-sm text-gray-600 mb-1">{t('totalProfit')}</p>
-            <p className="text-2xl font-bold text-green-600">{currency} {convertToLYD(data.totalProfit).toFixed(2)}</p>
+            <p className="text-2xl font-bold text-green-600">{currency} {(data.totalProfitWithExchange || data.totalProfit).toFixed(2)}</p>
           </div>
           <div className="bg-purple-50 p-4 rounded">
             <p className="text-sm text-gray-600 mb-1">{t('profitMargin')}</p>
@@ -147,10 +156,10 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
                   <tr key={order.id}>
                     <td className="border border-gray-300 px-4 py-2">{order.shippingCode || order.orderNumber}</td>
                     <td className="border border-gray-300 px-4 py-2">{order.customerName}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertToLYD(parseFloat(order.totalAmount)).toFixed(2)}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertToLYD(parseFloat(order.itemsProfit || "0")).toFixed(2)}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertToLYD(parseFloat(order.shippingProfit || "0")).toFixed(2)}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertToLYD(parseFloat(order.profit)).toFixed(2)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertOrderAmount(parseFloat(order.totalAmount)).toFixed(2)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertOrderAmount(parseFloat(order.itemsProfit || "0")).toFixed(2)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertOrderAmount(parseFloat(order.shippingProfit || "0")).toFixed(2)}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-right">{currency} {convertOrderAmount(parseFloat(order.profit)).toFixed(2)}</td>
                     <td className="border border-gray-300 px-4 py-2 text-right">{margin.toFixed(1)}%</td>
                     <td className="border border-gray-300 px-4 py-2 text-center">{new Date(order.createdAt).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US')}</td>
                   </tr>
@@ -163,41 +172,77 @@ export function SalesReport({ reportType, data, onPrint }: SalesReportProps) {
 
 
       {reportType === "financial" && (
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-blue-600">{t('financialPerformanceMetrics')}</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gray-50 p-4 rounded">
-              <h4 className="font-medium mb-3">{t('revenueAnalysis')}</h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>{t('grossRevenue')}:</span>
-                  <span className="font-medium">{currency} {convertToLYD(data.totalRevenue).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between border-t pt-2">
-                  <span>{t('netProfit')}:</span>
-                  <span className="font-bold text-green-600">{currency} {convertToLYD(data.totalProfit).toFixed(2)}</span>
+        <>
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold mb-4 text-blue-600">{t('financialPerformanceMetrics')}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gray-50 p-4 rounded">
+                <h4 className="font-medium mb-3">{t('revenueAnalysis')}</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>{t('grossRevenue')}:</span>
+                    <span className="font-medium">{currency} {data.totalRevenue.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2">
+                    <span>{t('netProfit')}:</span>
+                    <span className="font-bold text-green-600">{currency} {(data.totalProfitWithExchange || data.totalProfit).toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded">
-              <h4 className="font-medium mb-3">{t('performanceIndicators')}</h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>{t('profitMargin')}:</span>
-                  <span className="font-medium">{data.profitMargin.toFixed(1)}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>{t('averageOrderValue')}:</span>
-                  <span className="font-medium">{currency} {convertToLYD(data.totalRevenue / data.orderCount).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>{t('averageProfitPerOrder')}:</span>
-                  <span className="font-medium">{currency} {convertToLYD(data.totalProfit / data.orderCount).toFixed(2)}</span>
+              <div className="bg-gray-50 p-4 rounded">
+                <h4 className="font-medium mb-3">{t('performanceIndicators')}</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>{t('profitMargin')}:</span>
+                    <span className="font-medium">{data.profitMargin.toFixed(1)}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>{t('averageOrderValue')}:</span>
+                    <span className="font-medium">{currency} {(data.totalRevenue / data.orderCount).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>{t('averageProfitPerOrder')}:</span>
+                    <span className="font-medium">{currency} {((data.totalProfitWithExchange || data.totalProfit) / data.orderCount).toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+
+          {/* Profit Breakdown */}
+          {data.totalItemsProfit !== undefined && data.totalShippingProfit !== undefined && (
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold mb-4 text-blue-600">{t('profitBreakdown')}</h3>
+              <div className="bg-gray-50 p-4 rounded">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>{t('itemsProfit')}:</span>
+                    <span className="font-medium text-green-600">{currency} {data.totalItemsProfit.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>{t('profitFromShipping')}:</span>
+                    <span className="font-medium text-green-600">{currency} {data.totalShippingProfit.toFixed(2)}</span>
+                  </div>
+                  {data.exchangeRateProfit !== undefined && data.exchangeRateProfit > 0 && data.saleExchangeRate && data.purchaseExchangeRate && (
+                    <>
+                      <div className="flex justify-between">
+                        <span>{t('exchangeRateProfit')}:</span>
+                        <span className="font-medium text-amber-600">LYD {data.exchangeRateProfit.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-muted-foreground pl-4">
+                        <span>{t('saleRate')}: {data.saleExchangeRate.toFixed(4)} | {t('purchaseRate')}: {data.purchaseExchangeRate.toFixed(4)}</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex justify-between border-t pt-2 font-bold">
+                    <span>{t('totalProfit')}:</span>
+                    <span className="text-green-600">{currency} {(data.totalProfitWithExchange || data.totalProfit).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Report Footer */}
