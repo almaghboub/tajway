@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { Truck, LayoutDashboard, Package, Users, Box, TrendingUp, DollarSign, Users2, Settings, LogOut, MessageSquare, ClipboardList, UserCog, History, Menu } from "lucide-react";
+import { Truck, LayoutDashboard, Package, Users, Box, TrendingUp, DollarSign, Users2, Settings, LogOut, MessageSquare, ClipboardList, UserCog, History, Menu, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -14,6 +14,7 @@ import logoPath from "@assets/tajway_logo_1_-removebg-preview_1760403020566.png"
 const navigationItems = [
   { key: "dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"] },
   { key: "orders", href: "/orders", icon: Package, roles: ["owner", "customer_service", "receptionist", "sorter", "stock_manager"] },
+  { key: "readyToBuy", href: "/ready-to-buy", icon: ShoppingCart, roles: ["owner", "customer_service", "receptionist"] },
   { key: "customers", href: "/customers", icon: Users, roles: ["owner", "customer_service", "receptionist"] },
   { key: "deliveryTasks", href: "/delivery-tasks", icon: ClipboardList, roles: ["shipping_staff"] },
   { key: "taskAssignment", href: "/task-assignment", icon: UserCog, roles: ["owner", "customer_service", "receptionist"] },

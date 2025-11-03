@@ -20,7 +20,7 @@ export default function ReadyToBuy() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<OrderWithCustomer | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const { lydRate } = useLydExchangeRate();
+  const { exchangeRate } = useLydExchangeRate();
 
   const { data: orders = [], isLoading } = useQuery<OrderWithCustomer[]>({
     queryKey: ["/api/orders"],
@@ -49,7 +49,7 @@ export default function ReadyToBuy() {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     
     if (currency === 'LYD') {
-      const lydAmount = numAmount * lydRate;
+      const lydAmount = numAmount * exchangeRate;
       return i18n.language === 'ar' 
         ? `${lydAmount.toFixed(2)} د.ل`
         : `د.ل ${lydAmount.toFixed(2)}`;
@@ -60,7 +60,7 @@ export default function ReadyToBuy() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header title={t('readyToBuy')} />
       <main className="container mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
