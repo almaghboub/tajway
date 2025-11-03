@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ShoppingCart, Search, Eye } from "lucide-react";
@@ -7,10 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Header } from "@/components/header";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { OrderWithCustomer } from "@shared/schema";
 import { format } from "date-fns";
 
@@ -21,10 +24,43 @@ export default function ReadyToBuy() {
   const [selectedOrder, setSelectedOrder] = useState<OrderWithCustomer | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const { exchangeRate } = useLydExchangeRate();
+  const { toast } = useToast();
 
   const { data: orders = [], isLoading } = useQuery<OrderWithCustomer[]>({
     queryKey: ["/api/orders"],
   });
+
+  const markAsProcessingMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const response = await apiRequest("PATCH", `/api/orders/${orderId}`, {
+        status: "processing",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to update order status");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      toast({
+        title: t('success'),
+        description: t('orderMarkedAsProcessing'),
+      });
+    },
+    onError: () => {
+      toast({
+        title: t('error'),
+        description: t('failedToUpdateOrderStatus'),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleMarkAsBought = (orderId: string, checked: boolean) => {
+    if (checked) {
+      markAsProcessingMutation.mutate(orderId);
+    }
+  };
 
   const readyToBuyOrders = orders.filter(order => order.status === "ready_to_buy");
 
@@ -110,6 +146,7 @@ export default function ReadyToBuy() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-[100px]">{t('bought')}</TableHead>
                       <TableHead>{t('orderNumber')}</TableHead>
                       <TableHead>{t('customer')}</TableHead>
                       <TableHead>{t('customerCode')}</TableHead>
@@ -124,6 +161,13 @@ export default function ReadyToBuy() {
                   <TableBody>
                     {filteredOrders.map((order) => (
                       <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
+                        <TableCell>
+                          <Checkbox
+                            onCheckedChange={(checked) => handleMarkAsBought(order.id, checked as boolean)}
+                            disabled={markAsProcessingMutation.isPending}
+                            data-testid={`checkbox-bought-${order.id}`}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">
                           {order.orderNumber}
                         </TableCell>
