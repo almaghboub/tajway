@@ -90,6 +90,7 @@ export default function Profits() {
   });
 
   const lydExchangeRate = parseFloat(settings.find(s => s.key === 'lyd_exchange_rate')?.value || '0');
+  const lydPurchaseExchangeRate = parseFloat(settings.find(s => s.key === 'lyd_purchase_exchange_rate')?.value || '0');
 
   const toggleCountryFilter = (country: string) => {
     setPerformanceCountryFilters((prev: string[]) =>
@@ -131,24 +132,35 @@ export default function Profits() {
     const totalProfitUSD = filteredOrders.reduce((sum, order) => sum + parseFloat(order.totalProfit || "0"), 0);
     const averageOrderValueUSD = orderCount > 0 ? totalRevenueUSD / orderCount : 0;
     
+    // Calculate exchange rate profit (if both rates are set)
+    const exchangeRateProfitLYD = (lydExchangeRate > 0 && lydPurchaseExchangeRate > 0)
+      ? (lydExchangeRate - lydPurchaseExchangeRate) * totalRevenueUSD
+      : 0;
+    
     // Convert to LYD if exchange rate is set
     const totalRevenue = exchangeRate > 0 ? parseFloat(convertToLYD(totalRevenueUSD)) : totalRevenueUSD;
     const totalItemsProfit = exchangeRate > 0 ? parseFloat(convertToLYD(totalItemsProfitUSD)) : totalItemsProfitUSD;
     const totalShippingProfit = exchangeRate > 0 ? parseFloat(convertToLYD(totalShippingProfitUSD)) : totalShippingProfitUSD;
+    const exchangeRateProfit = exchangeRateProfitLYD; // Already in LYD
+    const totalProfitWithExchange = exchangeRate > 0 
+      ? parseFloat(convertToLYD(totalProfitUSD)) + exchangeRateProfit
+      : totalProfitUSD;
     const totalProfit = exchangeRate > 0 ? parseFloat(convertToLYD(totalProfitUSD)) : totalProfitUSD;
     const averageOrderValue = exchangeRate > 0 ? parseFloat(convertToLYD(averageOrderValueUSD)) : averageOrderValueUSD;
-    const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+    const profitMargin = totalRevenue > 0 ? (totalProfitWithExchange / totalRevenue) * 100 : 0;
 
     return {
       orderCount,
       totalRevenue,
       totalItemsProfit,
       totalShippingProfit,
+      exchangeRateProfit,
       totalProfit,
+      totalProfitWithExchange,
       averageOrderValue,
       profitMargin,
     };
-  }, [filteredOrders, exchangeRate, convertToLYD]);
+  }, [filteredOrders, exchangeRate, convertToLYD, lydExchangeRate, lydPurchaseExchangeRate]);
 
   const isLoading = isLoadingOrders;
 
@@ -705,12 +717,24 @@ export default function Profits() {
                   </span>
                 </div>
 
+                {lydExchangeRate > 0 && lydPurchaseExchangeRate > 0 && metrics.exchangeRateProfit > 0 && (
+                  <div className="flex items-center justify-between pl-4">
+                    <span className="text-sm text-muted-foreground">{t('exchangeRateProfit')}</span>
+                    <span className="font-semibold text-amber-600">
+                      {metrics.exchangeRateProfit.toFixed(2)} LYD
+                    </span>
+                  </div>
+                )}
+
                 <Separator />
 
                 <div className="flex items-center justify-between pt-2">
                   <span className="text-sm font-semibold text-foreground">{t('totalProfit')}</span>
                   <span className="text-xl font-bold text-green-600">
-                    {metrics.totalProfit.toFixed(2)} {currency}
+                    {lydExchangeRate > 0 && lydPurchaseExchangeRate > 0 && metrics.exchangeRateProfit > 0
+                      ? metrics.totalProfitWithExchange.toFixed(2)
+                      : metrics.totalProfit.toFixed(2)
+                    } {currency}
                   </span>
                 </div>
               </div>
