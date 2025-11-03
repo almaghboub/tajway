@@ -630,6 +630,7 @@ type PasswordForm = z.infer<typeof passwordSchema>;
 export default function Settings() {
   const [settingsState, setSettingsState] = useState(DEFAULT_SETTINGS);
   const [lydExchangeRate, setLydExchangeRate] = useState<string>("");
+  const [lydPurchaseExchangeRate, setLydPurchaseExchangeRate] = useState<string>("");
   const { toast } = useToast();
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -670,9 +671,13 @@ export default function Settings() {
         if (setting.type === "boolean") {
           settingsObj[setting.key as keyof typeof DEFAULT_SETTINGS] = setting.value === "true";
         }
-        // Handle LYD exchange rate
+        // Handle LYD exchange rate (sale rate)
         if (setting.key === "lyd_exchange_rate") {
           setLydExchangeRate(setting.value);
+        }
+        // Handle LYD purchase exchange rate
+        if (setting.key === "lyd_purchase_exchange_rate") {
+          setLydPurchaseExchangeRate(setting.value);
         }
       });
       setSettingsState(settingsObj);
@@ -726,7 +731,7 @@ export default function Settings() {
     updateSettingMutation.mutate({ key, value: checked.toString() });
   };
 
-  // Update LYD exchange rate mutation
+  // Update LYD exchange rate mutation (sale rate)
   const updateExchangeRateMutation = useMutation({
     mutationFn: async (rate: string) => {
       const existingSetting = settings.find(s => s.key === "lyd_exchange_rate");
@@ -738,7 +743,7 @@ export default function Settings() {
           key: "lyd_exchange_rate",
           value: rate,
           type: "number",
-          description: "LYD to USD exchange rate"
+          description: "LYD to USD exchange rate (sale rate)"
         });
         return response.json();
       }
@@ -759,6 +764,39 @@ export default function Settings() {
     },
   });
 
+  // Update LYD purchase exchange rate mutation
+  const updatePurchaseExchangeRateMutation = useMutation({
+    mutationFn: async (rate: string) => {
+      const existingSetting = settings.find(s => s.key === "lyd_purchase_exchange_rate");
+      if (existingSetting) {
+        const response = await apiRequest("PUT", `/api/settings/lyd_purchase_exchange_rate`, { value: rate, type: "number" });
+        return response.json();
+      } else {
+        const response = await apiRequest("POST", "/api/settings", {
+          key: "lyd_purchase_exchange_rate",
+          value: rate,
+          type: "number",
+          description: "LYD to USD purchase exchange rate"
+        });
+        return response.json();
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      toast({
+        title: t('success'),
+        description: t('purchaseExchangeRateUpdated'),
+      });
+    },
+    onError: () => {
+      toast({
+        title: t('error'),
+        description: t('failedUpdatePurchaseExchangeRate'),
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleExchangeRateSave = () => {
     if (lydExchangeRate && parseFloat(lydExchangeRate) > 0) {
       updateExchangeRateMutation.mutate(lydExchangeRate);
@@ -766,6 +804,18 @@ export default function Settings() {
       toast({
         title: t('error'),
         description: t('enterValidExchangeRate'),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePurchaseExchangeRateSave = () => {
+    if (lydPurchaseExchangeRate && parseFloat(lydPurchaseExchangeRate) > 0) {
+      updatePurchaseExchangeRateMutation.mutate(lydPurchaseExchangeRate);
+    } else {
+      toast({
+        title: t('error'),
+        description: t('enterValidPurchaseExchangeRate'),
         variant: "destructive",
       });
     }
@@ -1357,11 +1407,61 @@ export default function Settings() {
               {lydExchangeRate && parseFloat(lydExchangeRate) > 0 && (
                 <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
                   <p className="text-sm text-green-800 dark:text-green-200">
-                    {t('currentExchangeRate')}: 1 USD = {parseFloat(lydExchangeRate).toFixed(4)} LYD
+                    {t('currentSaleRate')}: 1 USD = {parseFloat(lydExchangeRate).toFixed(4)} LYD
                   </p>
                 </div>
               )}
             </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <div className="space-y-0.5">
+                <Label htmlFor="lyd-purchase-rate">{t('lydPurchaseExchangeRateSetting')}</Label>
+                <p className="text-sm text-muted-foreground">
+                  {t('lydPurchaseExchangeRateDesc')}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Input 
+                  id="lyd-purchase-rate"
+                  type="number"
+                  step="0.01"
+                  placeholder={t('enterPurchaseExchangeRate')}
+                  value={lydPurchaseExchangeRate}
+                  onChange={(e) => setLydPurchaseExchangeRate(e.target.value)}
+                  className="flex-1"
+                  data-testid="input-lyd-purchase-exchange-rate"
+                />
+                <Button 
+                  onClick={handlePurchaseExchangeRateSave}
+                  disabled={updatePurchaseExchangeRateMutation.isPending}
+                  data-testid="button-save-purchase-exchange-rate"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {t('save')}
+                </Button>
+              </div>
+              {lydPurchaseExchangeRate && parseFloat(lydPurchaseExchangeRate) > 0 && (
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    {t('currentPurchaseRate')}: 1 USD = {parseFloat(lydPurchaseExchangeRate).toFixed(4)} LYD
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {lydExchangeRate && lydPurchaseExchangeRate && parseFloat(lydExchangeRate) > 0 && parseFloat(lydPurchaseExchangeRate) > 0 && (
+              <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <h4 className="font-medium mb-2 text-amber-900 dark:text-amber-100">{t('exchangeRateProfit')}</h4>
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  {t('profitPerUSD')}: {(parseFloat(lydExchangeRate) - parseFloat(lydPurchaseExchangeRate)).toFixed(4)} LYD
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                  {t('exchangeRateProfitDesc')}
+                </p>
+              </div>
+            )}
 
             <div className="p-4 bg-muted/20 rounded-lg">
               <h4 className="font-medium mb-2">{t('currentTheme')}</h4>
