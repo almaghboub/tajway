@@ -103,8 +103,9 @@ export default function Orders() {
   const [shippingWeight, setShippingWeight] = useState(0);
   const [clothingSize, setClothingSize] = useState("");
   const [hasDownPayment, setHasDownPayment] = useState(false);
-  const [downPayment, setDownPayment] = useState(0);
-  const [lydExchangeRate, setLydExchangeRate] = useState<number>(0);
+  const [downPayment, setDownPayment] = useState("");
+  const [downPaymentCurrency, setDownPaymentCurrency] = useState<"USD" | "LYD">("USD");
+  const [lydExchangeRate, setLydExchangeRate] = useState<string>("");
   const [hasPromptedForLydRate, setHasPromptedForLydRate] = useState(false);
   const [shippingCalculation, setShippingCalculation] = useState<{
     base_shipping: number;
@@ -115,7 +116,7 @@ export default function Orders() {
   } | null>(null);
   const [calculatingShipping, setCalculatingShipping] = useState(false);
   const [notes, setNotes] = useState("");
-  const [orderLydRate, setOrderLydRate] = useState<number>(0);
+  const [orderLydRate, setOrderLydRate] = useState<string>("");
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -140,10 +141,10 @@ export default function Orders() {
   // Pre-fill order LYD rate when modal first opens
   useEffect(() => {
     if (isModalOpen && exchangeRate > 0) {
-      // Only set if orderLydRate hasn't been set (is 0 or undefined)
+      // Only set if orderLydRate hasn't been set (is empty string)
       // This allows user edits to persist within the same modal session
-      if (orderLydRate === 0 || !orderLydRate) {
-        setOrderLydRate(exchangeRate);
+      if (!orderLydRate || orderLydRate === "") {
+        setOrderLydRate(exchangeRate.toString());
       }
     }
   }, [isModalOpen, exchangeRate]);
@@ -579,13 +580,14 @@ export default function Orders() {
     setShippingCategory("normal");
     setShippingWeight(0);
     setClothingSize("");
-    setDownPayment(0);
-    setLydExchangeRate(0);
+    setDownPayment("");
+    setDownPaymentCurrency("USD");
+    setLydExchangeRate("");
     setHasPromptedForLydRate(false);
     setShippingCalculation(null);
     setNotes("");
     setCustomOrderCode("");
-    setOrderLydRate(0);
+    setOrderLydRate("");
     setNewCustomer({
       firstName: "",
       lastName: "",
@@ -794,9 +796,12 @@ export default function Orders() {
     
     const totalProfit = itemsProfit;
     
-    // Convert down payment from LYD to USD
-    const rate = orderLydRate > 0 ? orderLydRate : exchangeRate;
-    const downPaymentUSD = rate > 0 ? downPayment / rate : downPayment;
+    // Parse down payment and convert to USD if needed
+    const downPaymentValue = parseFloat(downPayment || "0");
+    const rate = parseFloat(orderLydRate || "0") > 0 ? parseFloat(orderLydRate || "0") : exchangeRate;
+    const downPaymentUSD = downPaymentCurrency === "LYD" && rate > 0 
+      ? downPaymentValue / rate 
+      : downPaymentValue;
     
     // Validate down payment doesn't exceed total
     if (downPaymentUSD > totals.total) {
@@ -822,6 +827,7 @@ export default function Orders() {
       status: "pending",
       totalAmount: totals.total.toFixed(2),
       downPayment: downPaymentUSD.toFixed(2),
+      downPaymentCurrency: downPaymentCurrency,
       remainingBalance: remainingBalance.toFixed(2),
       shippingCost: totals.shippingCost.toFixed(2),
       shippingWeight: shippingWeight.toFixed(2),
@@ -830,7 +836,7 @@ export default function Orders() {
       shippingCategory: shippingCategory || undefined,
       itemsProfit: itemsProfit.toFixed(2),
       totalProfit: totalProfit.toFixed(2),
-      lydExchangeRate: (orderLydRate > 0 ? orderLydRate : exchangeRate > 0 ? exchangeRate : undefined)?.toFixed(4),
+      lydExchangeRate: (parseFloat(orderLydRate || "0") > 0 ? parseFloat(orderLydRate || "0") : exchangeRate > 0 ? exchangeRate : undefined)?.toFixed(4),
       notes: finalNotes || undefined,
       orderNumber: customOrderCode || undefined,
     };
@@ -1663,7 +1669,7 @@ export default function Orders() {
                         const numValue = value === '' ? 1 : parseFloat(value);
                         setShippingWeight(isNaN(numValue) ? 1 : numValue);
                         // Prompt for LYD exchange rate if not set (only once)
-                        if (lydExchangeRate === 0 && !hasPromptedForLydRate) {
+                        if ((!lydExchangeRate || lydExchangeRate === "") && !hasPromptedForLydRate) {
                           toast({
                             title: "LYD Exchange Rate",
                             description: "Please enter the LYD exchange rate to see prices in Libyan Dinar",
@@ -1709,9 +1715,9 @@ export default function Orders() {
                           <span className="text-blue-600"> {t('convertedToUsd')}</span>
                         )}
                       </div>
-                      {lydExchangeRate > 0 && (
+                      {parseFloat(lydExchangeRate || "0") > 0 && (
                         <div className="text-blue-600 mt-1">
-                          ≈ {(calculateTotals().shippingCost * lydExchangeRate).toFixed(2)} LYD
+                          ≈ {(calculateTotals().shippingCost * parseFloat(lydExchangeRate || "0")).toFixed(2)} LYD
                         </div>
                       )}
                     </div>
@@ -1721,7 +1727,7 @@ export default function Orders() {
                 <div>
                   <Label htmlFor="lyd-exchange-rate" className="flex items-center gap-2">
                     {t('lydExchangeRate')}
-                    {lydExchangeRate === 0 && shippingWeight !== 1 && (
+                    {(!lydExchangeRate || lydExchangeRate === "") && shippingWeight !== 1 && (
                       <span className="text-xs text-orange-600 font-medium animate-pulse">
                         ← {t('required') || 'Required to see LYD prices'}
                       </span>
@@ -1731,37 +1737,35 @@ export default function Orders() {
                     id="lyd-exchange-rate"
                     type="text"
                     inputMode="decimal"
-                    value={lydExchangeRate === 0 ? "" : lydExchangeRate.toString()}
+                    value={lydExchangeRate}
                     onChange={(e) => {
                       let value = e.target.value.replace(/[^0-9.]/g, '');
                       const parts = value.split('.');
                       if (parts.length > 2) {
                         value = parts[0] + '.' + parts.slice(1).join('');
                       }
-                      const rate = value === '' ? 0 : parseFloat(value);
-                      const safeRate = isNaN(rate) ? 0 : rate;
-                      setLydExchangeRate(safeRate);
+                      setLydExchangeRate(value);
                       // Trigger recalculation if shipping was already calculated
-                      if (safeRate > 0 && shippingCalculation) {
+                      if (parseFloat(value || "0") > 0 && shippingCalculation) {
                         toast({
                           title: "LYD Calculation Updated",
-                          description: `Shipping: ${(calculateTotals().shippingCost * safeRate).toFixed(2)} LYD | Total: ${(calculateTotals().total * safeRate).toFixed(2)} LYD`,
+                          description: `Shipping: ${(calculateTotals().shippingCost * parseFloat(value)).toFixed(2)} LYD | Total: ${(calculateTotals().total * parseFloat(value)).toFixed(2)} LYD`,
                           duration: 3000,
                         });
                       }
                     }}
                     placeholder={t('enterLydRate')}
                     required
-                    className={lydExchangeRate === 0 && shippingWeight !== 1 ? "border-orange-400 border-2 animate-pulse" : ""}
+                    className={(!lydExchangeRate || lydExchangeRate === "") && shippingWeight !== 1 ? "border-orange-400 border-2 animate-pulse" : ""}
                     data-testid="input-lyd-exchange-rate"
                   />
-                  {lydExchangeRate > 0 && shippingCalculation && (
+                  {parseFloat(lydExchangeRate || "0") > 0 && shippingCalculation && (
                     <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950 rounded text-sm">
                       <div className="font-medium text-blue-900 dark:text-blue-100">
-                        Shipping in LYD: {(calculateTotals().shippingCost * lydExchangeRate).toFixed(2)} LYD
+                        Shipping in LYD: {(calculateTotals().shippingCost * parseFloat(lydExchangeRate || "0")).toFixed(2)} LYD
                       </div>
                       <div className="text-xs text-blue-700 dark:text-blue-300">
-                        Total Order: {(calculateTotals().total * lydExchangeRate).toFixed(2)} LYD
+                        Total Order: {(calculateTotals().total * parseFloat(lydExchangeRate || "0")).toFixed(2)} LYD
                       </div>
                     </div>
                   )}
@@ -1788,9 +1792,9 @@ export default function Orders() {
                       <span>{t('subtotal')}</span>
                       <div className="text-right">
                         <div data-testid="text-subtotal">${calculateTotals().subtotal.toFixed(2)}</div>
-                        {lydExchangeRate > 0 && (
+                        {parseFloat(lydExchangeRate || "0") > 0 && (
                           <div className="text-xs text-blue-600 font-medium">
-                            {(calculateTotals().subtotal * lydExchangeRate).toFixed(2)} LYD
+                            {(calculateTotals().subtotal * parseFloat(lydExchangeRate || "0")).toFixed(2)} LYD
                           </div>
                         )}
                       </div>
@@ -1801,9 +1805,9 @@ export default function Orders() {
                         <div data-testid="text-shipping">
                           {calculateTotals().currency} {calculateTotals().shippingCost.toFixed(2)}
                         </div>
-                        {lydExchangeRate > 0 && (
+                        {parseFloat(lydExchangeRate || "0") > 0 && (
                           <div className="text-xs text-blue-600 font-medium">
-                            {(calculateTotals().shippingCost * lydExchangeRate).toFixed(2)} LYD
+                            {(calculateTotals().shippingCost * parseFloat(lydExchangeRate || "0")).toFixed(2)} LYD
                           </div>
                         )}
                       </div>
@@ -1811,10 +1815,10 @@ export default function Orders() {
                     <div className="flex justify-between font-medium text-lg border-t pt-2">
                       <span>{t('total')}:</span>
                       <div className="text-right">
-                        {lydExchangeRate > 0 ? (
+                        {parseFloat(lydExchangeRate || "0") > 0 ? (
                           <>
                             <div className="text-lg text-blue-600 font-bold" data-testid="text-total">
-                              {(calculateTotals().total * lydExchangeRate).toFixed(2)} LYD
+                              {(calculateTotals().total * parseFloat(lydExchangeRate || "0")).toFixed(2)} LYD
                             </div>
                             <div className="text-xs text-muted-foreground">
                               ({calculateTotals().currency} {calculateTotals().total.toFixed(2)})
@@ -1836,7 +1840,7 @@ export default function Orders() {
                           onChange={(e) => {
                             setHasDownPayment(e.target.checked);
                             if (!e.target.checked) {
-                              setDownPayment(0);
+                              setDownPayment("");
                             }
                           }}
                           className="w-4 h-4 rounded border-gray-300"
@@ -1847,21 +1851,31 @@ export default function Orders() {
                         </Label>
                       </div>
                       {hasDownPayment && (
-                        <div>
+                        <div className="space-y-2">
+                          <Label htmlFor="down-payment-currency" className="text-sm">{t('downPaymentCurrency') || 'Currency'}</Label>
+                          <select
+                            id="down-payment-currency"
+                            value={downPaymentCurrency}
+                            onChange={(e) => setDownPaymentCurrency(e.target.value as "USD" | "LYD")}
+                            className="w-full px-3 py-2 border rounded-md bg-background"
+                            data-testid="select-down-payment-currency"
+                          >
+                            <option value="USD">USD ($)</option>
+                            <option value="LYD">LYD (د.ل)</option>
+                          </select>
                           <Label htmlFor="down-payment" className="text-sm">{t('downPaymentAmount') || 'Down Payment Amount'}</Label>
                           <Input
                             id="down-payment"
                             type="text"
                             inputMode="decimal"
-                            value={downPayment === 0 ? '' : downPayment.toString()}
+                            value={downPayment}
                             onChange={(e) => {
                               let value = e.target.value.replace(/[^0-9.]/g, '');
                               const parts = value.split('.');
                               if (parts.length > 2) {
                                 value = parts[0] + '.' + parts.slice(1).join('');
                               }
-                              const numValue = value === '' ? 0 : parseFloat(value);
-                              setDownPayment(isNaN(numValue) ? 0 : numValue);
+                              setDownPayment(value);
                             }}
                             placeholder="0.00"
                             className="mt-1"
@@ -1869,22 +1883,22 @@ export default function Orders() {
                           />
                         </div>
                       )}
-                      {downPayment > 0 && (
+                      {parseFloat(downPayment || "0") > 0 && (
                         <div className="flex justify-between text-orange-600 font-medium">
                           <span>{t('remainingBalance')}:</span>
                           <div className="text-right">
-                            {lydExchangeRate > 0 ? (
+                            {parseFloat(lydExchangeRate || "0") > 0 ? (
                               <>
                                 <div className="font-bold" data-testid="text-payment-remaining">
-                                  {((calculateTotals().total - downPayment) * lydExchangeRate).toFixed(2)} LYD
+                                  {((calculateTotals().total - parseFloat(downPayment || "0")) * parseFloat(lydExchangeRate || "0")).toFixed(2)} LYD
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                  (${(calculateTotals().total - downPayment).toFixed(2)})
+                                  (${(calculateTotals().total - parseFloat(downPayment || "0")).toFixed(2)})
                                 </div>
                               </>
                             ) : (
                               <div data-testid="text-payment-remaining">
-                                ${(calculateTotals().total - downPayment).toFixed(2)}
+                                ${(calculateTotals().total - parseFloat(downPayment || "0")).toFixed(2)}
                               </div>
                             )}
                           </div>
@@ -1894,10 +1908,10 @@ export default function Orders() {
                     <div className="flex justify-between text-green-600 font-medium border-t pt-2">
                       <span>{t('estimatedProfit')}</span>
                       <div className="text-right">
-                        {lydExchangeRate > 0 ? (
+                        {parseFloat(lydExchangeRate || "0") > 0 ? (
                           <>
                             <div className="font-bold" data-testid="text-profit">
-                              {(calculateTotals().profit * lydExchangeRate).toFixed(2)} LYD
+                              {(calculateTotals().profit * parseFloat(lydExchangeRate || "0")).toFixed(2)} LYD
                             </div>
                             <div className="text-xs text-muted-foreground">
                               ({calculateTotals().currency} {calculateTotals().profit.toFixed(2)})
