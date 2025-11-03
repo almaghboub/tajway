@@ -69,6 +69,8 @@ export default function Orders() {
         return t('statusReadyToCollect');
       case 'withshippingcompany':
         return t('statusWithShippingCompany');
+      case 'readytobuy':
+        return t('readyToBuy');
       default:
         return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
     }
@@ -926,9 +928,14 @@ export default function Orders() {
       finalNotes = finalNotes ? `${finalNotes} | Size: ${clothingSize}` : `Size: ${clothingSize}`;
     }
     
+    // Determine order status based on down payment
+    // If no down payment (0), set status to "ready_to_buy"
+    // Otherwise, keep it as "pending" until down payment is collected
+    const orderStatus = downPaymentUSD === 0 ? "ready_to_buy" : "pending";
+    
     const order: InsertOrder = {
       customerId: selectedCustomerId,
-      status: "pending",
+      status: orderStatus,
       totalAmount: totals.total.toFixed(2),
       downPayment: downPaymentUSD.toFixed(2),
       downPaymentCurrency: downPaymentCurrency,
@@ -1062,6 +1069,8 @@ export default function Orders() {
         return "bg-cyan-100 text-cyan-800";
       case "with_shipping_company":
         return "bg-indigo-100 text-indigo-800";
+      case "ready_to_buy":
+        return "bg-orange-100 text-orange-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
