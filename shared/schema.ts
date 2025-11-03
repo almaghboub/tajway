@@ -8,6 +8,7 @@ export const orderStatusEnum = pgEnum("order_status", ["pending", "processing", 
 export const taskStatusEnum = pgEnum("task_status", ["pending", "completed", "to_collect"]);
 export const taskTypeEnum = pgEnum("task_type", ["task", "delivery", "pickup"]);
 export const expenseCategoryEnum = pgEnum("expense_category", ["employee_salaries", "supplier_expenses", "marketing_commission", "rent", "cleaning_salaries", "other"]);
+export const currencyEnum = pgEnum("currency", ["USD", "LYD"]);
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -42,6 +43,7 @@ export const orders = pgTable("orders", {
   status: orderStatusEnum("status").notNull().default("pending"),
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
   downPayment: decimal("down_payment", { precision: 10, scale: 2 }).notNull().default("0"),
+  downPaymentCurrency: currencyEnum("down_payment_currency").notNull().default("USD"),
   remainingBalance: decimal("remaining_balance", { precision: 10, scale: 2 }).notNull().default("0"),
   shippingCost: decimal("shipping_cost", { precision: 10, scale: 2 }).notNull().default("0"),
   shippingWeight: decimal("shipping_weight", { precision: 10, scale: 2 }).notNull().default("1"),
