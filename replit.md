@@ -46,11 +46,21 @@ The system features comprehensive functionality with responsive interface, bilin
   - Backend: GET `/api/reports/performance?range=daily|weekly|monthly&country[]=...&dateFrom=...&dateTo=...`
   - Bilingual display (English/Arabic) with proper RTL layout
 
-- **LYD Currency Conversion System**: 
+- **LYD Currency Conversion System with Dual Exchange Rates (November 2025)**: 
   - `useLydExchangeRate` hook for centralized management
   - Dual-currency display (USD/LYD) across dashboards, orders, customers, invoices, and profit reports
-  - Global LYD exchange rate stored in settings table (key: 'lyd_exchange_rate', default: 4.85)
+  - **Dual Exchange Rate System**: Separate purchase rate (cost to buy USD) and sale rate (price sold to customers) for tracking exchange profit margin
+  - Exchange rates stored in settings table:
+    - `lyd_purchase_exchange_rate`: Rate paid to buy USD (default: 4.80)
+    - `lyd_exchange_rate` (sale rate): Rate sold to customers (default: 4.85)
+  - **Exchange Rate Profit Calculation**: `(sale_rate - purchase_rate) × total_revenue_USD` displayed only in LYD mode
   - Per-order LYD exchange rate tracking (stored in `orders.lyd_exchange_rate`)
+  - Settings page UI for managing both purchase and sale exchange rates with bilingual support
+  - Exchange rate profit integrated into:
+    - Profit page metrics with dedicated breakdown card
+    - Financial reports showing separate profit components (items, shipping, exchange rate)
+    - Total profit calculations include exchange rate profit when viewing in LYD
+  - Consistent currency conversion: values converted once at calculation level to prevent double-conversion
   - Color-coded LYD amounts with bold blue formatting
   - Locale-aware invoice numbering (Dinar/دينار)
   - Expenses page with dual currency support
