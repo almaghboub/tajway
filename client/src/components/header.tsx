@@ -1,7 +1,15 @@
-import { Bell, Languages } from "lucide-react";
+import { Bell, Languages, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
   title: string;
@@ -11,6 +19,13 @@ interface HeaderProps {
 export function Header({ title, description }: HeaderProps) {
   const { i18n, t } = useTranslation();
   const isMobile = useIsMobile();
+  const [, setLocation] = useLocation();
+  const isRTL = i18n.language === 'ar';
+
+  const { data: unreadCount } = useQuery<{ count: number }>({
+    queryKey: ["/api/messages/unread-count"],
+    refetchInterval: 30000,
+  });
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'ar' : 'en';
@@ -57,18 +72,44 @@ export function Header({ title, description }: HeaderProps) {
             </div>
           )}
           
-          {/* Notification bell */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="relative text-muted-foreground hover:text-foreground"
-            data-testid="button-notifications"
-          >
-            <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="absolute -top-1 ltr:-right-1 rtl:-left-1 w-4 h-4 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
-              3
-            </span>
-          </Button>
+          {/* Notification bell with dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative text-muted-foreground hover:text-foreground"
+                data-testid="button-notifications"
+              >
+                <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+                {(unreadCount?.count ?? 0) > 0 && (
+                  <span className="absolute -top-1 ltr:-right-1 rtl:-left-1 w-4 h-4 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
+                    {(unreadCount?.count ?? 0) > 9 ? '9+' : unreadCount?.count}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align={isRTL ? "start" : "end"} className="w-64">
+              <DropdownMenuItem 
+                onClick={() => setLocation("/messages")}
+                className="flex items-center gap-2 cursor-pointer"
+                data-testid="menu-item-view-messages"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <div className="flex flex-col">
+                  <span className="font-medium">
+                    {isRTL ? "الرسائل" : "Messages"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {(unreadCount?.count || 0) > 0 
+                      ? (isRTL ? `${unreadCount?.count} رسائل غير مقروءة` : `${unreadCount?.count} unread messages`)
+                      : (isRTL ? "لا توجد رسائل جديدة" : "No new messages")
+                    }
+                  </span>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
