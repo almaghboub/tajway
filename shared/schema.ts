@@ -348,6 +348,7 @@ export const deliveryTasks = pgTable("delivery_tasks", {
   customerCode: text("customer_code"),
   paymentType: text("payment_type"), // "collect" or "delivered"
   paymentAmount: decimal("payment_amount", { precision: 10, scale: 2 }),
+  currency: text("currency").default("USD"),
   address: text("address"),
   value: decimal("value", { precision: 10, scale: 2 }),
   weight: decimal("weight", { precision: 10, scale: 2 }),

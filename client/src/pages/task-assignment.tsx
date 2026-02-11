@@ -39,6 +39,7 @@ export default function TaskAssignment() {
   const [customerCode, setCustomerCode] = useState("");
   const [paymentType, setPaymentType] = useState<"collect" | "delivered">("delivered");
   const [paymentAmount, setPaymentAmount] = useState("");
+  const [currency, setCurrency] = useState<"USD" | "LYD">("USD");
   const [taskNotes, setTaskNotes] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -125,6 +126,8 @@ export default function TaskAssignment() {
       status: "pending",
     };
 
+    taskData.currency = currency;
+
     if (taskType === "task") {
       taskData.orderId = selectedOrderId;
       taskData.pickupLocation = pickupLocation;
@@ -155,6 +158,7 @@ export default function TaskAssignment() {
     setCustomerCode("");
     setPaymentType("delivered");
     setPaymentAmount("");
+    setCurrency("USD");
     setTaskNotes("");
   };
 
@@ -339,6 +343,20 @@ export default function TaskAssignment() {
                   </Select>
                 </div>
 
+                {/* Currency Selector */}
+                <div className="col-span-2">
+                  <Label htmlFor="currency">{t('currency')} *</Label>
+                  <Select value={currency} onValueChange={(value: any) => setCurrency(value)}>
+                    <SelectTrigger id="currency" data-testid="select-currency">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USD">USD ($)</SelectItem>
+                      <SelectItem value="LYD">LYD (د.ل)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Conditional Fields based on Task Type */}
                 {taskType === "task" ? (
                   <>
@@ -391,7 +409,7 @@ export default function TaskAssignment() {
                         </div>
 
                         <div className="col-span-2">
-                          <Label htmlFor="payment-amount">{t('paymentAmountDollar')}</Label>
+                          <Label htmlFor="payment-amount">{t('paymentAmount')} ({currency})</Label>
                           <Input
                             id="payment-amount"
                             type="number"
@@ -420,7 +438,7 @@ export default function TaskAssignment() {
                     </div>
 
                     <div>
-                      <Label htmlFor="task-value">{t('taskValue')}</Label>
+                      <Label htmlFor="task-value">{t('taskValue')} ({currency})</Label>
                       <Input
                         id="task-value"
                         type="number"
