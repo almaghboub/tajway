@@ -1308,9 +1308,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new delivery task (assign task to shipping staff) - managers only
   app.post("/api/delivery-tasks", requireDeliveryManager, async (req, res) => {
     try {
-      const result = insertDeliveryTaskSchema.safeParse(req.body);
+      const taskData = {
+        ...req.body,
+        assignedByUserId: req.user!.id,
+      };
+
+      const result = insertDeliveryTaskSchema.safeParse(taskData);
       if (!result.success) {
+        console.error("Task validation errors:", result.error.errors);
         return res.status(400).json({ message: "Invalid task data", errors: result.error.errors });
+      }
+
+      // Validate assignedToUserId exists
+      const assignedUser = await storage.getUser(result.data.assignedToUserId);
+      if (!assignedUser) {
+        return res.status(400).json({ message: "Assigned user not found" });
+      }
+
+      // Validate orderId exists if provided
+      if (result.data.orderId) {
+        const order = await storage.getOrderWithCustomer(result.data.orderId);
+        if (!order) {
+          return res.status(400).json({ message: "Order not found" });
+        }
       }
 
       const task = await storage.createDeliveryTask(result.data);

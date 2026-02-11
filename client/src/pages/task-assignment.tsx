@@ -121,7 +121,6 @@ export default function TaskAssignment() {
 
     const taskData: any = {
       assignedToUserId,
-      assignedByUserId: user?.id,
       taskType,
       status: "pending",
     };
