@@ -6,7 +6,7 @@ import { z } from "zod";
 export const userRoleEnum = pgEnum("user_role", ["owner", "customer_service", "receptionist", "sorter", "stock_manager", "shipping_staff"]);
 export const orderStatusEnum = pgEnum("order_status", ["pending", "processing", "arrived", "received_from_office", "out_to_delivery", "office_collect", "delivered", "cancelled", "partially_arrived", "ready_to_collect", "with_shipping_company", "ready_to_buy"]);
 export const taskStatusEnum = pgEnum("task_status", ["pending", "completed", "to_collect"]);
-export const taskTypeEnum = pgEnum("task_type", ["task", "delivery", "pickup", "receive_payment"]);
+export const taskTypeEnum = pgEnum("task_type", ["task", "delivery", "pickup", "receive_payment", "receive_shipments"]);
 export const expenseCategoryEnum = pgEnum("expense_category", ["employee_salaries", "supplier_expenses", "marketing_commission", "rent", "cleaning_salaries", "other"]);
 export const expenseCategoryTypeEnum = pgEnum("expense_category_type", ["operational", "administrative", "financial", "other"]);
 export const fundSourceTypeEnum = pgEnum("fund_source_type", ["safe", "bank", "external_party"]);
