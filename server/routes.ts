@@ -509,22 +509,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // Auto-deposit order total into first available safe
+        // Auto-deposit order total into first available safe (USD only - order totals are in USD)
         try {
           const totalAmount = parseFloat(order.totalAmount || '0');
           if (totalAmount > 0) {
             const allSafes = await storage.getAllSafes();
             if (allSafes.length > 0) {
               const defaultSafe = allSafes[0];
-              const lydRate = parseFloat(order.lydExchangeRate || '0');
-              const amountLYD = lydRate > 0 ? totalAmount * lydRate : 0;
               
               await storage.createSafeTransaction({
                 safeId: defaultSafe.id,
                 type: 'deposit',
                 amountUSD: totalAmount.toString(),
-                amountLYD: amountLYD.toString(),
-                description: `Order #${order.orderNumber}: New order revenue`,
+                amountLYD: '0',
+                description: `Order #${order.orderNumber}: New order revenue (USD)`,
                 referenceType: 'order',
                 referenceId: order.id,
                 createdByUserId: req.user!.id,
@@ -557,22 +555,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const order = await storage.createOrder(result.data);
 
-        // Auto-deposit order total into first available safe
+        // Auto-deposit order total into first available safe (USD only)
         try {
           const totalAmount = parseFloat(order.totalAmount || '0');
           if (totalAmount > 0) {
             const allSafes = await storage.getAllSafes();
             if (allSafes.length > 0) {
               const defaultSafe = allSafes[0];
-              const lydRate = parseFloat(order.lydExchangeRate || '0');
-              const amountLYD = lydRate > 0 ? totalAmount * lydRate : 0;
               
               await storage.createSafeTransaction({
                 safeId: defaultSafe.id,
                 type: 'deposit',
                 amountUSD: totalAmount.toString(),
-                amountLYD: amountLYD.toString(),
-                description: `Order #${order.orderNumber}: New order revenue`,
+                amountLYD: '0',
+                description: `Order #${order.orderNumber}: New order revenue (USD)`,
                 referenceType: 'order',
                 referenceId: order.id,
                 createdByUserId: req.user!.id,
