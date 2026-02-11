@@ -67,31 +67,48 @@ export class DarbAssabilService {
         throw new Error('Darb Assabil API credentials not configured');
       }
 
+      console.log('Darb Assabil: Sending to', `/orders/${USERNAME}/?autoGenerateRef=true`);
+
       const response = await this.apiClient.post(
         `/orders/${USERNAME}/?autoGenerateRef=true`,
         payload
       );
 
-      // Check if the API response itself indicates success
-      // The API may return HTTP 200 but with success: false in the body
-      if (response.data && response.data.success === false) {
+      console.log('Darb Assabil: Raw API response:', JSON.stringify(response.data));
+
+      // The API uses "status" field (true/false) not "success"
+      if (response.data && (response.data.status === false || response.data.success === false)) {
+        const messages = response.data.messages?.map((m: any) => m.message || m).join(', ') || '';
         return {
           success: false,
-          error: response.data.error || response.data.message || 'Order rejected by Darb Assabil',
-          message: response.data.message || 'Failed to create order in Darb Assabil system',
+          error: messages || response.data.error || response.data.message || 'Order rejected by Darb Assabil',
+          message: messages || response.data.message || 'Failed to create order in Darb Assabil system',
         };
       }
 
+      // Extract order data from API response - may be in data field or directly in response
+      const orderData = response.data?.data || response.data;
+      
       return {
         success: true,
-        data: response.data,
+        data: {
+          orderId: orderData?.orderId || orderData?.id || orderData?._id || '',
+          reference: orderData?.reference || orderData?.ref || '',
+          trackingNumber: orderData?.trackingNumber || orderData?.tracking || orderData?.reference || '',
+          status: orderData?.status || 'created',
+        },
       };
     } catch (error: any) {
-      console.error('Darb Assabil API Error:', error.response?.data || error.message);
+      console.error('Darb Assabil API Error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+      });
       
-      // Extract detailed error message from API response if available
       const apiError = error.response?.data;
-      const errorMessage = apiError?.message || apiError?.error || error.message;
+      const messages = apiError?.messages?.map((m: any) => m.message || m).join(', ') || '';
+      const errorMessage = messages || apiError?.message || apiError?.error || error.message;
       
       return {
         success: false,
@@ -111,22 +128,23 @@ export class DarbAssabilService {
         `/orders/${USERNAME}/${orderId}`
       );
 
-      // Check API response success flag
-      if (response.data && response.data.success === false) {
+      if (response.data && (response.data.status === false || response.data.success === false)) {
+        const messages = response.data.messages?.map((m: any) => m.message || m).join(', ') || '';
         return {
           success: false,
-          error: response.data.error || response.data.message || 'Failed to fetch order status',
+          error: messages || response.data.error || response.data.message || 'Failed to fetch order status',
         };
       }
 
       return {
         success: true,
-        data: response.data,
+        data: response.data?.data || response.data,
       };
     } catch (error: any) {
       console.error('Darb Assabil API Error:', error.response?.data || error.message);
       const apiError = error.response?.data;
-      const errorMessage = apiError?.message || apiError?.error || error.message;
+      const messages = apiError?.messages?.map((m: any) => m.message || m).join(', ') || '';
+      const errorMessage = messages || apiError?.message || apiError?.error || error.message;
       
       return {
         success: false,
@@ -145,22 +163,23 @@ export class DarbAssabilService {
         `/tracking/${reference}`
       );
 
-      // Check API response success flag
-      if (response.data && response.data.success === false) {
+      if (response.data && (response.data.status === false || response.data.success === false)) {
+        const messages = response.data.messages?.map((m: any) => m.message || m).join(', ') || '';
         return {
           success: false,
-          error: response.data.error || response.data.message || 'Failed to track order',
+          error: messages || response.data.error || response.data.message || 'Failed to track order',
         };
       }
 
       return {
         success: true,
-        data: response.data,
+        data: response.data?.data || response.data,
       };
     } catch (error: any) {
       console.error('Darb Assabil API Error:', error.response?.data || error.message);
       const apiError = error.response?.data;
-      const errorMessage = apiError?.message || apiError?.error || error.message;
+      const messages = apiError?.messages?.map((m: any) => m.message || m).join(', ') || '';
+      const errorMessage = messages || apiError?.message || apiError?.error || error.message;
       
       return {
         success: false,

@@ -724,40 +724,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const customer = order.customer;
-      const items = await storage.getOrderItems(order.id);
+      if (!customer) {
+        return res.status(400).json({ message: "Order has no customer data" });
+      }
 
-      // Prepare order data for Darb Assabil API
+      const items = await storage.getOrderItems(order.id);
+      if (!items || items.length === 0) {
+        return res.status(400).json({ message: "Order has no items" });
+      }
+
+      const receiverPhone = customer.phone || '';
+      if (!receiverPhone) {
+        return res.status(400).json({ message: "Customer has no phone number" });
+      }
+
       const darbAssabilPayload = {
-        receiverName: `${customer.firstName} ${customer.lastName}`,
-        receiverPhone: customer.phone,
+        receiverName: `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || 'Unknown',
+        receiverPhone: receiverPhone,
         receiverAddress: {
           city: order.shippingCity || customer.city || 'Tripoli',
-          street: customer.address || '',
+          street: (customer as any).address || '',
           notes: order.notes || '',
         },
         items: items.map(item => ({
-          name: item.productName,
-          quantity: item.quantity,
-          price: parseFloat(item.unitPrice),
-          weight: item.quantity * 0.5, // Estimate 0.5kg per item
+          name: item.productName || 'Item',
+          quantity: item.quantity || 1,
+          price: parseFloat(item.unitPrice || '0'),
+          weight: (item.quantity || 1) * 0.5,
         })),
-        totalAmount: parseFloat(order.totalAmount),
+        totalAmount: parseFloat(order.totalAmount || '0'),
         notes: order.notes || `Order #${order.orderNumber}`,
-        collectOnDelivery: parseFloat(order.remainingBalance) > 0,
-        codAmount: parseFloat(order.remainingBalance),
+        collectOnDelivery: parseFloat(order.remainingBalance || '0') > 0,
+        codAmount: parseFloat(order.remainingBalance || '0'),
       };
 
-      // Send to Darb Assabil
+      console.log("=== Darb Assabil Send Request ===");
+      console.log("Order:", order.orderNumber, "ID:", order.id);
+      console.log("Payload:", JSON.stringify(darbAssabilPayload, null, 2));
+
       const result = await darbAssabilService.createOrder(darbAssabilPayload);
+
+      console.log("=== Darb Assabil Response ===");
+      console.log("Result:", JSON.stringify(result, null, 2));
 
       if (!result.success) {
         return res.status(500).json({ 
-          message: result.message || "Failed to create order in Darb Assabil",
+          message: result.error || result.message || "Failed to create order in Darb Assabil",
           error: result.error
         });
       }
 
-      // Update order with Darb Assabil details
       await storage.updateOrder(order.id, {
         darbAssabilOrderId: result.data?.orderId,
         darbAssabilReference: result.data?.reference,
@@ -771,9 +787,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reference: result.data?.reference,
         trackingNumber: result.data?.trackingNumber || result.data?.reference,
       });
-    } catch (error) {
-      console.error("Darb Assabil integration error:", error);
-      res.status(500).json({ message: "Failed to send order to Darb Assabil" });
+    } catch (error: any) {
+      console.error("=== Darb Assabil Error ===");
+      console.error("Error:", error.message);
+      console.error("Response data:", error.response?.data);
+      console.error("Response status:", error.response?.status);
+      res.status(500).json({ message: error.message || "Failed to send order to Darb Assabil" });
     }
   });
 
