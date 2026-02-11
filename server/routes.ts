@@ -509,6 +509,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
+        // Auto-deposit order total into first available safe
+        try {
+          const totalAmount = parseFloat(order.totalAmount || '0');
+          if (totalAmount > 0) {
+            const allSafes = await storage.getAllSafes();
+            if (allSafes.length > 0) {
+              const defaultSafe = allSafes[0];
+              const lydRate = parseFloat(order.lydExchangeRate || '0');
+              const amountLYD = lydRate > 0 ? totalAmount * lydRate : 0;
+              
+              await storage.createSafeTransaction({
+                safeId: defaultSafe.id,
+                type: 'deposit',
+                amountUSD: totalAmount.toString(),
+                amountLYD: amountLYD.toString(),
+                description: `Order #${order.orderNumber}: New order revenue`,
+                referenceType: 'order',
+                referenceId: order.id,
+                createdByUserId: req.user!.id,
+              });
+            }
+          }
+        } catch (txError) {
+          console.error("Failed to create order safe transaction (non-blocking):", txError);
+        }
+
         // Return order with items
         const orderWithItems = await storage.getOrderWithCustomer(order.id);
         res.status(201).json(orderWithItems);
@@ -522,7 +548,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Auto-generate shipping code for customer if they don't have one
         const customer = await storage.getCustomer(result.data.customerId);
         if (customer && !customer.shippingCode) {
-          // Generate unique shipping code: TW + timestamp + random 4 digits
           const timestamp = Date.now().toString().slice(-6);
           const random = Math.floor(1000 + Math.random() * 9000);
           const shippingCode = `TW${timestamp}${random}`;
@@ -531,6 +556,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const order = await storage.createOrder(result.data);
+
+        // Auto-deposit order total into first available safe
+        try {
+          const totalAmount = parseFloat(order.totalAmount || '0');
+          if (totalAmount > 0) {
+            const allSafes = await storage.getAllSafes();
+            if (allSafes.length > 0) {
+              const defaultSafe = allSafes[0];
+              const lydRate = parseFloat(order.lydExchangeRate || '0');
+              const amountLYD = lydRate > 0 ? totalAmount * lydRate : 0;
+              
+              await storage.createSafeTransaction({
+                safeId: defaultSafe.id,
+                type: 'deposit',
+                amountUSD: totalAmount.toString(),
+                amountLYD: amountLYD.toString(),
+                description: `Order #${order.orderNumber}: New order revenue`,
+                referenceType: 'order',
+                referenceId: order.id,
+                createdByUserId: req.user!.id,
+              });
+            }
+          }
+        } catch (txError) {
+          console.error("Failed to create order safe transaction (non-blocking):", txError);
+        }
+
         res.status(201).json(order);
       }
     } catch (error) {
@@ -1422,7 +1474,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const expense = await storage.createExpense(result.data);
       
-      // Create transactions to update balances
       if (result.data.sourceType === 'safe' && result.data.sourceId) {
         const amountUSD = result.data.currency === 'USD' ? parseFloat(result.data.amount) : 0;
         const amountLYD = result.data.currency === 'LYD' ? parseFloat(result.data.amount) : 0;
@@ -1430,8 +1481,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.createSafeTransaction({
           safeId: result.data.sourceId,
           type: 'withdrawal',
-          amountUSD: (-amountUSD).toString(),
-          amountLYD: (-amountLYD).toString(),
+          amountUSD: amountUSD.toString(),
+          amountLYD: amountLYD.toString(),
           description: `Expense: ${result.data.personName} - ${result.data.description || ''}`,
           referenceType: 'expense',
           referenceId: expense.id,
@@ -1444,8 +1495,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.createBankTransaction({
           bankId: result.data.sourceId,
           type: 'withdrawal',
-          amountUSD: (-amountUSD).toString(),
-          amountLYD: (-amountLYD).toString(),
+          amountUSD: amountUSD.toString(),
+          amountLYD: amountLYD.toString(),
           description: `Expense: ${result.data.personName} - ${result.data.description || ''}`,
           referenceType: 'expense',
           referenceId: expense.id,
@@ -2105,8 +2156,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.createSafeTransaction({
           safeId: result.data.safeId,
           type: isCollection ? 'deposit' : 'withdrawal',
-          amountUSD: (isCollection ? amountUSD : -amountUSD).toString(),
-          amountLYD: (isCollection ? amountLYD : -amountLYD).toString(),
+          amountUSD: amountUSD.toString(),
+          amountLYD: amountLYD.toString(),
           description: `Receipt ${receiptNumber}: ${result.data.description || (isCollection ? 'Collection' : 'Payment')}`,
           referenceType: 'receipt',
           referenceId: receipt.id,
