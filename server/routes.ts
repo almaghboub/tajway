@@ -588,9 +588,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: (error as Error).message,
         stack: (error as Error).stack,
       });
+      console.error("Request body:", JSON.stringify(req.body, null, 2));
       res.status(500).json({ 
-        message: "Failed to create order",
-        error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+        message: "Failed to create order: " + (error as Error).message,
       });
     }
   });
