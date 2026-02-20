@@ -4,6 +4,69 @@ const DARB_ASSABIL_API_BASE = 'https://v2.sabil.ly';
 const DARB_ASSABIL_API_VERSION = '1.0.0';
 const DEFAULT_SERVICE_ID = '6783c612dcf305c9e775c987';
 
+const CITY_NAME_MAP: Record<string, string> = {
+  'tripoli': 'طرابلس',
+  'tajoura': 'تاجوراء',
+  'tajura': 'تاجوراء',
+  'tarhuna': 'ترهونة',
+  'tarhunah': 'ترهونة',
+  'misrata': 'مصراتة',
+  'misurata': 'مصراتة',
+  'misratah': 'مصراتة',
+  'benghazi': 'بنغازي',
+  'bengazi': 'بنغازي',
+  'sebha': 'سبها',
+  'sabha': 'سبها',
+  'zawiya': 'الزاوية',
+  'zawia': 'الزاوية',
+  'alzawiya': 'الزاوية',
+  'al-zawiya': 'الزاوية',
+  'zliten': 'الخمس',
+  'zlitan': 'الخمس',
+  'khoms': 'الخمس',
+  'alkhoms': 'الخمس',
+  'al-khoms': 'الخمس',
+  'gharyan': 'غريان',
+  'gharian': 'غريان',
+  'sirte': 'سرت',
+  'sirt': 'سرت',
+  'derna': 'درنة',
+  'darnah': 'درنة',
+  'tobruk': 'طبرق',
+  'tubrug': 'طبرق',
+  'bayda': 'البيضاء',
+  'al-bayda': 'البيضاء',
+  'albayda': 'البيضاء',
+  'marj': 'المرج',
+  'al-marj': 'المرج',
+  'almarj': 'المرج',
+  'sabratha': 'صبراتة',
+  'sabratah': 'صبراتة',
+  'zuwarah': 'زوارة',
+  'zuwara': 'زوارة',
+  'ajdabiya': 'اجدابيا',
+  'ejdabia': 'اجدابيا',
+  'bani walid': 'بني وليد',
+  'baniwalid': 'بني وليد',
+  'brega': 'البريقة',
+  'buraiqah': 'البريقة',
+  'jufra': 'الجفرة',
+  'aljufra': 'الجفرة',
+  'al-jufra': 'الجفرة',
+  'kufra': 'الكفرة',
+  'alkufra': 'الكفرة',
+  'al-kufra': 'الكفرة',
+  'ras lanuf': 'رأس لانوف',
+  'raslanuf': 'رأس لانوف',
+  'jalu': 'جالو اوجلة',
+  'awjila': 'جالو اوجلة',
+  'quba': 'القبة',
+  'al-quba': 'القبة',
+  'qasr khiar': 'قصر خيار',
+  'ajaylat': 'العجيلات',
+  'ajelat': 'العجيلات',
+};
+
 interface DarbAssabilOrderItem {
   name: string;
   quantity: number;
@@ -75,6 +138,20 @@ export class DarbAssabilService {
     });
   }
 
+  private translateCity(city: string): string {
+    if (!city) return city;
+    const arabicPattern = /[\u0600-\u06FF]/;
+    if (arabicPattern.test(city)) return city;
+    const normalized = city.toLowerCase().trim();
+    const mapped = CITY_NAME_MAP[normalized];
+    if (mapped) {
+      console.log(`[DarbAssabil] City translated: "${city}" → "${mapped}"`);
+      return mapped;
+    }
+    console.log(`[DarbAssabil] No translation for city "${city}", using as-is`);
+    return city;
+  }
+
   private formatPhone(phone: string): string {
     let cleaned = phone.replace(/\s+/g, '');
     if (cleaned.startsWith('00218')) {
@@ -137,8 +214,8 @@ export class DarbAssabilService {
         paymentBy: payload.collectOnDelivery ? 'receiver' : 'sender',
         to: {
           countryCode: 'lby',
-          city: payload.receiverAddress.city,
-          area: payload.receiverAddress.area || payload.receiverAddress.city,
+          city: this.translateCity(payload.receiverAddress.city),
+          area: this.translateCity(payload.receiverAddress.area || payload.receiverAddress.city),
           address: payload.receiverAddress.street || payload.receiverAddress.notes || '',
         },
       };
