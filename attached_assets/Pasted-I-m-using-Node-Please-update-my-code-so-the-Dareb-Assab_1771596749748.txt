@@ -1,0 +1,74 @@
+I’m using Node. Please update my code so the Dareb Assabile request uses an API key (NOT a Bearer token).
+
+Requirements:
+
+Store the key in Replit Secrets as DAREB_API_KEY.
+
+Remove any Authorization: Bearer ... header completely.
+
+Send the API key using header x-api-key like this:
+"x-api-key": process.env.DAREB_API_KEY.trim()
+
+Make the Dareb call from the backend only (Express route), not from frontend.
+
+Add safe debug logs:
+
+log the API key length only (not the key)
+
+log the exact headers object (but replace the key value with "***")
+
+log response status + response body
+
+Here is the code I want you to create/replace with:
+
+import express from "express";
+
+const app = express();
+app.use(express.json());
+
+app.post("/dareb-test", async (req, res) => {
+  try {
+    const apiKey = (process.env.DAREB_API_KEY || "").trim();
+
+    console.log("DAREB_API_KEY length:", apiKey.length);
+    if (!apiKey) return res.status(500).json({ error: "Missing DAREB_API_KEY in Replit Secrets" });
+
+    const headers = {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,          // IMPORTANT: API key here
+      // DO NOT add Authorization: Bearer ...
+    };
+
+    // Safe log (don’t leak key)
+    console.log("Headers sent:", { ...headers, "x-api-key": "***" });
+
+    const url = "PUT_DAREB_ENDPOINT_URL_HERE"; // replace with the real Dareb endpoint
+    const darebRes = await fetch(url, {
+      method: "POST",               // change if Dareb docs require GET/PUT
+      headers,
+      body: JSON.stringify(req.body)
+    });
+
+    const text = await darebRes.text();
+    console.log("Dareb status:", darebRes.status);
+    console.log("Dareb response:", text);
+
+    return res.status(darebRes.status).send(text);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: String(err) });
+  }
+});
+
+app.listen(3000, () => console.log("Server running on port 3000"));
+
+
+If it still fails, test these alternative auth header formats one by one (only one at a time):
+
+headers.Authorization = apiKey
+
+headers.Authorization = "ApiKey " + apiKey
+
+headers["api-key"] = apiKey
+
+And show me the status code + response body for each test.
