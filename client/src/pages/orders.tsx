@@ -200,7 +200,8 @@ export default function Orders() {
     mutationFn: async (orderData: { order: InsertOrder; items: InsertOrderItem[]; images?: OrderImage[] }) => {
       const response = await apiRequest("POST", "/api/orders", orderData);
       if (!response.ok) {
-        throw new Error(t('failedCreateOrder'));
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || t('failedCreateOrder'));
       }
       return response.json();
     },
@@ -217,7 +218,7 @@ export default function Orders() {
     onError: (error) => {
       toast({
         title: t('error'),
-        description: t('failedCreateOrder'),
+        description: error.message || t('failedCreateOrder'),
         variant: "destructive",
       });
     },
@@ -232,7 +233,8 @@ export default function Orders() {
     }) => {
       const orderResponse = await apiRequest("POST", "/api/orders", data.orderData);
       if (!orderResponse.ok) {
-        throw new Error(t('failedCreateOrder'));
+        const errorData = await orderResponse.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || t('failedCreateOrder'));
       }
       const createdOrder = await orderResponse.json();
       
