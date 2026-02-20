@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 
-const DARB_ASSABIL_API_BASE = 'https://api.sabil.ly/v1';
+const DARB_ASSABIL_API_BASE = 'https://api.sabil.ly';
 
 interface DarbAssabilOrderItem {
   name: string;
@@ -42,46 +42,157 @@ interface DarbAssabilOrderResponse {
 }
 
 export class DarbAssabilService {
-  private getToken(): string | undefined {
-    return process.env.DARB_ASSABIL_API_TOKEN;
-  }
+  private accessToken: string | null = null;
+  private tokenExpiry: number = 0;
 
   private getUsername(): string | undefined {
     return process.env.DARB_ASSABIL_USERNAME;
   }
 
-  private createClient(): AxiosInstance {
-    const token = this.getToken();
-    console.log(`Darb Assabil: Token length=${token?.length || 0}, starts with=${token?.substring(0, 8)}...`);
+  private getPassword(): string | undefined {
+    return process.env.DARB_ASSABIL_PASSWORD;
+  }
+
+  private getApiToken(): string | undefined {
+    return process.env.DARB_ASSABIL_API_TOKEN;
+  }
+
+  private async login(): Promise<string> {
+    const username = this.getUsername();
+    const password = this.getPassword();
+    
+    if (!username || !password) {
+      throw new Error('Darb Assabil login credentials not configured');
+    }
+
+    console.log(`Darb Assabil: Attempting v2 login for user: ${username}`);
+
+    const response = await axios.post(
+      `${DARB_ASSABIL_API_BASE}/v2/user/access/`,
+      `type=Authorization&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        timeout: 15000,
+      }
+    );
+
+    console.log('Darb Assabil: Login response status:', response.data?.status);
+
+    if (response.data?.status === false) {
+      const messages = response.data.messages?.map((m: any) => m.message || m).join(', ') || '';
+      throw new Error(`Login failed: ${messages}`);
+    }
+
+    const token = response.data?.data?.token || response.data?.data?.accessToken || response.data?.token || response.data?.accessToken;
+    if (!token) {
+      console.log('Darb Assabil: Full login response:', JSON.stringify(response.data));
+      throw new Error('No access token returned from login');
+    }
+
+    this.accessToken = token;
+    this.tokenExpiry = Date.now() + (3600 * 1000);
+    console.log(`Darb Assabil: Login successful, token length=${token.length}`);
+    return token;
+  }
+
+  private async getValidToken(): Promise<string> {
+    if (this.accessToken && Date.now() < this.tokenExpiry) {
+      return this.accessToken;
+    }
+
+    const password = this.getPassword();
+    if (password) {
+      try {
+        return await this.login();
+      } catch (loginError: any) {
+        console.log('Darb Assabil: Login failed, falling back to API token:', loginError.message);
+      }
+    }
+
+    const apiToken = this.getApiToken();
+    if (apiToken) {
+      console.log(`Darb Assabil: Using API token, length=${apiToken.length}`);
+      return apiToken;
+    }
+
+    throw new Error('No valid Darb Assabil credentials available');
+  }
+
+  private async createClient(): Promise<AxiosInstance> {
+    const token = await this.getValidToken();
     return axios.create({
-      baseURL: DARB_ASSABIL_API_BASE,
+      baseURL: `${DARB_ASSABIL_API_BASE}/v1`,
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
       timeout: 30000,
     });
   }
 
+  private buildFormData(payload: CreateOrderPayload): string {
+    const params = new URLSearchParams();
+    
+    params.append('title', `Order - ${payload.receiverName}`);
+    params.append('servicePackageId', 'tosyl-rgaly');
+    params.append('destination[from][city]', 'Tripoli');
+    params.append('destination[to][city]', payload.receiverAddress.city);
+    params.append('receivers[0][fullName]', payload.receiverName);
+    params.append('receivers[0][contact]', payload.receiverPhone);
+    
+    if (payload.receiverAddress.street) {
+      params.append('receivers[0][address]', payload.receiverAddress.street);
+    }
+    if (payload.receiverAddress.notes || payload.notes) {
+      params.append('receivers[0][notes]', payload.receiverAddress.notes || payload.notes || '');
+    }
+
+    payload.items.forEach((item, index) => {
+      params.append(`products[${index}][title]`, item.name);
+      params.append(`products[${index}][amount]`, String(item.price));
+      params.append(`products[${index}][quantity]`, String(item.quantity));
+      if (item.weight) {
+        params.append(`products[${index}][weight]`, String(item.weight));
+      }
+    });
+
+    if (payload.collectOnDelivery && payload.codAmount) {
+      params.append('paymentBy', 'Receiver');
+      params.append('codAmount', String(payload.codAmount));
+    } else {
+      params.append('paymentBy', 'Sender');
+    }
+
+    if (payload.notes) {
+      params.append('notes', payload.notes);
+    }
+
+    return params.toString();
+  }
+
   async createOrder(payload: CreateOrderPayload): Promise<DarbAssabilOrderResponse> {
     try {
-      const token = this.getToken();
       const username = this.getUsername();
-      if (!token || !username) {
-        throw new Error('Darb Assabil API credentials not configured');
+      if (!username) {
+        throw new Error('Darb Assabil username not configured');
       }
 
-      const client = this.createClient();
-      console.log('Darb Assabil: Sending to', `/orders/${username}/?autoGenerateRef=true`);
+      const client = await this.createClient();
+      const formData = this.buildFormData(payload);
+
+      console.log('=== Darb Assabil Send Request ===');
+      console.log('Sending to:', `/orders/${username}/?autoGenerateRef=true`);
+      console.log('Form data:', formData);
 
       const response = await client.post(
         `/orders/${username}/?autoGenerateRef=true`,
-        payload
+        formData
       );
 
       console.log('Darb Assabil: Raw API response:', JSON.stringify(response.data));
 
-      // The API uses "status" field (true/false) not "success"
       if (response.data && (response.data.status === false || response.data.success === false)) {
         const messages = response.data.messages?.map((m: any) => m.message || m).join(', ') || '';
         return {
@@ -91,7 +202,6 @@ export class DarbAssabilService {
         };
       }
 
-      // Extract order data from API response - may be in data field or directly in response
       const orderData = response.data?.data || response.data;
       
       return {
@@ -111,6 +221,11 @@ export class DarbAssabilService {
         message: error.message,
       });
       
+      if (error.response?.status === 403 || error.response?.status === 401) {
+        this.accessToken = null;
+        this.tokenExpiry = 0;
+      }
+
       const apiError = error.response?.data;
       const messages = apiError?.messages?.map((m: any) => m.message || m).join(', ') || '';
       const errorMessage = messages || apiError?.message || apiError?.error || error.message;
@@ -125,13 +240,12 @@ export class DarbAssabilService {
 
   async getOrderStatus(orderId: string): Promise<any> {
     try {
-      const token = this.getToken();
       const username = this.getUsername();
-      if (!token || !username) {
-        throw new Error('Darb Assabil API credentials not configured');
+      if (!username) {
+        throw new Error('Darb Assabil username not configured');
       }
 
-      const client = this.createClient();
+      const client = await this.createClient();
       const response = await client.get(
         `/orders/${username}/${orderId}`
       );
@@ -150,6 +264,10 @@ export class DarbAssabilService {
       };
     } catch (error: any) {
       console.error('Darb Assabil API Error:', error.response?.data || error.message);
+      if (error.response?.status === 403 || error.response?.status === 401) {
+        this.accessToken = null;
+        this.tokenExpiry = 0;
+      }
       const apiError = error.response?.data;
       const messages = apiError?.messages?.map((m: any) => m.message || m).join(', ') || '';
       const errorMessage = messages || apiError?.message || apiError?.error || error.message;
@@ -163,13 +281,12 @@ export class DarbAssabilService {
 
   async trackOrder(reference: string): Promise<any> {
     try {
-      const token = this.getToken();
       const username = this.getUsername();
-      if (!token || !username) {
-        throw new Error('Darb Assabil API credentials not configured');
+      if (!username) {
+        throw new Error('Darb Assabil username not configured');
       }
 
-      const client = this.createClient();
+      const client = await this.createClient();
       const response = await client.get(
         `/tracking/${reference}`
       );
@@ -188,6 +305,10 @@ export class DarbAssabilService {
       };
     } catch (error: any) {
       console.error('Darb Assabil API Error:', error.response?.data || error.message);
+      if (error.response?.status === 403 || error.response?.status === 401) {
+        this.accessToken = null;
+        this.tokenExpiry = 0;
+      }
       const apiError = error.response?.data;
       const messages = apiError?.messages?.map((m: any) => m.message || m).join(', ') || '';
       const errorMessage = messages || apiError?.message || apiError?.error || error.message;
@@ -200,7 +321,9 @@ export class DarbAssabilService {
   }
 
   isConfigured(): boolean {
-    return !!(this.getToken() && this.getUsername());
+    const hasLogin = !!(this.getUsername() && this.getPassword());
+    const hasApiToken = !!(this.getApiToken() && this.getUsername());
+    return hasLogin || hasApiToken;
   }
 }
 
