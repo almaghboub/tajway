@@ -54,7 +54,8 @@ export class DarbAssabilService {
   }
 
   private getApiToken(): string | undefined {
-    return process.env.DARB_ASSABIL_API_TOKEN;
+    const raw = process.env.DARB_ASSABIL_API_TOKEN;
+    return raw ? raw.trim() : undefined;
   }
 
   private async login(): Promise<string> {
@@ -65,7 +66,7 @@ export class DarbAssabilService {
       throw new Error('Darb Assabil login credentials not configured');
     }
 
-    console.log(`Darb Assabil: Attempting v2 login for user: ${username}`);
+    console.log(`[DarbAssabil] Attempting v2 login for user: ${username}`);
 
     const response = await axios.post(
       `${DARB_ASSABIL_API_BASE}/v2/user/access/`,
@@ -78,7 +79,8 @@ export class DarbAssabilService {
       }
     );
 
-    console.log('Darb Assabil: Login response status:', response.data?.status);
+    console.log('[DarbAssabil] Login response status:', response.data?.status);
+    console.log('[DarbAssabil] Login response code:', response.data?.code);
 
     if (response.data?.status === false) {
       const messages = response.data.messages?.map((m: any) => m.message || m).join(', ') || '';
@@ -87,19 +89,21 @@ export class DarbAssabilService {
 
     const token = response.data?.data?.token || response.data?.data?.accessToken || response.data?.token || response.data?.accessToken;
     if (!token) {
-      console.log('Darb Assabil: Full login response:', JSON.stringify(response.data));
+      console.log('[DarbAssabil] Full login response keys:', Object.keys(response.data || {}));
+      console.log('[DarbAssabil] Login data keys:', Object.keys(response.data?.data || {}));
       throw new Error('No access token returned from login');
     }
 
-    this.accessToken = token;
+    this.accessToken = token.trim();
     this.tokenExpiry = Date.now() + (3600 * 1000);
-    console.log(`Darb Assabil: Login successful, token length=${token.length}`);
-    return token;
+    console.log(`[DarbAssabil] Login successful, token length=${this.accessToken.length}`);
+    return this.accessToken;
   }
 
   private async getValidToken(): Promise<string> {
-    if (this.accessToken && Date.now() < this.tokenExpiry) {
-      return this.accessToken;
+    if (this.accessToken !== null && Date.now() < this.tokenExpiry) {
+      console.log('[DarbAssabil] Using cached access token');
+      return this.accessToken as string;
     }
 
     const password = this.getPassword();
@@ -107,29 +111,70 @@ export class DarbAssabilService {
       try {
         return await this.login();
       } catch (loginError: any) {
-        console.log('Darb Assabil: Login failed, falling back to API token:', loginError.message);
+        console.log('[DarbAssabil] Login failed, falling back to API token:', loginError.message);
       }
     }
 
     const apiToken = this.getApiToken();
     if (apiToken) {
-      console.log(`Darb Assabil: Using API token, length=${apiToken.length}`);
+      console.log(`[DarbAssabil] Using API token from env`);
+      console.log(`[DarbAssabil] Token length: ${apiToken.length}`);
+      console.log(`[DarbAssabil] Token preview: ${apiToken.slice(0, 4)}...${apiToken.slice(-4)}`);
+      console.log(`[DarbAssabil] Token has whitespace: ${apiToken !== apiToken.trim()}`);
+      console.log(`[DarbAssabil] Token has newlines: ${apiToken.includes('\n') || apiToken.includes('\r')}`);
+      
+      const parts = apiToken.split('.');
+      console.log(`[DarbAssabil] JWT parts count: ${parts.length}`);
+      if (parts.length === 3) {
+        try {
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+          console.log('[DarbAssabil] JWT payload:', JSON.stringify({
+            sub: payload.sub,
+            iss: payload.iss,
+            aud: payload.aud,
+            iat: payload.iat,
+            exp: payload.exp,
+            secretId: payload.secretId?.slice(0, 8) + '...',
+          }));
+          if (payload.exp) {
+            const expDate = new Date(payload.exp * 1000);
+            console.log(`[DarbAssabil] Token expires: ${expDate.toISOString()}`);
+            console.log(`[DarbAssabil] Token expired: ${Date.now() > payload.exp * 1000}`);
+          } else {
+            console.log('[DarbAssabil] Token has no expiration field');
+          }
+        } catch (e) {
+          console.log('[DarbAssabil] Could not decode JWT payload');
+        }
+      }
+      
       return apiToken;
     }
 
     throw new Error('No valid Darb Assabil credentials available');
   }
 
-  private async createClient(): Promise<AxiosInstance> {
+  private async createClient(): Promise<{ client: AxiosInstance; token: string }> {
     const token = await this.getValidToken();
-    return axios.create({
+    
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+
+    console.log('[DarbAssabil] Final headers:', {
+      ...headers,
+      'Authorization': `Bearer ***${token.slice(-4)}`,
+    });
+    console.log('[DarbAssabil] Base URL:', `${DARB_ASSABIL_API_BASE}/v1`);
+
+    const client = axios.create({
       baseURL: `${DARB_ASSABIL_API_BASE}/v1`,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers,
       timeout: 30000,
     });
+
+    return { client, token };
   }
 
   private buildFormData(payload: CreateOrderPayload): string {
@@ -179,19 +224,20 @@ export class DarbAssabilService {
         throw new Error('Darb Assabil username not configured');
       }
 
-      const client = await this.createClient();
+      const { client } = await this.createClient();
       const formData = this.buildFormData(payload);
+      const endpoint = `/orders/${username}/?autoGenerateRef=true`;
 
       console.log('=== Darb Assabil Send Request ===');
-      console.log('Sending to:', `/orders/${username}/?autoGenerateRef=true`);
-      console.log('Form data:', formData);
+      console.log('[DarbAssabil] Endpoint:', endpoint);
+      console.log('[DarbAssabil] Full URL:', `${DARB_ASSABIL_API_BASE}/v1${endpoint}`);
+      console.log('[DarbAssabil] Method: POST');
+      console.log('[DarbAssabil] Form data length:', formData.length);
 
-      const response = await client.post(
-        `/orders/${username}/?autoGenerateRef=true`,
-        formData
-      );
+      const response = await client.post(endpoint, formData);
 
-      console.log('Darb Assabil: Raw API response:', JSON.stringify(response.data));
+      console.log('[DarbAssabil] Response status:', response.status);
+      console.log('[DarbAssabil] Response body:', JSON.stringify(response.data));
 
       if (response.data && (response.data.status === false || response.data.success === false)) {
         const messages = response.data.messages?.map((m: any) => m.message || m).join(', ') || '';
@@ -214,12 +260,12 @@ export class DarbAssabilService {
         },
       };
     } catch (error: any) {
-      console.error('Darb Assabil API Error:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message,
-      });
+      console.error('=== Darb Assabil API Error ===');
+      console.error('[DarbAssabil] Error status:', error.response?.status);
+      console.error('[DarbAssabil] Error statusText:', error.response?.statusText);
+      console.error('[DarbAssabil] Error response body:', JSON.stringify(error.response?.data));
+      console.error('[DarbAssabil] Error code:', error.response?.data?.code);
+      console.error('[DarbAssabil] Error message:', error.message);
       
       if (error.response?.status === 403 || error.response?.status === 401) {
         this.accessToken = null;
@@ -245,10 +291,10 @@ export class DarbAssabilService {
         throw new Error('Darb Assabil username not configured');
       }
 
-      const client = await this.createClient();
-      const response = await client.get(
-        `/orders/${username}/${orderId}`
-      );
+      const { client } = await this.createClient();
+      const response = await client.get(`/orders/${username}/${orderId}`);
+
+      console.log('[DarbAssabil] getOrderStatus response:', response.status, JSON.stringify(response.data));
 
       if (response.data && (response.data.status === false || response.data.success === false)) {
         const messages = response.data.messages?.map((m: any) => m.message || m).join(', ') || '';
@@ -263,7 +309,7 @@ export class DarbAssabilService {
         data: response.data?.data || response.data,
       };
     } catch (error: any) {
-      console.error('Darb Assabil API Error:', error.response?.data || error.message);
+      console.error('[DarbAssabil] getOrderStatus error:', error.response?.status, error.response?.data || error.message);
       if (error.response?.status === 403 || error.response?.status === 401) {
         this.accessToken = null;
         this.tokenExpiry = 0;
@@ -286,10 +332,10 @@ export class DarbAssabilService {
         throw new Error('Darb Assabil username not configured');
       }
 
-      const client = await this.createClient();
-      const response = await client.get(
-        `/tracking/${reference}`
-      );
+      const { client } = await this.createClient();
+      const response = await client.get(`/tracking/${reference}`);
+
+      console.log('[DarbAssabil] trackOrder response:', response.status, JSON.stringify(response.data));
 
       if (response.data && (response.data.status === false || response.data.success === false)) {
         const messages = response.data.messages?.map((m: any) => m.message || m).join(', ') || '';
@@ -304,7 +350,7 @@ export class DarbAssabilService {
         data: response.data?.data || response.data,
       };
     } catch (error: any) {
-      console.error('Darb Assabil API Error:', error.response?.data || error.message);
+      console.error('[DarbAssabil] trackOrder error:', error.response?.data || error.message);
       if (error.response?.status === 403 || error.response?.status === 401) {
         this.accessToken = null;
         this.tokenExpiry = 0;
