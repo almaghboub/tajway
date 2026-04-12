@@ -96,7 +96,10 @@ import pg from "pg";
 import { eq, desc, sql, or, ilike } from "drizzle-orm";
 
 // Database connection
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new pg.Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  max: 10,
+});
 const db = drizzle(pool);
 
 export interface IStorage {
