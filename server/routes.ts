@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import session from "express-session";
-import MemoryStore from "memorystore";
+import connectPgSimple from "connect-pg-simple";
+import pg from "pg";
 import { storage } from "./storage";
 import { hashPassword, verifyPassword } from "./auth";
 import { requireAuth, requireOwner, requireOperational, requireDeliveryManager, requireShippingStaff, requireDeliveryAccess } from "./middleware";
@@ -56,14 +57,17 @@ declare global {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Session configuration with MemoryStore
-  const MemoryStoreSession = MemoryStore(session);
-  
+  // Session configuration with PostgreSQL-backed store (survives restarts)
+  const PgSession = connectPgSimple(session);
+  const pgPool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+
   app.set('trust proxy', 1);
   app.use(
     session({
-      store: new MemoryStoreSession({
-        checkPeriod: 86400000, // prune expired entries every 24h
+      store: new PgSession({
+        pool: pgPool,
+        tableName: 'session',
+        createTableIfMissing: true,
       }),
       secret: process.env.SESSION_SECRET || "your-secret-key",
       resave: false,
@@ -72,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         secure: true,
         httpOnly: true,
         sameSite: 'none',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       },
     })
   );
